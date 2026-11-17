@@ -10,6 +10,7 @@ import { ScrambleTextPlugin } from "gsap/ScrambleTextPlugin";
 import { DrawSVGPlugin } from "gsap/DrawSVGPlugin";
 import { Header } from "./Header";
 import { Hero } from "./Hero";
+import { Journey } from "./Journey";
 import { Projects } from "./Projects";
 import { Experience } from "./Experience";
 import { Expertise } from "./Expertise";
@@ -28,12 +29,13 @@ gsap.registerPlugin(
 );
 
 const SECTION_LABELS: Array<{ selector: string; label: string }> = [
-  { selector: "#top", label: "01 // HERO" },
-  { selector: "#work", label: "02 // LAB" },
-  { selector: "#experience", label: "03 // ARENA" },
-  { selector: "#expertise", label: "04 // CRAFT" },
-  { selector: "#friction", label: "05 // FRICTION" },
-  { selector: "#contact", label: "06 // CONTACT" },
+  { selector: "#top", label: "01 // DESIGN" },
+  { selector: "#journey", label: "02 // PIPELINE" },
+  { selector: "#work", label: "03 // SAMPLES" },
+  { selector: "#experience", label: "04 // ARENA" },
+  { selector: "#expertise", label: "05 // CRAFT" },
+  { selector: "#friction", label: "06 // FRICTION" },
+  { selector: "#contact", label: "07 // CONTACT" },
 ];
 
 export function Landing() {
@@ -127,7 +129,7 @@ export function Landing() {
               {
                 duration: 0.8,
                 scrambleText: {
-                  text: "SYSTEMS // MOTION // PRODUCT // CODE",
+                  text: "DESIGN // FACTORY // READY // TRUCK // SHIP",
                   chars: "01/\\XO",
                   speed: 0.5,
                 },
@@ -389,7 +391,8 @@ export function Landing() {
 
       <Header activeSection={activeSection} onNavigate={navigateTo} />
       <main>
-        <Hero onEnterDojo={() => navigateTo("#work")} />
+        <Hero onEnterDojo={() => navigateTo("#journey")} />
+        <Journey />
         <Projects />
         <Experience />
         <Expertise />

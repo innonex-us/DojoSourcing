@@ -77,16 +77,17 @@ export function Hero({
       {/* Center Kinetic Typography */}
       <div className="relative z-10 flex max-w-[1100px] flex-col items-center text-center">
         <p className="hero-scramble mb-5 font-mono text-[11px] font-bold uppercase tracking-[0.34em] text-brand md:text-xs">
-          SYSTEMS // MOTION // PRODUCT // CODE
+          DESIGN // FACTORY // READY // TRUCK // SHIP
         </p>
 
-        <h1 className="hero-title text-5xl font-extrabold uppercase leading-[0.95] tracking-[0.04em] text-chrome sm:text-7xl md:text-8xl lg:text-[7.5rem]">
-          Practice. Build. Ship.
+        <h1 className="hero-title text-5xl font-extrabold uppercase leading-[0.95] tracking-[0.04em] text-chrome sm:text-7xl md:text-8xl lg:text-[7.2rem]">
+          Design. Produce. Ship.
         </h1>
 
         <p className="hero-sub mt-7 max-w-xl text-sm leading-relaxed text-foreground/85 md:text-base">
-          DOJO is a kinetic product &amp; motion studio. We turn ambitious
-          product theses into tactile, high-velocity web experiences.
+          Complete end-to-end apparel solution for clothing brands — starting
+          from garment design &amp; tech packs, through factory production,
+          cargo trucking, and ocean shipment.
         </p>
 
         <div className="hero-actions mt-10 flex flex-wrap items-center justify-center gap-4">
@@ -96,7 +97,7 @@ export function Hero({
             data-cursor="magnet"
             className="focus-ring inline-flex items-center gap-3 rounded-full bg-brand px-7 py-3.5 text-xs font-bold uppercase tracking-[0.22em] text-white shadow-[0_12px_32px_rgba(254,65,1,0.35)] transition-transform hover:scale-[1.03]"
           >
-            <span>Enter The Dojo</span>
+            <span>Start The Journey</span>
             <span aria-hidden>↓</span>
           </button>
           <a
@@ -104,7 +105,7 @@ export function Hero({
             data-cursor="magnet"
             className="focus-ring inline-flex items-center gap-2 rounded-full border border-border bg-surface-deep/75 px-6 py-3.5 text-xs font-bold uppercase tracking-[0.2em] text-chrome backdrop-blur-md transition-colors hover:border-brand hover:text-brand"
           >
-            Capabilities
+            Full Capabilities
           </a>
         </div>
       </div>
@@ -112,7 +113,7 @@ export function Hero({
       {/* Bottom Scroll Cue */}
       <div className="absolute bottom-7 left-1/2 z-10 -translate-x-1/2">
         <a
-          href="#work"
+          href="#journey"
           className="focus-ring hero-scroll inline-flex flex-col items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.32em] text-white/70 transition-colors hover:text-brand"
         >
           <span>Scroll</span>
