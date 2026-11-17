@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 
 export function Header({
@@ -30,13 +31,21 @@ export function Header({
         <Link
           href="/"
           data-cursor="magnet"
-          className="focus-ring site-logo flex items-center gap-2.5 text-xl font-extrabold uppercase tracking-[0.2em] text-brand md:text-2xl"
+          className="focus-ring site-logo flex items-center gap-3"
         >
-          <span
-            aria-hidden
-            className="inline-block h-2.5 w-2.5 rotate-45 border-2 border-brand"
-          />
-          <span>DOJO</span>
+          <span className="flex h-9 items-center justify-center rounded-full bg-white px-2.5 shadow-sm">
+            <Image
+              src="/dojo-sourcing-logo.png"
+              alt="Dojo Sourcing logo"
+              width={60}
+              height={20}
+              className="h-5 w-[60px] object-contain"
+              priority
+            />
+          </span>
+          <span className="text-sm font-extrabold uppercase tracking-[0.16em] text-chrome sm:text-base md:text-lg">
+            Dojo <span className="text-brand">Sourcing</span>
+          </span>
         </Link>
 
         <div className="site-pill flex items-center gap-2">
@@ -68,7 +77,7 @@ export function Header({
           href="/#contact"
           onClick={(e) => handleNav(e, "#contact")}
           data-cursor="magnet"
-          className="focus-ring site-cta group inline-flex items-center gap-2 rounded-full border border-brand/40 bg-brand/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-brand transition-colors hover:bg-brand hover:text-white md:text-sm"
+          className="focus-ring site-cta group inline-flex items-center gap-2 rounded-full border border-brand/45 bg-brand/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-brand transition-colors hover:bg-brand hover:text-white md:text-sm"
         >
           <span>Let&apos;s Talk</span>
           <span

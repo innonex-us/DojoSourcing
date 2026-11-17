@@ -51,19 +51,21 @@ const STAGES = [
 ] as const;
 
 export const COLORWAYS = [
-  { name: "Off-White", hex: "#dad5cc", gsm: "420 GSM Heavy Jersey" },
-  { name: "Obsidian", hex: "#1b1817", gsm: "380 GSM Combed Cotton" },
-  { name: "Vermilion", hex: "#fe4101", gsm: "420 GSM Enzyme Wash" },
-  { name: "Sage", hex: "#647566", gsm: "340 GSM Organic Knit" },
+  { name: "Off-White", hex: "#e2e8f0", gsm: "420 GSM Heavy Jersey" },
+  { name: "Corp Navy", hex: "#1e3a8a", gsm: "380 GSM Combed Cotton" },
+  { name: "Crimson Red", hex: "#dc2626", gsm: "420 GSM Enzyme Wash" },
+  { name: "Slate Blue", hex: "#475569", gsm: "340 GSM Organic Knit" },
 ] as const;
 
 const GROUND_Y = -1.35;
 
 export function Journey({
   theme = "dark",
+  accent = "red",
   onColorwayChange,
 }: {
   theme?: "dark" | "light";
+  accent?: "red" | "blue";
   onColorwayChange?: (colorName: string) => void;
 }) {
   const sectionRef = useRef<HTMLElement>(null);
@@ -72,6 +74,8 @@ export function Journey({
   const sceneEnvRef = useRef<{
     scene: THREE.Scene;
     renderer: THREE.WebGLRenderer;
+    portalMat: THREE.MeshBasicMaterial;
+    rimLight: THREE.SpotLight;
   } | null>(null);
 
   const [activeStep, setActiveStep] = useState(0);
@@ -112,7 +116,8 @@ export function Journey({
           renderer.toneMapping = THREE.ACESFilmicToneMapping;
           renderer.toneMappingExposure = 0.96;
 
-          const bgHex = theme === "light" ? 0xf4f2ef : 0x120f0e;
+          const bgHex = theme === "light" ? 0xf4f7fb : 0x091122;
+          const accentHex = accent === "blue" ? 0x2563eb : 0xdc2626;
           renderer.setClearColor(bgHex, 1);
           host.innerHTML = "";
           host.appendChild(renderer.domElement);
@@ -120,7 +125,6 @@ export function Journey({
           const scene = new THREE.Scene();
           scene.background = new THREE.Color(bgHex);
           scene.fog = new THREE.FogExp2(bgHex, 0.036);
-          sceneEnvRef.current = { scene, renderer };
 
           const pmrem = new THREE.PMREMGenerator(renderer);
           const envRT = pmrem.fromScene(new RoomEnvironment(), 0.04);
@@ -131,8 +135,8 @@ export function Journey({
           camera.position.set(-0.9, 1.15, 9.8);
           camera.lookAt(1.05, -0.15, 0);
 
-          // Studio 3-Point Lighting (balanced to prevent white blowout)
-          scene.add(new THREE.HemisphereLight(0xfff5ec, 0x1a1513, 0.45));
+          // Studio 3-Point Lighting (Red + Corporate Blue accents)
+          scene.add(new THREE.HemisphereLight(0xf8fafc, 0x0f1c38, 0.48));
 
           const keyLight = new THREE.DirectionalLight(0xfffaf4, 1.85);
           keyLight.position.set(5, 9, 6);
@@ -147,7 +151,7 @@ export function Journey({
           keyLight.shadow.bias = -0.0004;
           scene.add(keyLight);
 
-          const rimLight = new THREE.SpotLight(0xfe4101, 12, 22, Math.PI / 3, 0.65);
+          const rimLight = new THREE.SpotLight(accentHex, 12, 22, Math.PI / 3, 0.65);
           rimLight.position.set(-3.2, 4, 4);
           scene.add(rimLight);
 
@@ -166,24 +170,27 @@ export function Journey({
           shadowFloor.receiveShadow = true;
           stageAnchor.add(shadowFloor);
 
-          const horizonGrid = new THREE.GridHelper(18, 30, 0xfe4101, 0x2a2422);
+          const horizonGrid = new THREE.GridHelper(18, 30, 0x2563eb, 0x1e3a8a);
           horizonGrid.position.y = GROUND_Y;
           (horizonGrid.material as THREE.Material).transparent = true;
-          (horizonGrid.material as THREE.Material).opacity = 0.2;
+          (horizonGrid.material as THREE.Material).opacity = 0.22;
           stageAnchor.add(horizonGrid);
 
+          const portalMat = new THREE.MeshBasicMaterial({
+            color: accentHex,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.55,
+          });
           const portalRing = new THREE.Mesh(
             new THREE.RingGeometry(2.45, 2.51, 96),
-            new THREE.MeshBasicMaterial({
-              color: 0xfe4101,
-              side: THREE.DoubleSide,
-              transparent: true,
-              opacity: 0.5,
-            }),
+            portalMat,
           );
           portalRing.rotation.x = -Math.PI / 2;
           portalRing.position.y = GROUND_Y + 0.012;
           stageAnchor.add(portalRing);
+
+          sceneEnvRef.current = { scene, renderer, portalMat, rimLight };
 
           // Build 5 Separated Realistic 3D Components
           const assets = buildRealisticStages(stageAnchor, groundClip);
@@ -437,19 +444,22 @@ export function Journey({
     { scope: sectionRef },
   );
 
-  // Sync 3D Scene Background & Fog with Light/Dark Theme
+  // Sync 3D Scene Background, Fog & Accent with Theme Controls
   useGSAP(
     () => {
       const env = sceneEnvRef.current;
       if (!env) return;
-      const targetColor = new THREE.Color(theme === "light" ? 0xf4f2ef : 0x120f0e);
+      const targetColor = new THREE.Color(theme === "light" ? 0xf4f7fb : 0x091122);
+      const accentColor = new THREE.Color(accent === "blue" ? 0x2563eb : 0xdc2626);
       env.scene.background = targetColor;
       if (env.scene.fog instanceof THREE.FogExp2) {
         env.scene.fog.color.copy(targetColor);
       }
       env.renderer.setClearColor(targetColor, 1);
+      env.portalMat.color.copy(accentColor);
+      env.rimLight.color.copy(accentColor);
     },
-    { scope: sectionRef, dependencies: [theme] },
+    { scope: sectionRef, dependencies: [theme, accent] },
   );
 
   // Smooth Colorway Tween on Stage 01

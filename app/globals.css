@@ -1,31 +1,48 @@
 @import "tailwindcss";
 
 :root {
-  --background: #120f0e;
-  --foreground: #e4e2df;
-  --brand: #fe4101;
-  --surface: #2a2422;
-  --surface-deep: #18181b;
-  --muted: #71717a;
+  --background: #091122;
+  --foreground: #e6ecf5;
+  --brand: #dc2626;
+  --corporate: #2563eb;
+  --corporate-deep: #1e3a8a;
+  --surface: #111d38;
+  --surface-deep: #0d162c;
+  --muted: #8fa3c7;
   --chrome: #ffffff;
-  --border: rgba(255, 255, 255, 0.1);
+  --border: rgba(148, 179, 230, 0.18);
   --fab-chat: #25d366;
 }
 
 [data-theme="light"] {
-  --background: #f4f2ef;
-  --foreground: #1a1614;
+  --background: #f4f7fb;
+  --foreground: #0f2347;
+  --brand: #dc2626;
+  --corporate: #1d4ed8;
+  --corporate-deep: #1e3a8a;
   --surface: #ffffff;
-  --surface-deep: #ebe7e2;
-  --muted: #71717a;
-  --chrome: #120f0e;
-  --border: rgba(18, 15, 14, 0.12);
+  --surface-deep: #e8eef7;
+  --muted: #4b6188;
+  --chrome: #0b1833;
+  --border: rgba(15, 35, 71, 0.14);
+}
+
+[data-accent="blue"] {
+  --brand: #2563eb;
+  --corporate: #dc2626;
+}
+
+[data-theme="light"][data-accent="blue"] {
+  --brand: #1d4ed8;
+  --corporate: #dc2626;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-brand: var(--brand);
+  --color-corporate: var(--corporate);
+  --color-corporate-deep: var(--corporate-deep);
   --color-surface: var(--surface);
   --color-surface-deep: var(--surface-deep);
   --color-muted: var(--muted);
@@ -53,15 +70,15 @@ body {
 
 .grid-bg {
   background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    linear-gradient(to right, rgba(59, 130, 246, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(59, 130, 246, 0.06) 1px, transparent 1px);
   background-size: 64px 64px;
 }
 
 [data-theme="light"] .grid-bg {
   background-image:
-    linear-gradient(to right, rgba(18, 15, 14, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(18, 15, 14, 0.05) 1px, transparent 1px);
+    linear-gradient(to right, rgba(15, 35, 71, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15, 35, 71, 0.06) 1px, transparent 1px);
 }
 
 .noise-overlay::before {
@@ -99,15 +116,14 @@ a {
 }
 
 .chat-fab-pulse {
-  animation: pulse-ring 2.4s ease-out infinite;
+  animation: pulse-ring 2.6s infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .chat-fab-pulse {
-    animation: none;
-  }
-
   html {
     scroll-behavior: auto;
+  }
+  .chat-fab-pulse {
+    animation: none;
   }
 }

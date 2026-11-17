@@ -137,13 +137,13 @@ export function Contact({
 
             <div className="space-y-4">
               <a
-                href="mailto:hello@dojo.dev"
+                href="mailto:sourcing@dojosourcing.com"
                 className="focus-ring group flex items-center gap-4 text-sm text-foreground/85 transition-colors hover:text-brand"
               >
                 <span className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-brand transition-colors group-hover:border-brand">
                   @
                 </span>
-                <span>hello@dojo.dev</span>
+                <span>sourcing@dojosourcing.com</span>
               </a>
               <div className="flex items-center gap-4 text-sm text-foreground/85">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-brand">

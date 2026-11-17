@@ -40,7 +40,7 @@ const SECTION_LABELS: Array<{ selector: string; label: string }> = [
 
 export function Landing() {
   const root = useRef<HTMLDivElement>(null);
-  const [theme, toggleTheme] = useTheme();
+  const { theme, accent, setTheme, setAccent } = useTheme();
   const [activeSection, setActiveSection] = useState("01 // DESIGN");
   const [selectedColorway, setSelectedColorway] = useState(
     "Off-White (420 GSM Heavy Jersey)",
@@ -239,7 +239,11 @@ export function Landing() {
       <Header activeSection={activeSection} mode="home" onNavigate={navigateTo} />
       <main>
         <Hero onEnterDojo={() => navigateTo("#journey")} />
-        <Journey theme={theme} onColorwayChange={setSelectedColorway} />
+        <Journey
+          theme={theme}
+          accent={accent}
+          onColorwayChange={setSelectedColorway}
+        />
         <Experience />
         <Estimator
           selectedColorway={selectedColorway}
@@ -255,7 +259,12 @@ export function Landing() {
         />
       </main>
       <Footer />
-      <Fabs theme={theme} onToggleTheme={toggleTheme} />
+      <Fabs
+        theme={theme}
+        accent={accent}
+        onSetTheme={setTheme}
+        onSetAccent={setAccent}
+      />
     </div>
   );
 }

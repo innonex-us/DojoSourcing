@@ -2,29 +2,65 @@
 
 import { useCallback, useSyncExternalStore } from "react";
 
-type Theme = "dark" | "light";
+export type ThemeMode = "dark" | "light";
+export type AccentMode = "red" | "blue";
 
-const STORAGE_KEY = "dojo-theme";
+export type ThemePreferences = {
+  theme: ThemeMode;
+  accent: AccentMode;
+};
+
+const STORAGE_THEME = "dojo-sourcing-theme";
+const STORAGE_ACCENT = "dojo-sourcing-accent";
 const listeners = new Set<() => void>();
 
-function getSnapshot(): Theme {
-  if (typeof document === "undefined") return "dark";
-  const attr = document.documentElement.getAttribute("data-theme");
-  if (attr === "light") return "light";
+let cachedSnapshot: ThemePreferences = { theme: "dark", accent: "red" };
+
+function readSnapshot(): ThemePreferences {
+  if (typeof document === "undefined") return cachedSnapshot;
+
+  let theme: ThemeMode =
+    document.documentElement.getAttribute("data-theme") === "light"
+      ? "light"
+      : "dark";
+  let accent: AccentMode =
+    document.documentElement.getAttribute("data-accent") === "blue"
+      ? "blue"
+      : "red";
+
   try {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (saved === "light") {
-      document.documentElement.setAttribute("data-theme", "light");
-      return "light";
+    const savedTheme = window.localStorage.getItem(STORAGE_THEME);
+    if (savedTheme === "light" || savedTheme === "dark") {
+      theme = savedTheme;
+      if (theme === "light") {
+        document.documentElement.setAttribute("data-theme", "light");
+      } else {
+        document.documentElement.removeAttribute("data-theme");
+      }
+    }
+    const savedAccent = window.localStorage.getItem(STORAGE_ACCENT);
+    if (savedAccent === "blue" || savedAccent === "red") {
+      accent = savedAccent;
+      if (accent === "blue") {
+        document.documentElement.setAttribute("data-accent", "blue");
+      } else {
+        document.documentElement.removeAttribute("data-accent");
+      }
     }
   } catch {
     // ignore storage errors
   }
-  return "dark";
+
+  if (cachedSnapshot.theme !== theme || cachedSnapshot.accent !== accent) {
+    cachedSnapshot = { theme, accent };
+  }
+  return cachedSnapshot;
 }
 
-function getServerSnapshot(): Theme {
-  return "dark";
+const SERVER_SNAPSHOT: ThemePreferences = { theme: "dark", accent: "red" };
+
+function getServerSnapshot(): ThemePreferences {
+  return SERVER_SNAPSHOT;
 }
 
 function subscribe(cb: () => void) {
@@ -34,23 +70,57 @@ function subscribe(cb: () => void) {
   };
 }
 
-export function useTheme(): [Theme, () => void] {
-  const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+function applyPrefs(nextTheme: ThemeMode, nextAccent: AccentMode) {
+  if (nextTheme === "light") {
+    document.documentElement.setAttribute("data-theme", "light");
+  } else {
+    document.documentElement.removeAttribute("data-theme");
+  }
+
+  if (nextAccent === "blue") {
+    document.documentElement.setAttribute("data-accent", "blue");
+  } else {
+    document.documentElement.removeAttribute("data-accent");
+  }
+
+  try {
+    window.localStorage.setItem(STORAGE_THEME, nextTheme);
+    window.localStorage.setItem(STORAGE_ACCENT, nextAccent);
+  } catch {
+    // ignore storage errors
+  }
+
+  cachedSnapshot = { theme: nextTheme, accent: nextAccent };
+  listeners.forEach((l) => l());
+}
+
+export function useTheme() {
+  const prefs = useSyncExternalStore(subscribe, readSnapshot, getServerSnapshot);
+
+  const setTheme = useCallback(
+    (nextTheme: ThemeMode) => {
+      applyPrefs(nextTheme, readSnapshot().accent);
+    },
+    [],
+  );
 
   const toggleTheme = useCallback(() => {
-    const next: Theme = getSnapshot() === "dark" ? "light" : "dark";
-    if (next === "light") {
-      document.documentElement.setAttribute("data-theme", "light");
-    } else {
-      document.documentElement.removeAttribute("data-theme");
-    }
-    try {
-      window.localStorage.setItem(STORAGE_KEY, next);
-    } catch {
-      // ignore storage errors
-    }
-    listeners.forEach((l) => l());
+    const cur = readSnapshot();
+    applyPrefs(cur.theme === "dark" ? "light" : "dark", cur.accent);
   }, []);
 
-  return [theme, toggleTheme];
+  const setAccent = useCallback(
+    (nextAccent: AccentMode) => {
+      applyPrefs(readSnapshot().theme, nextAccent);
+    },
+    [],
+  );
+
+  return {
+    theme: prefs.theme,
+    accent: prefs.accent,
+    setTheme,
+    toggleTheme,
+    setAccent,
+  };
 }

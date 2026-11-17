@@ -42,7 +42,7 @@ export function KineticCursor() {
             if (target?.closest('[data-cursor="magnet"]')) {
               gsap.to(ring, {
                 scale: 1.65,
-                borderColor: "#fe4101",
+                borderColor: "#dc2626",
                 duration: 0.25,
               });
             }
@@ -53,7 +53,7 @@ export function KineticCursor() {
             if (target?.closest('[data-cursor="magnet"]')) {
               gsap.to(ring, {
                 scale: 1,
-                borderColor: "rgba(254, 65, 1, 0.55)",
+                borderColor: "rgba(37, 99, 235, 0.65)",
                 duration: 0.25,
               });
             }

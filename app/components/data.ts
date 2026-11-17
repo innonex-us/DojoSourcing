@@ -337,16 +337,16 @@ export const heroCards: HeroCard[] = [
 ];
 
 export const partnerTiles = [
-  { name: "MILAN ATELIER", bg: "#18181b", fg: "#ffffff" },
-  { name: "DHAKA MILLS", bg: "#262335", fg: "#e4e2df" },
-  { name: "ROTTERDAM PORT", bg: "#fe4101", fg: "#ffffff" },
-  { name: "TOKYO DENIM", bg: "#1e1b4b", fg: "#e4e2df" },
-  { name: "PORTO KNITS", bg: "#2a2422", fg: "#fe4101" },
-  { name: "LOS ANGELES 3PL", bg: "#e4e2df", fg: "#120f0e" },
-  { name: "HAMBURG CARGO", bg: "#18181b", fg: "#fe4101" },
-  { name: "BUSAN TERMINAL", bg: "#3b1d14", fg: "#fcc3ae" },
-  { name: "NY SHOWROOM", bg: "#14261c", fg: "#e4e2df" },
-  { name: "ANTWERP FREIGHT", bg: "#120f0e", fg: "#ffffff" },
+  { name: "MILAN ATELIER", bg: "#0f2347", fg: "#ffffff" },
+  { name: "DHAKA MILLS", bg: "#1e3a8a", fg: "#e6ecf5" },
+  { name: "ROTTERDAM PORT", bg: "#dc2626", fg: "#ffffff" },
+  { name: "TOKYO DENIM", bg: "#172554", fg: "#e6ecf5" },
+  { name: "PORTO KNITS", bg: "#111d38", fg: "#dc2626" },
+  { name: "LOS ANGELES 3PL", bg: "#e6ecf5", fg: "#0f2347" },
+  { name: "HAMBURG CARGO", bg: "#091122", fg: "#2563eb" },
+  { name: "BUSAN TERMINAL", bg: "#991b1b", fg: "#ffffff" },
+  { name: "NY SHOWROOM", bg: "#1e3a8a", fg: "#ffffff" },
+  { name: "ANTWERP FREIGHT", bg: "#0d162c", fg: "#ffffff" },
 ] as const;
 
 export const expertiseMedia = [

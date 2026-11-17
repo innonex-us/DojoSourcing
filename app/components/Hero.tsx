@@ -10,7 +10,7 @@ export function Hero({
   return (
     <section
       id="top"
-      className="hero relative flex h-svh min-h-[680px] items-center justify-center overflow-hidden bg-[#120f0e] px-5 pt-20 md:px-8"
+      className="hero relative flex h-svh min-h-[680px] items-center justify-center overflow-hidden bg-[#091122] px-5 pt-20 md:px-8"
       aria-label="Hero"
     >
       {/* Atmospheric Video Backdrop (vividly visible) */}
@@ -45,25 +45,25 @@ export function Hero({
         <path
           className="hero-draw-path"
           d="M 48 16 L 16 16 L 16 48"
-          stroke="#fe4101"
+          stroke="#dc2626"
           strokeWidth="2"
         />
         <path
           className="hero-draw-path"
           d="M 1152 16 L 1184 16 L 1184 48"
-          stroke="#fe4101"
+          stroke="#2563eb"
           strokeWidth="2"
         />
         <path
           className="hero-draw-path"
           d="M 48 624 L 16 624 L 16 592"
-          stroke="#fe4101"
+          stroke="#2563eb"
           strokeWidth="2"
         />
         <path
           className="hero-draw-path"
           d="M 1152 624 L 1184 624 L 1184 592"
-          stroke="#fe4101"
+          stroke="#dc2626"
           strokeWidth="2"
         />
         <circle
@@ -87,9 +87,9 @@ export function Hero({
         </h1>
 
         <p className="hero-sub mt-7 max-w-xl text-sm leading-relaxed text-white/90 drop-shadow-[0_2px_14px_rgba(0,0,0,0.9)] md:text-base">
-          Complete end-to-end apparel solution for clothing brands — starting
-          from garment design &amp; tech packs, through factory production,
-          cargo trucking, and ocean shipment.
+          Dojo Sourcing is your complete apparel sourcing partner — from garment
+          design &amp; tech packs through factory production, cargo trucking,
+          and global ocean shipment.
         </p>
 
         <div className="hero-actions mt-10 flex flex-wrap items-center justify-center gap-4">

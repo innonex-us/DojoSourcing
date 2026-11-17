@@ -20,7 +20,7 @@ gsap.registerPlugin(useGSAP, ScrollTrigger, ScrollToPlugin, SplitText);
 
 export default function ShowcasePage() {
   const root = useRef<HTMLDivElement>(null);
-  const [theme, toggleTheme] = useTheme();
+  const { theme, accent, setTheme, setAccent } = useTheme();
 
   const { contextSafe } = useGSAP(
     () => {
@@ -148,7 +148,12 @@ export default function ShowcasePage() {
       </main>
 
       <Footer />
-      <Fabs theme={theme} onToggleTheme={toggleTheme} />
+      <Fabs
+        theme={theme}
+        accent={accent}
+        onSetTheme={setTheme}
+        onSetAccent={setAccent}
+      />
     </div>
   );
 }

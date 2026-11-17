@@ -150,11 +150,11 @@ function createCardboardTextures() {
   ctx.lineWidth = 5;
   ctx.strokeRect(92, 110, 420, 290);
 
-  ctx.fillStyle = "#fe4101";
+  ctx.fillStyle = "#dc2626";
   ctx.fillRect(110, 128, 384, 52);
   ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 28px monospace";
-  ctx.fillText("DOJO APPAREL · EXPORT", 128, 164);
+  ctx.font = "bold 25px monospace";
+  ctx.fillText("DOJO SOURCING · EXPORT", 122, 164);
 
   ctx.fillStyle = "#161311";
   ctx.font = "bold 22px monospace";
@@ -331,16 +331,16 @@ export function createSharedMaterials(groundClip: THREE.Plane): SharedStageMater
   track(cardboard.map);
   track(cardboard.normalMap);
 
-  const containerBrand = createCorrugatedTextures("#fe4101", "DOJO CARGO");
+  const containerBrand = createCorrugatedTextures("#dc2626", "DOJO SOURCING");
   track(containerBrand.map);
   track(containerBrand.normalMap);
-  const containerDark = createCorrugatedTextures("#20262c");
+  const containerDark = createCorrugatedTextures("#0f2347");
   track(containerDark.map);
   track(containerDark.normalMap);
-  const containerSteel = createCorrugatedTextures("#36404a");
+  const containerSteel = createCorrugatedTextures("#1e3a8a");
   track(containerSteel.map);
   track(containerSteel.normalMap);
-  const containerCream = createCorrugatedTextures("#d8d3ca");
+  const containerCream = createCorrugatedTextures("#e2e8f0");
   track(containerCream.map);
   track(containerCream.normalMap);
 
@@ -401,16 +401,16 @@ export function createSharedMaterials(groundClip: THREE.Plane): SharedStageMater
       metalness: 0.05,
     }),
     matBrand: makePhys({
-      color: 0xfe4101,
+      color: 0xdc2626,
       roughness: 0.3,
-      metalness: 0.12,
+      metalness: 0.14,
       clearcoat: 0.45,
       clearcoatRoughness: 0.25,
     }),
     matObsidian: makeStd({
-      color: 0x110f0e,
-      roughness: 0.58,
-      metalness: 0.22,
+      color: 0x0f1c38,
+      roughness: 0.52,
+      metalness: 0.28,
     }),
     matChrome: makePhys({
       color: 0xd0ccc5,
@@ -427,15 +427,15 @@ export function createSharedMaterials(groundClip: THREE.Plane): SharedStageMater
       opacity: 0.65,
     }),
     matGlowWindow: makeStd({
-      color: 0xffb37a,
-      emissive: 0xff5e1a,
+      color: 0x93c5fd,
+      emissive: 0x2563eb,
       emissiveIntensity: 0.55,
       roughness: 0.35,
     }),
     matHeadlight: makeStd({
-      color: 0xfff3de,
-      emissive: 0xffdfa8,
-      emissiveIntensity: 0.85,
+      color: 0xffffff,
+      emissive: 0xe0f2fe,
+      emissiveIntensity: 0.9,
       roughness: 0.15,
     }),
     matFactoryWall: makeStd({
@@ -453,7 +453,7 @@ export function createSharedMaterials(groundClip: THREE.Plane): SharedStageMater
       metalness: 0.02,
     }),
     matTape: makePhys({
-      color: 0xfe4101,
+      color: 0xdc2626,
       roughness: 0.2,
       clearcoat: 1,
       clearcoatRoughness: 0.1,

@@ -150,7 +150,7 @@ export function buildTShirt(mats: SharedStageMaterials): TShirtBuild {
   rackBase.position.y = -1.46;
   swatches.add(rackBase);
 
-  const swatchColors = [0xfe4101, 0x221e1d, 0xdad5cc];
+  const swatchColors = [0xdc2626, 0x1e3a8a, 0xe2e8f0];
   swatchColors.forEach((hex, idx) => {
     const card = new THREE.Group();
     const plate = new THREE.Mesh(

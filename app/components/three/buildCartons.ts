@@ -149,7 +149,7 @@ export function buildCartons(mats: SharedStageMaterials): CartonsBuild {
     track(new THREE.ConeGeometry(0.22, 0.95, 4, 1, true)),
     track(
       new THREE.MeshBasicMaterial({
-        color: 0xfe4101,
+        color: 0xdc2626,
         transparent: true,
         opacity: 0.35,
         side: THREE.DoubleSide,
