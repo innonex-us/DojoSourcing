@@ -9,6 +9,7 @@ import { SplitText } from "gsap/SplitText";
 import { ScrambleTextPlugin } from "gsap/ScrambleTextPlugin";
 import { DrawSVGPlugin } from "gsap/DrawSVGPlugin";
 import { Header } from "./Header";
+import { Preloader } from "./Preloader";
 import { Hero } from "./Hero";
 import { Journey } from "./Journey";
 import { Experience } from "./Experience";
@@ -234,6 +235,7 @@ export function Landing() {
 
   return (
     <div ref={root} className="relative min-h-svh bg-background text-foreground">
+      <Preloader />
       <KineticCursor />
 
       <Header activeSection={activeSection} mode="home" onNavigate={navigateTo} />

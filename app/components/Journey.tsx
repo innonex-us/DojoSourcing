@@ -2,6 +2,16 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
+import {
+  ArrowDown,
+  ArrowUpRight,
+  Factory,
+  MoveHorizontal,
+  PackageCheck,
+  Ship,
+  Shirt,
+  Truck,
+} from "lucide-react";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import gsap from "gsap";
@@ -56,6 +66,8 @@ export const COLORWAYS = [
   { name: "Crimson Red", hex: "#dc2626", gsm: "420 GSM Enzyme Wash" },
   { name: "Slate Blue", hex: "#475569", gsm: "340 GSM Organic Knit" },
 ] as const;
+
+const STAGE_ICONS = [Shirt, Factory, PackageCheck, Truck, Ship] as const;
 
 const GROUND_Y = -1.35;
 
@@ -533,6 +545,7 @@ export function Journey({
             {STAGES.map((stage, idx) => {
               const isActive = idx === activeStep;
               const isDone = idx < activeStep;
+              const Icon = STAGE_ICONS[idx];
               return (
                 <button
                   key={stage.num}
@@ -548,7 +561,7 @@ export function Journey({
                   }`}
                 >
                   <span
-                    className={`flex h-7 w-7 items-center justify-center rounded-full border font-mono text-[10px] transition-colors ${
+                    className={`flex h-7 w-7 items-center justify-center rounded-full border transition-colors ${
                       isActive
                         ? "border-brand bg-brand text-white"
                         : isDone
@@ -556,6 +569,9 @@ export function Journey({
                           : "border-border text-muted"
                     }`}
                   >
+                    <Icon className="h-3.5 w-3.5" aria-hidden />
+                  </span>
+                  <span className="hidden font-mono text-[10px] text-brand lg:inline">
                     {stage.num}
                   </span>
                   <span className="hidden lg:inline">{stage.tag}</span>
@@ -629,16 +645,18 @@ export function Journey({
                     <a
                       href="#estimator"
                       data-cursor="magnet"
-                      className="focus-ring inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-[0_12px_28px_rgba(254,65,1,0.35)] transition-transform hover:scale-[1.03]"
+                      className="focus-ring inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-[0_12px_28px_rgba(220,38,38,0.35)] transition-transform hover:scale-[1.03]"
                     >
-                      <span>Estimate Your Run ↓</span>
+                      <span>Estimate Your Run</span>
+                      <ArrowDown className="h-3.5 w-3.5" aria-hidden />
                     </a>
                     <Link
                       href="/showcase"
                       data-cursor="magnet"
                       className="focus-ring inline-flex items-center gap-2 rounded-full border border-border bg-surface-deep/80 px-6 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-chrome transition-colors hover:border-brand hover:text-brand"
                     >
-                      <span>Product Showcase ↗</span>
+                      <span>Product Showcase</span>
+                      <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
                     </Link>
                   </div>
                 ) : null}
@@ -649,12 +667,16 @@ export function Journey({
 
         {/* Bottom Telemetry Bar */}
         <div className="pointer-events-none relative z-10 mx-auto flex w-full max-w-[1400px] items-center justify-between font-mono text-[11px] uppercase tracking-[0.22em] text-muted">
-          <span>Drag 3D Stage To Orbit · Scroll Or Click 01–05</span>
+          <span className="inline-flex items-center gap-2">
+            <MoveHorizontal className="h-3.5 w-3.5 text-brand" aria-hidden />
+            <span>Drag 3D Stage To Orbit · Scroll Or Click 01–05</span>
+          </span>
           <Link
             href="/showcase"
-            className="pointer-events-auto transition-colors hover:text-brand"
+            className="pointer-events-auto inline-flex items-center gap-1.5 transition-colors hover:text-brand"
           >
-            Product Showcase ↗
+            <span>Product Showcase</span>
+            <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
           </Link>
         </div>
       </div>

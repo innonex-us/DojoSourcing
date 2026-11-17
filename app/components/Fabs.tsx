@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Moon, Palette, SlidersHorizontal, Sun, X } from "lucide-react";
 import type { AccentMode, ThemeMode } from "./useTheme";
 
 type FabsProps = {
@@ -23,16 +24,17 @@ export function Fabs({ theme, accent, onSetTheme, onSetAccent }: FabsProps) {
           className="fixed bottom-20 right-6 z-50 w-72 border border-border bg-surface p-5 shadow-2xl backdrop-blur-md"
         >
           <div className="flex items-center justify-between border-b border-border pb-3">
-            <span className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-brand">
-              Theme Control
+            <span className="inline-flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-brand">
+              <Palette className="h-3.5 w-3.5" aria-hidden />
+              <span>Theme Control</span>
             </span>
             <button
               type="button"
               onClick={() => setOpen(false)}
               aria-label="Close theme control"
-              className="focus-ring text-xs font-bold text-muted hover:text-chrome"
+              className="focus-ring flex h-6 w-6 items-center justify-center rounded-full text-muted hover:text-chrome"
             >
-              ✕
+              <X className="h-3.5 w-3.5" aria-hidden />
             </button>
           </div>
 
@@ -45,24 +47,26 @@ export function Fabs({ theme, accent, onSetTheme, onSetAccent }: FabsProps) {
                 <button
                   type="button"
                   onClick={() => onSetTheme("dark")}
-                  className={`focus-ring rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.15em] transition-colors ${
+                  className={`focus-ring inline-flex items-center justify-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.15em] transition-colors ${
                     theme === "dark"
                       ? "border-brand bg-brand text-white"
                       : "border-border text-muted hover:text-chrome"
                   }`}
                 >
-                  Dark Navy
+                  <Moon className="h-3 w-3" aria-hidden />
+                  <span>Dark Navy</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => onSetTheme("light")}
-                  className={`focus-ring rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.15em] transition-colors ${
+                  className={`focus-ring inline-flex items-center justify-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.15em] transition-colors ${
                     theme === "light"
                       ? "border-brand bg-brand text-white"
                       : "border-border text-muted hover:text-chrome"
                   }`}
                 >
-                  Light Blue
+                  <Sun className="h-3 w-3" aria-hidden />
+                  <span>Light Blue</span>
                 </button>
               </div>
             </div>
@@ -102,49 +106,17 @@ export function Fabs({ theme, accent, onSetTheme, onSetAccent }: FabsProps) {
         </div>
       ) : null}
 
-      {/* Theme Control Trigger */}
+      {/* Theme Control Trigger (Chat Box Removed) */}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label="Open theme control"
         aria-expanded={open}
-        className="focus-ring fixed bottom-6 right-20 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-border bg-surface text-chrome shadow-lg transition-colors hover:border-brand hover:text-brand"
+        className="focus-ring fixed bottom-6 right-6 z-50 flex h-12 items-center gap-2 rounded-full border border-border bg-surface px-4 text-[11px] font-bold uppercase tracking-[0.16em] text-chrome shadow-lg transition-colors hover:border-brand hover:text-brand"
       >
-        <PaletteIcon />
+        <SlidersHorizontal className="h-4 w-4 text-brand" aria-hidden />
+        <span className="hidden sm:inline">Theme</span>
       </button>
-
-      {/* Direct Quote / Chat FAB */}
-      <a
-        href="#contact"
-        aria-label="Contact Dojo Sourcing"
-        className="focus-ring chat-fab-pulse fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full border-2 border-fab-chat bg-surface text-chrome shadow-lg transition-transform hover:scale-105"
-      >
-        <ChatIcon />
-      </a>
     </>
-  );
-}
-
-function PaletteIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
-      <circle cx="9.5" cy="9.5" r="1.4" fill="#dc2626" />
-      <circle cx="14.5" cy="9.5" r="1.4" fill="#2563eb" />
-      <circle cx="12" cy="14.5" r="1.4" fill="currentColor" />
-    </svg>
-  );
-}
-
-function ChatIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M5 18.5 4 22l3.8-1.4A9 9 0 1 0 5 18.5Z"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }

@@ -11,7 +11,6 @@
   --muted: #8fa3c7;
   --chrome: #ffffff;
   --border: rgba(148, 179, 230, 0.18);
-  --fab-chat: #25d366;
 }
 
 [data-theme="light"] {
@@ -48,7 +47,6 @@
   --color-muted: var(--muted);
   --color-chrome: var(--chrome);
   --color-border: var(--border);
-  --color-fab-chat: var(--fab-chat);
   --font-sans: var(--font-montserrat);
 }
 
@@ -103,27 +101,8 @@ a {
   -webkit-tap-highlight-color: transparent;
 }
 
-@keyframes pulse-ring {
-  0% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--fab-chat) 55%, transparent);
-  }
-  70% {
-    box-shadow: 0 0 0 12px transparent;
-  }
-  100% {
-    box-shadow: 0 0 0 0 transparent;
-  }
-}
-
-.chat-fab-pulse {
-  animation: pulse-ring 2.6s infinite;
-}
-
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
-  }
-  .chat-fab-pulse {
-    animation: none;
   }
 }

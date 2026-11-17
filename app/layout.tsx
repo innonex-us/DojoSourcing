@@ -29,8 +29,11 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Dojo Sourcing" }],
   icons: {
-    icon: "/dojo-sourcing-logo.png",
-    apple: "/dojo-sourcing-logo.png",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/dojo-crane-mark.png", type: "image/png" },
+    ],
+    apple: "/dojo-crane-mark.png",
   },
   openGraph: {
     type: "website",

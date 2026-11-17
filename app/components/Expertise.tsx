@@ -2,6 +2,14 @@
 
 import Image from "next/image";
 import { useRef, useState } from "react";
+import {
+  Factory,
+  PackageCheck,
+  PenTool,
+  Plus,
+  Ship,
+  Truck,
+} from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { Flip } from "gsap/Flip";
@@ -9,6 +17,8 @@ import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import { expertise, expertiseMedia } from "./data";
 
 gsap.registerPlugin(useGSAP, Flip, ScrollToPlugin);
+
+const EXPERTISE_ICONS = [PenTool, Factory, PackageCheck, Truck, Ship] as const;
 
 export function Expertise() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -136,8 +146,12 @@ export function Expertise() {
                     reversed ? "md:order-1" : "md:order-2"
                   }`}
                 >
-                  <span className="font-mono text-sm font-bold tracking-[0.22em] text-brand">
-                    0{i + 1}
+                  <span className="inline-flex items-center gap-2 font-mono text-sm font-bold tracking-[0.22em] text-brand">
+                    {(() => {
+                      const CapIcon = EXPERTISE_ICONS[i] ?? PenTool;
+                      return <CapIcon className="h-4 w-4" aria-hidden />;
+                    })()}
+                    <span>0{i + 1}</span>
                   </span>
                   <h3 className="expertise-title mt-3 text-3xl font-bold uppercase leading-[1.05] tracking-wide text-chrome md:text-5xl lg:text-[3.75rem]">
                     {item.title}
@@ -154,7 +168,7 @@ export function Expertise() {
                     className="focus-ring group mt-8 inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.22em] text-chrome transition-colors hover:text-brand"
                   >
                     <span className="flex h-9 w-9 items-center justify-center rounded-full border border-border transition-colors group-hover:border-brand group-hover:bg-brand group-hover:text-white">
-                      +
+                      <Plus className="h-4 w-4" aria-hidden />
                     </span>
                     <span>Details</span>
                   </a>

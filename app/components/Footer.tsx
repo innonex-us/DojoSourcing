@@ -7,13 +7,13 @@ export function Footer() {
       <div className="mx-auto grid max-w-[1400px] gap-12 md:grid-cols-[1.4fr_1fr_1fr]">
         <div>
           <div className="flex items-center gap-3">
-            <span className="flex h-9 items-center justify-center rounded-full bg-white px-2.5 shadow-sm">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white p-1.5 shadow-sm ring-1 ring-black/10">
               <Image
-                src="/dojo-sourcing-logo.png"
+                src="/dojo-crane-mark.png"
                 alt="Dojo Sourcing logo"
-                width={60}
-                height={20}
-                className="h-5 w-[60px] object-contain"
+                width={24}
+                height={24}
+                className="h-6 w-6 shrink-0 object-contain"
               />
             </span>
             <p className="text-lg font-extrabold uppercase tracking-[0.18em] text-chrome">

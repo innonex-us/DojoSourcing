@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { ArrowLeft, ArrowUpRight } from "lucide-react";
 
 export function Header({
   activeSection = "01 // DESIGN",
@@ -33,13 +34,13 @@ export function Header({
           data-cursor="magnet"
           className="focus-ring site-logo flex items-center gap-3"
         >
-          <span className="flex h-9 items-center justify-center rounded-full bg-white px-2.5 shadow-sm">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white p-1.5 shadow-sm ring-1 ring-black/10">
             <Image
-              src="/dojo-sourcing-logo.png"
+              src="/dojo-crane-mark.png"
               alt="Dojo Sourcing logo"
-              width={60}
-              height={20}
-              className="h-5 w-[60px] object-contain"
+              width={24}
+              height={24}
+              className="h-6 w-6 shrink-0 object-contain"
               priority
             />
           </span>
@@ -58,17 +59,19 @@ export function Header({
             <Link
               href="/#journey"
               data-cursor="magnet"
-              className="focus-ring rounded-full border border-border bg-surface-deep/85 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-chrome transition-colors hover:border-brand/60 hover:text-brand md:px-5 md:text-[11px]"
+              className="focus-ring inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-deep/85 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-chrome transition-colors hover:border-brand/60 hover:text-brand md:px-5 md:text-[11px]"
             >
-              ← 3D Pipeline
+              <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
+              <span>3D Pipeline</span>
             </Link>
           ) : (
             <Link
               href="/showcase"
               data-cursor="magnet"
-              className="focus-ring rounded-full border border-border bg-surface-deep/85 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-chrome transition-colors hover:border-brand/60 hover:text-brand md:px-5 md:text-[11px]"
+              className="focus-ring inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-deep/85 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-chrome transition-colors hover:border-brand/60 hover:text-brand md:px-5 md:text-[11px]"
             >
-              Showcase ↗
+              <span>Showcase</span>
+              <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
             </Link>
           )}
         </div>
@@ -77,15 +80,13 @@ export function Header({
           href="/#contact"
           onClick={(e) => handleNav(e, "#contact")}
           data-cursor="magnet"
-          className="focus-ring site-cta group inline-flex items-center gap-2 rounded-full border border-brand/45 bg-brand/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-brand transition-colors hover:bg-brand hover:text-white md:text-sm"
+          className="focus-ring site-cta group inline-flex items-center gap-1.5 rounded-full border border-brand/45 bg-brand/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-brand transition-colors hover:bg-brand hover:text-white md:text-sm"
         >
           <span>Let&apos;s Talk</span>
-          <span
+          <ArrowUpRight
             aria-hidden
-            className="cta-arrow inline-block transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-          >
-            ↗
-          </span>
+            className="cta-arrow h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+          />
         </Link>
       </div>
     </header>

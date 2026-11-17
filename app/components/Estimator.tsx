@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { ArrowDown, Clock, Layers, Plane, Ship, Shirt } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
@@ -125,8 +126,9 @@ export function Estimator({
           {/* Controls */}
           <div className="space-y-8 border border-border bg-surface-deep/75 p-7 backdrop-blur-sm lg:col-span-7 md:p-10">
             <div>
-              <p className="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.22em] text-muted">
-                01 · Garment Silhouette (Active 3D Color: {selectedColorway})
+              <p className="mb-3 inline-flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.22em] text-muted">
+                <Shirt className="h-3.5 w-3.5 text-brand" aria-hidden />
+                <span>01 · Garment Silhouette (Active 3D Color: {selectedColorway})</span>
               </p>
               <div className="flex flex-wrap gap-2.5">
                 {GARMENTS.map((g, i) => (
@@ -148,8 +150,9 @@ export function Estimator({
             </div>
 
             <div>
-              <p className="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.22em] text-muted">
-                02 · Batch Quantity (Pieces)
+              <p className="mb-3 inline-flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.22em] text-muted">
+                <Layers className="h-3.5 w-3.5 text-brand" aria-hidden />
+                <span>02 · Batch Quantity (Pieces)</span>
               </p>
               <div className="flex flex-wrap gap-2.5">
                 {QUANTITIES.map((q) => (
@@ -171,25 +174,30 @@ export function Estimator({
             </div>
 
             <div>
-              <p className="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.22em] text-muted">
-                03 · Logistics &amp; Shipment Mode
+              <p className="mb-3 inline-flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.22em] text-muted">
+                <Ship className="h-3.5 w-3.5 text-brand" aria-hidden />
+                <span>03 · Logistics &amp; Shipment Mode</span>
               </p>
               <div className="flex flex-wrap gap-2.5">
-                {FREIGHT.map((f, i) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    onClick={() => setFreightIdx(i)}
-                    data-cursor="magnet"
-                    className={`focus-ring rounded-full border px-5 py-2 text-xs font-bold uppercase tracking-[0.16em] transition-colors ${
-                      i === freightIdx
-                        ? "border-brand bg-brand text-white"
-                        : "border-border text-muted hover:border-chrome/40 hover:text-chrome"
-                    }`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
+                {FREIGHT.map((f, i) => {
+                  const Icon = f.id === "sea" ? Ship : Plane;
+                  return (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setFreightIdx(i)}
+                      data-cursor="magnet"
+                      className={`focus-ring inline-flex items-center gap-2 rounded-full border px-5 py-2 text-xs font-bold uppercase tracking-[0.16em] transition-colors ${
+                        i === freightIdx
+                          ? "border-brand bg-brand text-white"
+                          : "border-border text-muted hover:border-chrome/40 hover:text-chrome"
+                      }`}
+                    >
+                      <Icon className="h-3.5 w-3.5" aria-hidden />
+                      <span>{f.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -197,8 +205,9 @@ export function Estimator({
           {/* Live GSAP Timeline Readout */}
           <div className="flex flex-col justify-between border border-border bg-surface-deep/85 p-7 backdrop-blur-sm lg:col-span-5 md:p-10">
             <div>
-              <p className="font-mono text-[11px] font-bold uppercase tracking-[0.25em] text-brand">
-                Estimated Door-To-Door Timeline
+              <p className="inline-flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.25em] text-brand">
+                <Clock className="h-3.5 w-3.5" aria-hidden />
+                <span>Estimated Door-To-Door Timeline</span>
               </p>
               <div className="mt-4 flex items-baseline gap-3">
                 <span
@@ -244,10 +253,10 @@ export function Estimator({
               type="button"
               onClick={handleApply}
               data-cursor="magnet"
-              className="focus-ring mt-8 inline-flex w-full items-center justify-center gap-3 rounded-full bg-brand px-7 py-4 text-xs font-bold uppercase tracking-[0.22em] text-white shadow-[0_12px_28px_rgba(254,65,1,0.3)] transition-transform hover:scale-[1.02]"
+              className="focus-ring mt-8 inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-brand px-7 py-4 text-xs font-bold uppercase tracking-[0.22em] text-white shadow-[0_12px_28px_rgba(220,38,38,0.3)] transition-transform hover:scale-[1.02]"
             >
               <span>Lock Estimate &amp; Start Quote</span>
-              <span aria-hidden>↓</span>
+              <ArrowDown className="h-4 w-4" aria-hidden />
             </button>
           </div>
         </div>

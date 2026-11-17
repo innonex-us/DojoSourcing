@@ -1,6 +1,15 @@
 "use client";
 
 import { FormEvent, useRef, useState } from "react";
+import {
+  ArrowUpRight,
+  CheckCircle2,
+  FileCheck2,
+  Globe,
+  Mail,
+  Trash2,
+  UploadCloud,
+} from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { interestChips } from "./data";
@@ -141,13 +150,13 @@ export function Contact({
                 className="focus-ring group flex items-center gap-4 text-sm text-foreground/85 transition-colors hover:text-brand"
               >
                 <span className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-brand transition-colors group-hover:border-brand">
-                  @
+                  <Mail className="h-4 w-4" aria-hidden />
                 </span>
                 <span>sourcing@dojosourcing.com</span>
               </a>
               <div className="flex items-center gap-4 text-sm text-foreground/85">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-brand">
-                  ↗
+                  <Globe className="h-4 w-4" aria-hidden />
                 </span>
                 <span>Design · Factory · Truck · Global Freight</span>
               </div>
@@ -183,8 +192,9 @@ export function Contact({
               role="status"
               className="mt-10 border border-brand/45 bg-brand/10 p-8 text-chrome"
             >
-              <p className="font-mono text-xs font-bold uppercase tracking-[0.25em] text-brand">
-                Quote Reference · {receipt.referenceId}
+              <p className="inline-flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-[0.25em] text-brand">
+                <CheckCircle2 className="h-4 w-4" aria-hidden />
+                <span>Quote Reference · {receipt.referenceId}</span>
               </p>
               <p className="mt-2 text-xl font-bold uppercase tracking-wide">
                 Production brief received for {receipt.company}.
@@ -273,8 +283,11 @@ export function Contact({
                     className="focus-ring flex flex-1 cursor-pointer items-center justify-between gap-4 text-xs text-foreground/80"
                   >
                     {techPack ? (
-                      <span className="font-mono font-bold text-brand">
-                        ✓ {techPack.name} ({Math.max(1, Math.round(techPack.size / 1024))} KB)
+                      <span className="inline-flex items-center gap-2 font-mono font-bold text-brand">
+                        <FileCheck2 className="h-4 w-4" aria-hidden />
+                        <span>
+                          {techPack.name} ({Math.max(1, Math.round(techPack.size / 1024))} KB)
+                        </span>
                       </span>
                     ) : (
                       <span>
@@ -282,8 +295,9 @@ export function Contact({
                       </span>
                     )}
                     {!techPack ? (
-                      <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-brand">
-                        Upload ↑
+                      <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-brand">
+                        <UploadCloud className="h-3.5 w-3.5" aria-hidden />
+                        <span>Upload</span>
                       </span>
                     ) : null}
                   </label>
@@ -291,9 +305,11 @@ export function Contact({
                     <button
                       type="button"
                       onClick={() => setTechPack(null)}
-                      className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted hover:text-brand"
+                      aria-label="Remove attached file"
+                      className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.18em] text-muted hover:text-brand"
                     >
-                      Remove
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                      <span>Remove</span>
                     </button>
                   ) : null}
                 </div>
@@ -330,10 +346,10 @@ export function Contact({
                 onMouseMove={handleMagneticMove}
                 onMouseLeave={handleMagneticLeave}
                 data-cursor="magnet"
-                className="focus-ring inline-flex items-center gap-3 rounded-full bg-brand px-8 py-4 text-[11px] font-bold uppercase tracking-[0.25em] text-white transition-opacity hover:opacity-95 disabled:opacity-60"
+                className="focus-ring inline-flex items-center gap-2.5 rounded-full bg-brand px-8 py-4 text-[11px] font-bold uppercase tracking-[0.25em] text-white transition-opacity hover:opacity-95 disabled:opacity-60"
               >
                 <span>{submitting ? "Sending..." : "Send Quote Brief"}</span>
-                <span aria-hidden>↗</span>
+                <ArrowUpRight className="h-4 w-4" aria-hidden />
               </button>
             </form>
           )}

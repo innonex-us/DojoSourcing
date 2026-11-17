@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowDown, ArrowUpRight, ChevronDown } from "lucide-react";
 
 export function Hero({
   onEnterDojo,
@@ -97,17 +98,18 @@ export function Hero({
             type="button"
             onClick={onEnterDojo}
             data-cursor="magnet"
-            className="focus-ring inline-flex items-center gap-3 rounded-full bg-brand px-7 py-3.5 text-xs font-bold uppercase tracking-[0.22em] text-white shadow-[0_12px_32px_rgba(254,65,1,0.35)] transition-transform hover:scale-[1.03]"
+            className="focus-ring inline-flex items-center gap-2.5 rounded-full bg-brand px-7 py-3.5 text-xs font-bold uppercase tracking-[0.22em] text-white shadow-[0_12px_32px_rgba(220,38,38,0.35)] transition-transform hover:scale-[1.03]"
           >
             <span>Start The Journey</span>
-            <span aria-hidden>↓</span>
+            <ArrowDown className="h-4 w-4" aria-hidden />
           </button>
           <Link
             href="/showcase"
             data-cursor="magnet"
             className="focus-ring inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/45 px-6 py-3.5 text-xs font-bold uppercase tracking-[0.2em] text-white backdrop-blur-md transition-colors hover:border-brand hover:text-brand"
           >
-            Product Showcase ↗
+            <span>Product Showcase</span>
+            <ArrowUpRight className="h-4 w-4" aria-hidden />
           </Link>
         </div>
       </div>
@@ -116,10 +118,10 @@ export function Hero({
       <div className="absolute bottom-7 left-1/2 z-10 -translate-x-1/2">
         <a
           href="#journey"
-          className="focus-ring hero-scroll inline-flex flex-col items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.32em] text-white/70 transition-colors hover:text-brand"
+          className="focus-ring hero-scroll inline-flex flex-col items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.32em] text-white/75 transition-colors hover:text-brand"
         >
           <span>Scroll</span>
-          <span aria-hidden className="block h-5 w-px bg-current opacity-60" />
+          <ChevronDown className="h-4 w-4 animate-bounce opacity-75" aria-hidden />
         </a>
       </div>
     </section>

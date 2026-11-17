@@ -23,13 +23,13 @@ export function Experience() {
       className="experience relative overflow-hidden border-y border-border py-20 md:py-28"
     >
       <div className="mx-auto max-w-[900px] px-5 text-center md:px-8">
-        <div className="mx-auto mb-5 inline-flex items-center gap-3 rounded-full border border-border bg-white px-4 py-1.5 shadow-sm">
+        <div className="mx-auto mb-5 inline-flex items-center gap-2.5 rounded-full border border-border bg-white px-3.5 py-1.5 shadow-sm">
           <Image
-            src="/dojo-sourcing-logo.png"
+            src="/dojo-crane-mark.png"
             alt="Dojo Sourcing mark"
-            width={48}
-            height={16}
-            className="h-4 w-12 object-contain"
+            width={22}
+            height={22}
+            className="h-5 w-5 object-contain"
           />
           <span className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-[#0f2347]">
             Dojo Sourcing Network

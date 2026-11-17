@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { Minus, Plus, ShieldCheck } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrambleTextPlugin } from "gsap/ScrambleTextPlugin";
@@ -43,8 +44,9 @@ export function Accordion() {
       className="accordion-section grid-bg relative px-5 py-24 md:px-8 md:py-32"
     >
       <div className="mx-auto max-w-[1100px]">
-        <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-brand">
-          • Friction Points
+        <p className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.3em] text-brand">
+          <ShieldCheck className="h-4 w-4" aria-hidden />
+          <span>Friction Points</span>
         </p>
         <h2 className="mt-4 max-w-4xl text-3xl font-semibold uppercase leading-[1.1] tracking-wide text-chrome md:text-5xl">
           What&apos;s holding your product back from where it should be?
@@ -73,13 +75,17 @@ export function Accordion() {
                   </span>
                   <span
                     aria-hidden
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-base font-medium transition-colors duration-300 ${
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-colors duration-300 ${
                       isOpen
                         ? "border-brand text-brand"
                         : "border-border text-muted hover:border-chrome/40 hover:text-chrome"
                     }`}
                   >
-                    {isOpen ? "−" : "+"}
+                    {isOpen ? (
+                      <Minus className="h-4 w-4" />
+                    ) : (
+                      <Plus className="h-4 w-4" />
+                    )}
                   </span>
                 </button>
                 <div
