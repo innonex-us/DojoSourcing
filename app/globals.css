@@ -1,26 +1,113 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #120f0e;
+  --foreground: #e4e2df;
+  --brand: #fe4101;
+  --surface: #2a2422;
+  --surface-deep: #18181b;
+  --muted: #71717a;
+  --chrome: #ffffff;
+  --border: rgba(255, 255, 255, 0.1);
+  --fab-chat: #25d366;
+}
+
+[data-theme="light"] {
+  --background: #f4f2ef;
+  --foreground: #1a1614;
+  --surface: #ffffff;
+  --surface-deep: #ebe7e2;
+  --muted: #71717a;
+  --chrome: #120f0e;
+  --border: rgba(18, 15, 14, 0.12);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-brand: var(--brand);
+  --color-surface: var(--surface);
+  --color-surface-deep: var(--surface-deep);
+  --color-muted: var(--muted);
+  --color-chrome: var(--chrome);
+  --color-border: var(--border);
+  --color-fab-chat: var(--fab-chat);
+  --font-sans: var(--font-montserrat);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--brand) 70%, transparent);
+  color: #fff;
+}
+
+.grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+[data-theme="light"] .grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(18, 15, 14, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(18, 15, 14, 0.05) 1px, transparent 1px);
+}
+
+.noise-overlay::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+}
+
+input,
+textarea,
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--fab-chat) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 12px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.chat-fab-pulse {
+  animation: pulse-ring 2.4s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-fab-pulse {
+    animation: none;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
 }
