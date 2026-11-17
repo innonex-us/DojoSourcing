@@ -1,53 +1,59 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState } from "react";
+import * as THREE from "three";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { DrawSVGPlugin } from "gsap/DrawSVGPlugin";
+import { buildRealisticStages } from "./three";
 
-gsap.registerPlugin(useGSAP, ScrollTrigger, DrawSVGPlugin);
+gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 const STAGES = [
   {
     num: "01",
-    tag: "DESIGN",
-    title: "Start Designing Your Product",
-    subtitle: "Concept, Tech Pack & 3D Fit",
-    body: "Every collection begins with silhouette architecture, fabric selection, graded measurements, and factory-ready tech packs.",
+    tag: "DESIGN A T-SHIRT",
+    title: "Start With The Garment",
+    subtitle: "Silhouette · Tech Pack · 3D Fit",
+    body: "Everything begins on the digital drafting table. We sculpt your T-shirt silhouette, cotton GSM, stitching specs, and colorway before a single yard is cut.",
   },
   {
     num: "02",
-    tag: "FACTORY",
-    title: "To The Factory Floor",
-    subtitle: "Cutting, Sewing & Craftsmanship",
-    body: "Approved patterns enter vetted garment lines — precision cutting, stitching, washing, and inline quality checks at every step.",
+    tag: "FACTORY PRODUCTION",
+    title: "Into The Factory",
+    subtitle: "Rise Of Manufacturing · Cut & Sew",
+    body: "Your approved design flies straight into our vetted garment factory — precision cutting, knitting, dyeing, and assembly lines built for scale.",
   },
   {
     num: "03",
-    tag: "READY",
-    title: "Packed & Ready To Ship",
-    subtitle: "AQL Inspection & Cartonization",
-    body: "Finished garments are steamed, polybagged, hang-tagged, barcode-labeled, and sealed into export cartons after passing AQL 2.5.",
+    tag: "READY TO SHIP",
+    title: "Packed & QC Cleared",
+    subtitle: "AQL 2.5 · Export Cartons",
+    body: "Finished tees are steamed, folded, polybagged, hang-tagged, and sealed into barcoded export cartons — 100% inspection cleared.",
   },
   {
     num: "04",
-    tag: "TRUCK",
+    tag: "CARGO TRUCK",
     title: "Cargo Truck Dispatch",
-    subtitle: "Factory Gate To Export Port",
-    body: "Sealed cargo trucks haul your finished inventory from the factory floor through export clearance straight to the container terminal.",
+    subtitle: "Factory Floor To Export Port",
+    body: "Sealed cargo trucks haul your cartons straight from the factory loading dock through export customs to the container terminal.",
   },
   {
     num: "05",
-    tag: "SHIP",
-    title: "Ocean Ship Journey",
-    subtitle: "Global Freight To Your Warehouse",
-    body: "Loaded onto ocean vessels for FCL or LCL transit — tracked across the sea until final-mile delivery at your brand's doorstep.",
+    tag: "OCEAN SHIP",
+    title: "Global Ship Journey",
+    subtitle: "Port To Brand Warehouse",
+    body: "Loaded onto ocean cargo vessels and tracked across the sea until final delivery at your brand's fulfillment center.",
   },
 ] as const;
 
+const GROUND_Y = -1.35;
+
 export function Journey() {
   const sectionRef = useRef<HTMLElement>(null);
+  const canvasHostRef = useRef<HTMLDivElement>(null);
   const [activeStep, setActiveStep] = useState(0);
 
   useGSAP(
@@ -57,22 +63,195 @@ export function Journey() {
       mm.add(
         "(min-width: 768px) and (prefers-reduced-motion: no-preference)",
         () => {
-          const scenes = gsap.utils.toArray<HTMLElement>(".journey-scene");
+          const host = canvasHostRef.current;
           const texts = gsap.utils.toArray<HTMLElement>(".journey-copy");
+          if (!host) return;
 
-          gsap.set(scenes, { autoAlpha: 0, scale: 0.94, y: 24 });
-          gsap.set(texts, { autoAlpha: 0, y: 24 });
-          if (scenes[0]) gsap.set(scenes[0], { autoAlpha: 1, scale: 1, y: 0 });
+          gsap.set(texts, { autoAlpha: 0, y: 28 });
           if (texts[0]) gsap.set(texts[0], { autoAlpha: 1, y: 0 });
 
-          // Initial DrawSVG preparation for Scene 1 garment paths
-          gsap.set(".garment-draw", { drawSVG: "0%" });
+          let renderer: THREE.WebGLRenderer | null = null;
+          try {
+            renderer = new THREE.WebGLRenderer({
+              antialias: true,
+              alpha: true,
+              powerPreference: "high-performance",
+            });
+          } catch {
+            return;
+          }
 
+          const width = host.clientWidth || window.innerWidth;
+          const height = host.clientHeight || window.innerHeight;
+          renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+          renderer.setSize(width, height);
+          renderer.localClippingEnabled = true;
+          renderer.shadowMap.enabled = true;
+          renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+          renderer.toneMapping = THREE.ACESFilmicToneMapping;
+          renderer.toneMappingExposure = 1.15;
+
+          host.innerHTML = "";
+          host.appendChild(renderer.domElement);
+
+          const scene = new THREE.Scene();
+          scene.fog = new THREE.FogExp2(0x120f0e, 0.036);
+
+          // Physically-Based Studio IBL Environment Map for Realistic Reflections
+          const pmrem = new THREE.PMREMGenerator(renderer);
+          const envRT = pmrem.fromScene(new RoomEnvironment(), 0.04);
+          scene.environment = envRT.texture;
+          scene.environmentIntensity = 0.65;
+
+          const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
+          camera.position.set(-1.15, 1.1, 8.6);
+          camera.lookAt(0.85, -0.15, 0);
+
+          // Studio Key + Fill + Rim Lighting with Real Soft Shadows
+          const hemi = new THREE.HemisphereLight(0xfff5ec, 0x1a1513, 0.55);
+          scene.add(hemi);
+
+          const keyLight = new THREE.DirectionalLight(0xfffaf4, 2.4);
+          keyLight.position.set(5, 9, 6);
+          keyLight.castShadow = true;
+          keyLight.shadow.mapSize.set(1024, 1024);
+          keyLight.shadow.camera.near = 1;
+          keyLight.shadow.camera.far = 26;
+          keyLight.shadow.camera.left = -6;
+          keyLight.shadow.camera.right = 6;
+          keyLight.shadow.camera.top = 6;
+          keyLight.shadow.camera.bottom = -6;
+          keyLight.shadow.bias = -0.0005;
+          scene.add(keyLight);
+
+          const rimLight = new THREE.SpotLight(0xfe4101, 18, 22, Math.PI / 3, 0.6);
+          rimLight.position.set(-3.5, 4, 4);
+          scene.add(rimLight);
+
+          const groundClip = new THREE.Plane(new THREE.Vector3(0, 1, 0), -GROUND_Y);
+
+          const stageAnchor = new THREE.Group();
+          stageAnchor.position.set(1.55, 0, 0);
+          scene.add(stageAnchor);
+
+          // Shadow-receiving dark matte stage floor + subtle horizon ring
+          const floorGeo = new THREE.CircleGeometry(9, 64);
+          const floorMat = new THREE.ShadowMaterial({ opacity: 0.45 });
+          const shadowFloor = new THREE.Mesh(floorGeo, floorMat);
+          shadowFloor.rotation.x = -Math.PI / 2;
+          shadowFloor.position.y = GROUND_Y + 0.005;
+          shadowFloor.receiveShadow = true;
+          stageAnchor.add(shadowFloor);
+
+          const horizonGrid = new THREE.GridHelper(18, 30, 0xfe4101, 0x241f1d);
+          horizonGrid.position.y = GROUND_Y;
+          (horizonGrid.material as THREE.Material).transparent = true;
+          (horizonGrid.material as THREE.Material).opacity = 0.25;
+          stageAnchor.add(horizonGrid);
+
+          const portalRing = new THREE.Mesh(
+            new THREE.RingGeometry(2.35, 2.42, 72),
+            new THREE.MeshBasicMaterial({
+              color: 0xfe4101,
+              side: THREE.DoubleSide,
+              transparent: true,
+              opacity: 0.55,
+            }),
+          );
+          portalRing.rotation.x = -Math.PI / 2;
+          portalRing.position.y = GROUND_Y + 0.012;
+          stageAnchor.add(portalRing);
+
+          // Build all 5 realistic multi-part 3D models
+          const assets = buildRealisticStages(stageAnchor, groundClip);
+          const {
+            tshirtGroup,
+            factoryGroup,
+            steamPuffs,
+            readyGroup,
+            truckGroup,
+            wheels,
+            shipStageGroup,
+            shipHullGroup,
+            waveGeo,
+          } = assets;
+
+          // Pointer Parallax
+          const rotYTo = gsap.quickTo(stageAnchor.rotation, "y", {
+            duration: 0.6,
+            ease: "power3.out",
+          });
+          const rotXTo = gsap.quickTo(stageAnchor.rotation, "x", {
+            duration: 0.6,
+            ease: "power3.out",
+          });
+          const onPointerMove = (e: PointerEvent) => {
+            rotYTo((e.clientX / window.innerWidth - 0.5) * 0.4);
+            rotXTo((e.clientY / window.innerHeight - 0.5) * 0.16);
+          };
+          window.addEventListener("pointermove", onPointerMove, { passive: true });
+
+          // Continuous realistic motion (steam, ocean swell, garment hang sway)
+          let rafId = 0;
+          const clock = new THREE.Clock();
+          const wavePos = waveGeo.attributes.position as THREE.BufferAttribute;
+
+          const renderLoop = () => {
+            const t = clock.getElapsedTime();
+
+            tshirtGroup.rotation.y = Math.sin(t * 0.7) * 0.4;
+            readyGroup.rotation.y = Math.sin(t * 0.55) * 0.3;
+
+            steamPuffs.forEach((puff) => {
+              const phase = (t * 0.45 + (puff.userData.offset as number)) % 1;
+              puff.position.y = 1.9 + phase * 1.4;
+              puff.position.x =
+                (puff.userData.baseX as number) + Math.sin(phase * 4 + t) * 0.12;
+              puff.scale.setScalar(0.8 + phase * 1.3);
+              (puff.material as THREE.MeshStandardMaterial).opacity =
+                0.45 * (1 - phase);
+            });
+
+            shipHullGroup.position.y = Math.sin(t * 1.6) * 0.07;
+            shipHullGroup.rotation.z = Math.sin(t * 1.1) * 0.025;
+            shipHullGroup.rotation.x = Math.cos(t * 1.3) * 0.015;
+
+            for (let i = 0; i < wavePos.count; i++) {
+              const vx = wavePos.getX(i);
+              const vz = wavePos.getZ(i);
+              wavePos.setY(
+                i,
+                Math.sin(vx * 0.75 + t * 2.0) * 0.11 +
+                  Math.cos(vz * 1.05 + t * 1.5) * 0.07,
+              );
+            }
+            wavePos.needsUpdate = true;
+            waveGeo.computeVertexNormals();
+
+            renderer?.render(scene, camera);
+            rafId = requestAnimationFrame(renderLoop);
+          };
+          rafId = requestAnimationFrame(renderLoop);
+
+          const onResize = () => {
+            if (!host || !renderer) return;
+            const w = host.clientWidth || window.innerWidth;
+            const h = host.clientHeight || window.innerHeight;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+          };
+          window.addEventListener("resize", onResize);
+
+          // =========================================================
+          // GSAP SCROLLTRIGGER MASTER TIMELINE:
+          // Underground Emergence + Fly-Out Choreography
+          // =========================================================
           const tl = gsap.timeline({
             scrollTrigger: {
               trigger: ".journey-stage",
               start: "top top",
-              end: "+=3600",
+              end: "+=4800",
               pin: true,
               scrub: 1,
               anticipatePin: 1,
@@ -86,78 +265,98 @@ export function Journey() {
             },
           });
 
-          // Top progress rail fills 0 -> 1 across all 5 stages
+          tl.to(".journey-rail-fill", { scaleX: 1, ease: "none", duration: 5 }, 0);
+
+          // STAGE 1 -> 2: T-Shirt FLIES OUT, Factory RISES FROM UNDERGROUND
           tl.to(
-            ".journey-rail-fill",
-            { scaleX: 1, ease: "none", duration: 5 },
-            0,
-          );
+            tshirtGroup.position,
+            { y: 5.5, x: 1.8, z: -2.2, duration: 0.75, ease: "power2.in" },
+            0.75,
+          )
+            .to(
+              tshirtGroup.rotation,
+              { z: 0.4, x: -0.3, duration: 0.75, ease: "power2.in" },
+              0.75,
+            )
+            .to(texts[0], { autoAlpha: 0, y: -28, duration: 0.35 }, 0.75)
+            .to(
+              factoryGroup.position,
+              { y: 0, duration: 0.85, ease: "power3.out" },
+              0.9,
+            )
+            .to(texts[1], { autoAlpha: 1, y: 0, duration: 0.45 }, 1.15);
 
-          // STAGE 1 (0 -> 1): Draw Garment Blueprint
+          // STAGE 2 -> 3: Factory FLIES OUT, Ready Cartons RISE FROM UNDERGROUND
           tl.to(
-            ".garment-draw",
-            { drawSVG: "100%", duration: 0.7, stagger: 0.08, ease: "power2.out" },
-            0.05,
-          );
-
-          // Transition 1 -> 2: Design to Factory
-          tl.to([scenes[0], texts[0]], { autoAlpha: 0, y: -24, duration: 0.35 }, 0.9)
-            .to([scenes[1], texts[1]], { autoAlpha: 1, scale: 1, y: 0, duration: 0.4 }, 1.1)
+            factoryGroup.position,
+            { y: 5.8, x: -2.2, duration: 0.75, ease: "power2.in" },
+            1.8,
+          )
+            .to(factoryGroup.rotation, { y: -0.35, duration: 0.75 }, 1.8)
+            .to(texts[1], { autoAlpha: 0, y: -28, duration: 0.35 }, 1.8)
             .to(
-              ".factory-gear",
-              { rotation: 360, transformOrigin: "50% 50%", duration: 0.9, ease: "none" },
-              1.1,
+              readyGroup.position,
+              { y: 0, duration: 0.85, ease: "power3.out" },
+              1.95,
             )
+            .to(texts[2], { autoAlpha: 1, y: 0, duration: 0.45 }, 2.2);
+
+          // STAGE 3 -> 4: Ready Cartons FLY OUT, Cargo Truck RISES FROM UNDERGROUND & Drives
+          tl.to(
+            readyGroup.position,
+            { y: 5.5, x: 2.0, duration: 0.75, ease: "power2.in" },
+            2.8,
+          )
+            .to(readyGroup.rotation, { z: -0.25, duration: 0.75 }, 2.8)
+            .to(texts[2], { autoAlpha: 0, y: -28, duration: 0.35 }, 2.8)
             .to(
-              ".factory-needle",
-              { y: 18, repeat: 3, yoyo: true, duration: 0.2, ease: "power1.inOut" },
-              1.15,
-            );
-
-          // Transition 2 -> 3: Factory to Ready to Ship
-          tl.to([scenes[1], texts[1]], { autoAlpha: 0, y: -24, duration: 0.35 }, 1.9)
-            .to([scenes[2], texts[2]], { autoAlpha: 1, scale: 1, y: 0, duration: 0.4 }, 2.1)
+              truckGroup.position,
+              { y: -0.02, duration: 0.75, ease: "power3.out" },
+              2.95,
+            )
             .fromTo(
-              ".qc-stamp",
-              { scale: 2.2, autoAlpha: 0, rotation: -18 },
-              { scale: 1, autoAlpha: 1, rotation: -8, duration: 0.45, ease: "back.out(2)" },
-              2.35,
-            );
-
-          // Transition 3 -> 4: Ready to Cargo Truck
-          tl.to([scenes[2], texts[2]], { autoAlpha: 0, y: -24, duration: 0.35 }, 2.9)
-            .to([scenes[3], texts[3]], { autoAlpha: 1, scale: 1, y: 0, duration: 0.4 }, 3.1)
-            .fromTo(
-              ".cargo-truck-group",
-              { x: -160 },
-              { x: 140, duration: 0.95, ease: "power1.inOut" },
+              truckGroup.position,
+              { x: -1.6 },
+              { x: 1.2, duration: 1.0, ease: "power1.inOut" },
               3.1,
             )
-            .to(
-              ".truck-wheel",
-              { rotation: 720, transformOrigin: "50% 50%", duration: 0.95, ease: "none" },
-              3.1,
-            )
-            .to(
-              ".road-dashes",
-              { x: -120, duration: 0.95, ease: "none" },
-              3.1,
-            );
+            .to(texts[3], { autoAlpha: 1, y: 0, duration: 0.45 }, 3.2);
 
-          // Transition 4 -> 5: Cargo Truck to Ocean Ship
-          tl.to([scenes[3], texts[3]], { autoAlpha: 0, y: -24, duration: 0.35 }, 3.9)
-            .to([scenes[4], texts[4]], { autoAlpha: 1, scale: 1, y: 0, duration: 0.4 }, 4.1)
-            .fromTo(
-              ".ocean-ship-group",
-              { x: -140, y: 6 },
-              { x: 110, y: -6, duration: 0.95, ease: "power1.inOut" },
+          wheels.forEach((w) => {
+            tl.to(w.rotation, { z: -Math.PI * 6, duration: 1.0, ease: "none" }, 3.1);
+          });
+
+          // STAGE 4 -> 5: Cargo Truck DRIVES/FLIES OUT, Ocean Ship RISES FROM UNDERGROUND & Sails
+          tl.to(
+            truckGroup.position,
+            { x: 7.5, y: 2.5, duration: 0.75, ease: "power2.in" },
+            3.95,
+          )
+            .to(texts[3], { autoAlpha: 0, y: -28, duration: 0.35 }, 3.95)
+            .to(
+              shipStageGroup.position,
+              { y: -0.1, duration: 0.85, ease: "power3.out" },
               4.1,
             )
-            .to(
-              ".ocean-waves",
-              { x: -90, duration: 0.95, ease: "none" },
-              4.1,
-            );
+            .fromTo(
+              shipStageGroup.position,
+              { x: -1.3 },
+              { x: 0.75, duration: 0.9, ease: "power1.inOut" },
+              4.25,
+            )
+            .to(texts[4], { autoAlpha: 1, y: 0, duration: 0.45 }, 4.35);
+
+          return () => {
+            cancelAnimationFrame(rafId);
+            window.removeEventListener("pointermove", onPointerMove);
+            window.removeEventListener("resize", onResize);
+            assets.dispose();
+            floorGeo.dispose();
+            floorMat.dispose();
+            envRT.dispose();
+            pmrem.dispose();
+            renderer?.dispose();
+          };
         },
       );
 
@@ -171,11 +370,21 @@ export function Journey() {
       id="journey"
       ref={sectionRef}
       className="journey-section relative border-t border-border bg-background"
-      aria-label="Clothing Production & Shipment Journey"
+      aria-label="3D Clothing Production & Shipment Journey"
     >
-      {/* Desktop Pinned 5-Stage Pipeline */}
-      <div className="journey-stage relative hidden h-svh min-h-[700px] w-full flex-col justify-between overflow-hidden px-8 pt-24 pb-12 md:flex">
-        <div className="grid-bg pointer-events-none absolute inset-0 opacity-45" />
+      {/* Desktop Full-Bleed Pinned 3D WebGL + GSAP Stage */}
+      <div className="journey-stage relative hidden h-svh min-h-[700px] w-full flex-col justify-between overflow-hidden px-8 pt-24 pb-10 md:flex">
+        {/* Full-Bleed 3D WebGL Canvas */}
+        <div
+          ref={canvasHostRef}
+          className="pointer-events-none absolute inset-0 z-0"
+        />
+
+        {/* Left Atmospheric Gradient so Copy stays Razor-Sharp */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-[50%] bg-gradient-to-r from-background via-background/75 to-transparent"
+        />
 
         {/* Top 5-Step Pipeline HUD */}
         <div className="relative z-10 mx-auto w-full max-w-[1400px]">
@@ -215,10 +424,9 @@ export function Journey() {
           </div>
         </div>
 
-        {/* Center Split: Narrative Copy (Left) + Animated SVG Stage (Right) */}
-        <div className="relative z-10 mx-auto grid w-full max-w-[1400px] flex-1 grid-cols-12 items-center gap-12">
-          {/* Left Narrative Stack */}
-          <div className="relative col-span-5 h-[280px]">
+        {/* Floating Editorial Narrative (Left) */}
+        <div className="relative z-10 mx-auto flex w-full max-w-[1400px] flex-1 items-center">
+          <div className="relative h-[340px] w-full max-w-[490px]">
             {STAGES.map((stage, idx) => (
               <div
                 key={stage.num}
@@ -228,186 +436,38 @@ export function Journey() {
                 <span className="font-mono text-xs font-bold uppercase tracking-[0.3em] text-brand">
                   {`STAGE ${stage.num} // ${stage.tag}`}
                 </span>
-                <h2 className="mt-4 text-4xl font-extrabold uppercase leading-[1.05] tracking-wide text-chrome lg:text-5xl">
+                <h2 className="mt-4 text-4xl font-extrabold uppercase leading-[1.03] tracking-wide text-chrome lg:text-5xl">
                   {stage.title}
                 </h2>
                 <p className="mt-3 text-xs font-bold uppercase tracking-[0.22em] text-brand/90">
                   {stage.subtitle}
                 </p>
-                <p className="mt-5 max-w-md text-base leading-relaxed text-foreground/80">
+                <p className="mt-5 text-base leading-relaxed text-foreground/85">
                   {stage.body}
                 </p>
+                {idx === STAGES.length - 1 ? (
+                  <div className="mt-7">
+                    <Link
+                      href="/showcase"
+                      data-cursor="magnet"
+                      className="focus-ring inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-[0_12px_28px_rgba(254,65,1,0.35)] transition-transform hover:scale-[1.03]"
+                    >
+                      <span>Explore Product Showcase</span>
+                      <span aria-hidden>↗</span>
+                    </Link>
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>
-
-          {/* Right Visual Stage */}
-          <div className="relative col-span-7 flex h-[420px] items-center justify-center border border-border bg-surface-deep/60 p-8 backdrop-blur-sm">
-            {/* Scene 1: Garment Design Blueprint (DrawSVG) */}
-            <div className="journey-scene absolute inset-0 flex items-center justify-center p-8">
-              <svg viewBox="0 0 520 340" fill="none" className="h-full w-full max-w-[480px]">
-                {/* Blueprint Grid Frame */}
-                <rect
-                  className="garment-draw"
-                  x="20"
-                  y="20"
-                  width="480"
-                  height="300"
-                  stroke="rgba(228,226,223,0.18)"
-                  strokeWidth="1.5"
-                />
-                {/* Jacket / Hoodie Silhouette */}
-                <path
-                  className="garment-draw"
-                  d="M 190 70 L 230 55 Q 260 72 290 55 L 330 70 L 385 115 L 355 155 L 325 130 L 325 275 L 195 275 L 195 130 L 165 155 L 135 115 Z"
-                  stroke="#fe4101"
-                  strokeWidth="3"
-                  strokeLinejoin="round"
-                />
-                {/* Center Seam & Pocket Specs */}
-                <line className="garment-draw" x1="260" y1="68" x2="260" y2="275" stroke="#e4e2df" strokeWidth="1.5" strokeDasharray="5 5" />
-                <rect className="garment-draw" x="212" y="190" width="36" height="44" stroke="#e4e2df" strokeWidth="1.5" />
-                <rect className="garment-draw" x="272" y="190" width="36" height="44" stroke="#e4e2df" strokeWidth="1.5" />
-                {/* Dimension Callout */}
-                <line className="garment-draw" x1="195" y1="295" x2="325" y2="295" stroke="#fe4101" strokeWidth="1.5" />
-                <text x="260" y="312" textAnchor="middle" fill="#8b8988" fontSize="11" fontFamily="monospace">
-                  TECH PACK · 420GSM HEAVYWEIGHT
-                </text>
-              </svg>
-            </div>
-
-            {/* Scene 2: Factory Production */}
-            <div className="journey-scene absolute inset-0 flex items-center justify-center p-8">
-              <svg viewBox="0 0 520 340" fill="none" className="h-full w-full max-w-[480px]">
-                {/* Factory Building */}
-                <path
-                  d="M 60 270 L 60 150 L 150 110 L 150 150 L 240 110 L 240 150 L 330 110 L 330 270 Z"
-                  stroke="#e4e2df"
-                  strokeWidth="2.5"
-                  fill="rgba(42,36,34,0.45)"
-                />
-                {/* Rotating Gear */}
-                <g className="factory-gear">
-                  <circle cx="155" cy="205" r="28" stroke="#fe4101" strokeWidth="3" strokeDasharray="10 6" />
-                  <circle cx="155" cy="205" r="10" fill="#fe4101" />
-                </g>
-                {/* Sewing Machine Head & Animated Needle */}
-                <rect x="355" y="130" width="110" height="28" rx="4" stroke="#e4e2df" strokeWidth="2" fill="#1a1614" />
-                <line className="factory-needle" x1="410" y1="158" x2="410" y2="215" stroke="#fe4101" strokeWidth="3" />
-                <path d="M 340 245 L 480 245" stroke="#e4e2df" strokeWidth="3" />
-                <text x="260" y="305" textAnchor="middle" fill="#8b8988" fontSize="11" fontFamily="monospace">
-                  CUT &amp; SEW LINE · INLINE QC ACTIVE
-                </text>
-              </svg>
-            </div>
-
-            {/* Scene 3: Ready to Ship Carton + QC Stamp */}
-            <div className="journey-scene absolute inset-0 flex items-center justify-center p-8">
-              <svg viewBox="0 0 520 340" fill="none" className="h-full w-full max-w-[480px]">
-                {/* Export Carton Box */}
-                <rect x="145" y="105" width="230" height="165" stroke="#e4e2df" strokeWidth="3" fill="rgba(42,36,34,0.6)" />
-                <line x1="145" y1="145" x2="375" y2="145" stroke="#e4e2df" strokeWidth="2" />
-                <rect x="242" y="105" width="36" height="65" fill="#fe4101" opacity="0.85" />
-                {/* Barcode */}
-                <g stroke="#e4e2df" strokeWidth="2">
-                  <line x1="170" y1="220" x2="170" y2="248" />
-                  <line x1="178" y1="220" x2="178" y2="248" />
-                  <line x1="184" y1="220" x2="184" y2="248" />
-                  <line x1="194" y1="220" x2="194" y2="248" />
-                  <line x1="202" y1="220" x2="202" y2="248" />
-                </g>
-                {/* QC Passed Stamp */}
-                <g className="qc-stamp">
-                  <rect x="245" y="175" width="115" height="44" rx="4" stroke="#fe4101" strokeWidth="3" fill="rgba(254,65,1,0.14)" />
-                  <text x="302" y="202" textAnchor="middle" fill="#fe4101" fontSize="13" fontWeight="bold" fontFamily="monospace">
-                    READY TO SHIP
-                  </text>
-                </g>
-                <text x="260" y="305" textAnchor="middle" fill="#8b8988" fontSize="11" fontFamily="monospace">
-                  AQL 2.5 PASSED · CARTON SEALED
-                </text>
-              </svg>
-            </div>
-
-            {/* Scene 4: Cargo Truck */}
-            <div className="journey-scene absolute inset-0 flex items-center justify-center p-8 overflow-hidden">
-              <svg viewBox="0 0 520 340" fill="none" className="h-full w-full max-w-[480px]">
-                {/* Highway */}
-                <line x1="20" y1="265" x2="500" y2="265" stroke="#e4e2df" strokeWidth="2" />
-                <line className="road-dashes" x1="0" y1="282" x2="640" y2="282" stroke="#fe4101" strokeWidth="2" strokeDasharray="24 18" />
-                {/* Cargo Truck */}
-                <g className="cargo-truck-group">
-                  {/* Trailer */}
-                  <rect x="110" y="130" width="195" height="110" stroke="#e4e2df" strokeWidth="3" fill="#1a1614" />
-                  <text x="207" y="192" textAnchor="middle" fill="#fe4101" fontSize="16" fontWeight="bold" fontFamily="monospace">
-                    DOJO CARGO
-                  </text>
-                  {/* Cab */}
-                  <path d="M 310 165 L 365 165 L 385 198 L 385 240 L 310 240 Z" stroke="#fe4101" strokeWidth="3" fill="#2a2422" />
-                  <rect x="325" y="177" width="32" height="22" fill="rgba(228,226,223,0.25)" />
-                  {/* Wheels */}
-                  <g className="truck-wheel">
-                    <circle cx="155" cy="245" r="20" stroke="#e4e2df" strokeWidth="3" fill="#120f0e" />
-                    <line x1="155" y1="229" x2="155" y2="261" stroke="#fe4101" strokeWidth="2" />
-                  </g>
-                  <g className="truck-wheel">
-                    <circle cx="265" cy="245" r="20" stroke="#e4e2df" strokeWidth="3" fill="#120f0e" />
-                    <line x1="265" y1="229" x2="265" y2="261" stroke="#fe4101" strokeWidth="2" />
-                  </g>
-                  <g className="truck-wheel">
-                    <circle cx="350" cy="245" r="20" stroke="#e4e2df" strokeWidth="3" fill="#120f0e" />
-                    <line x1="350" y1="229" x2="350" y2="261" stroke="#fe4101" strokeWidth="2" />
-                  </g>
-                </g>
-                <text x="260" y="315" textAnchor="middle" fill="#8b8988" fontSize="11" fontFamily="monospace">
-                  INLAND FREIGHT · FACTORY TO PORT TERMINAL
-                </text>
-              </svg>
-            </div>
-
-            {/* Scene 5: Ocean Container Ship */}
-            <div className="journey-scene absolute inset-0 flex items-center justify-center p-8 overflow-hidden">
-              <svg viewBox="0 0 520 340" fill="none" className="h-full w-full max-w-[480px]">
-                {/* Container Ship */}
-                <g className="ocean-ship-group">
-                  {/* Hull */}
-                  <path d="M 95 215 L 420 215 L 395 255 L 120 255 Z" stroke="#e4e2df" strokeWidth="3" fill="#2a2422" />
-                  {/* Bridge */}
-                  <rect x="135" y="145" width="46" height="70" stroke="#e4e2df" strokeWidth="2.5" fill="#1a1614" />
-                  <rect x="148" y="122" width="16" height="23" fill="#fe4101" />
-                  {/* Containers */}
-                  <rect x="195" y="175" width="55" height="40" stroke="#e4e2df" strokeWidth="2" fill="#fe4101" />
-                  <rect x="255" y="175" width="55" height="40" stroke="#e4e2df" strokeWidth="2" fill="#1a1614" />
-                  <rect x="315" y="175" width="55" height="40" stroke="#e4e2df" strokeWidth="2" fill="#fe4101" opacity="0.8" />
-                  <rect x="225" y="135" width="55" height="40" stroke="#e4e2df" strokeWidth="2" fill="#2a2422" />
-                  <rect x="285" y="135" width="55" height="40" stroke="#e4e2df" strokeWidth="2" fill="#fe4101" />
-                </g>
-                {/* Animated Ocean Waves */}
-                <path
-                  className="ocean-waves"
-                  d="M -40 258 Q 10 245 60 258 T 160 258 T 260 258 T 360 258 T 460 258 T 560 258 T 660 258"
-                  stroke="#fe4101"
-                  strokeWidth="3"
-                  fill="none"
-                />
-                <path
-                  className="ocean-waves"
-                  d="M -20 276 Q 30 264 80 276 T 180 276 T 280 276 T 380 276 T 480 276 T 580 276"
-                  stroke="rgba(228,226,223,0.4)"
-                  strokeWidth="2"
-                  fill="none"
-                />
-                <text x="260" y="315" textAnchor="middle" fill="#8b8988" fontSize="11" fontFamily="monospace">
-                  OCEAN VOYAGE · GLOBAL BRAND DELIVERY
-                </text>
-              </svg>
-            </div>
-          </div>
         </div>
 
-        <div className="relative z-10 mx-auto flex w-full max-w-[1400px] items-center justify-between text-[11px] font-mono uppercase tracking-[0.22em] text-muted">
-          <span>End-To-End Clothing Solution</span>
-          <span>Scroll To Advance Stage →</span>
+        {/* Bottom Telemetry Bar */}
+        <div className="relative z-10 mx-auto flex w-full max-w-[1400px] items-center justify-between font-mono text-[11px] uppercase tracking-[0.22em] text-muted">
+          <span>Scroll To Erupt Next Stage From Ground</span>
+          <Link href="/showcase" className="transition-colors hover:text-brand">
+            Product Showcase ↗
+          </Link>
         </div>
       </div>
 
@@ -436,6 +496,15 @@ export function Journey() {
               </p>
             </div>
           ))}
+        </div>
+        <div className="mt-10">
+          <Link
+            href="/showcase"
+            className="focus-ring inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3 text-xs font-bold uppercase tracking-[0.2em] text-white"
+          >
+            <span>Explore Product Showcase</span>
+            <span aria-hidden>↗</span>
+          </Link>
         </div>
       </div>
     </section>

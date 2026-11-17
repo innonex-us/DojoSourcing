@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
+
 export function Header({
-  activeSection = "01 // HERO",
+  activeSection = "01 // DESIGN",
   onNavigate,
 }: {
   activeSection?: string;
@@ -23,9 +25,8 @@ export function Header({
       />
 
       <div className="mx-auto flex h-full max-w-[1400px] items-center justify-between px-5 md:px-8">
-        <a
-          href="#top"
-          onClick={(e) => handleNav(e, "#top")}
+        <Link
+          href="/"
           data-cursor="magnet"
           className="focus-ring site-logo flex items-center gap-2.5 text-xl font-extrabold uppercase tracking-[0.2em] text-brand md:text-2xl"
         >
@@ -34,20 +35,24 @@ export function Header({
             className="inline-block h-2.5 w-2.5 rotate-45 border-2 border-brand"
           />
           <span>DOJO</span>
-        </a>
+        </Link>
 
-        <a
-          href="#work"
-          onClick={(e) => handleNav(e, "#work")}
-          data-cursor="magnet"
-          className="focus-ring site-pill hidden items-center gap-2.5 rounded-full border border-border bg-surface-deep/85 px-5 py-2 text-[11px] font-bold uppercase tracking-[0.2em] text-chrome backdrop-blur-md transition-colors hover:border-brand/60 hover:text-brand md:inline-flex"
-        >
-          <span className="h-1.5 w-1.5 rounded-full bg-brand animate-pulse" />
-          <span className="header-telemetry font-mono">{activeSection}</span>
-        </a>
+        <div className="site-pill hidden items-center gap-2 md:inline-flex">
+          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-deep/85 px-4 py-2 text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-muted backdrop-blur-md">
+            <span className="h-1.5 w-1.5 rounded-full bg-brand animate-pulse" />
+            <span>{activeSection}</span>
+          </span>
+          <Link
+            href="/showcase"
+            data-cursor="magnet"
+            className="focus-ring rounded-full border border-border bg-surface-deep/85 px-5 py-2 text-[11px] font-bold uppercase tracking-[0.2em] text-chrome backdrop-blur-md transition-colors hover:border-brand/60 hover:text-brand"
+          >
+            Product Showcase ↗
+          </Link>
+        </div>
 
-        <a
-          href="#contact"
+        <Link
+          href="/#contact"
           onClick={(e) => handleNav(e, "#contact")}
           data-cursor="magnet"
           className="focus-ring site-cta group inline-flex items-center gap-2 rounded-full border border-brand/40 bg-brand/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-brand transition-colors hover:bg-brand hover:text-white md:text-sm"
@@ -59,7 +64,7 @@ export function Header({
           >
             ↗
           </span>
-        </a>
+        </Link>
       </div>
     </header>
   );

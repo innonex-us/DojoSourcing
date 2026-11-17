@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 export function Hero({
   onEnterDojo,
 }: {
@@ -100,13 +102,13 @@ export function Hero({
             <span>Start The Journey</span>
             <span aria-hidden>↓</span>
           </button>
-          <a
-            href="#expertise"
+          <Link
+            href="/showcase"
             data-cursor="magnet"
             className="focus-ring inline-flex items-center gap-2 rounded-full border border-border bg-surface-deep/75 px-6 py-3.5 text-xs font-bold uppercase tracking-[0.2em] text-chrome backdrop-blur-md transition-colors hover:border-brand hover:text-brand"
           >
-            Full Capabilities
-          </a>
+            Product Showcase ↗
+          </Link>
         </div>
       </div>
 

@@ -11,10 +11,6 @@ import { DrawSVGPlugin } from "gsap/DrawSVGPlugin";
 import { Header } from "./Header";
 import { Hero } from "./Hero";
 import { Journey } from "./Journey";
-import { Projects } from "./Projects";
-import { Experience } from "./Experience";
-import { Expertise } from "./Expertise";
-import { Accordion } from "./Accordion";
 import { Contact } from "./Contact";
 import { Footer } from "./Footer";
 import { Fabs } from "./Fabs";
@@ -30,12 +26,8 @@ gsap.registerPlugin(
 
 const SECTION_LABELS: Array<{ selector: string; label: string }> = [
   { selector: "#top", label: "01 // DESIGN" },
-  { selector: "#journey", label: "02 // PIPELINE" },
-  { selector: "#work", label: "03 // SAMPLES" },
-  { selector: "#experience", label: "04 // ARENA" },
-  { selector: "#expertise", label: "05 // CRAFT" },
-  { selector: "#friction", label: "06 // FRICTION" },
-  { selector: "#contact", label: "07 // CONTACT" },
+  { selector: "#journey", label: "02 // 3D PIPELINE" },
+  { selector: "#contact", label: "03 // CONTACT" },
 ];
 
 export function Landing() {
@@ -43,7 +35,7 @@ export function Landing() {
   const cursorDotRef = useRef<HTMLDivElement>(null);
   const cursorRingRef = useRef<HTMLDivElement>(null);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
-  const [activeSection, setActiveSection] = useState("01 // HERO");
+  const [activeSection, setActiveSection] = useState("01 // DESIGN");
 
   const { contextSafe } = useGSAP(
     () => {
@@ -68,9 +60,6 @@ export function Landing() {
                 ".hero-sub",
                 ".hero-actions",
                 ".hero-scroll",
-                ".experience",
-                ".expertise-row",
-                ".faq-item",
                 ".contact",
               ],
               { clearProps: "all", autoAlpha: 1 },
@@ -233,102 +222,7 @@ export function Landing() {
             document.addEventListener("pointerout", onPointerOut);
           }
 
-          // 5. Velocity-Reactive Dual Marquee
-          const rowLeft = document.querySelector<HTMLElement>(".marquee-row-left");
-          const rowRight = document.querySelector<HTMLElement>(".marquee-row-right");
-          let tweenLeft: gsap.core.Tween | null = null;
-          let tweenRight: gsap.core.Tween | null = null;
-
-          if (rowLeft && rowRight) {
-            tweenLeft = gsap.to(rowLeft, {
-              xPercent: -50,
-              duration: 28,
-              ease: "none",
-              repeat: -1,
-            });
-
-            gsap.set(rowRight, { xPercent: -50 });
-            tweenRight = gsap.to(rowRight, {
-              xPercent: 0,
-              duration: 32,
-              ease: "none",
-              repeat: -1,
-            });
-
-            const clampSkew = gsap.utils.clamp(-6, 6);
-            const resetVelocity = gsap.delayedCall(0.18, () => {
-              gsap.to([tweenLeft, tweenRight], { timeScale: 1, duration: 0.5 });
-              gsap.to([rowLeft, rowRight], { skewX: 0, duration: 0.5 });
-            }).pause();
-
-            ScrollTrigger.create({
-              trigger: ".experience",
-              start: "top bottom",
-              end: "bottom top",
-              onUpdate: (self) => {
-                const vel = self.getVelocity();
-                const boost = 1 + Math.min(Math.abs(vel) / 500, 3.2);
-                const skew = clampSkew(vel / -450);
-                if (tweenLeft) tweenLeft.timeScale(boost);
-                if (tweenRight) tweenRight.timeScale(boost);
-                gsap.to(rowLeft, { skewX: skew, duration: 0.2, overwrite: "auto" });
-                gsap.to(rowRight, { skewX: -skew, duration: 0.2, overwrite: "auto" });
-                resetVelocity.restart(true);
-              },
-            });
-          }
-
-          // 6. Expertise SplitText + Row Reveals
-          gsap.utils.toArray<HTMLElement>(".expertise-row").forEach((row) => {
-            const title = row.querySelector<HTMLElement>(".expertise-title");
-            const titleSplit = title
-              ? SplitText.create(title, { type: "lines", mask: "lines" })
-              : null;
-
-            const tl = gsap.timeline({
-              scrollTrigger: {
-                trigger: row,
-                start: "top 80%",
-                toggleActions: "play none none reverse",
-              },
-            });
-
-            tl.from(row, {
-              autoAlpha: 0,
-              y: 36,
-              duration: 0.6,
-              ease: "power3.out",
-            });
-
-            if (titleSplit) {
-              tl.from(
-                titleSplit.lines,
-                {
-                  yPercent: 100,
-                  autoAlpha: 0,
-                  duration: 0.55,
-                  stagger: 0.08,
-                  ease: "power3.out",
-                },
-                "-=0.4",
-              );
-            }
-          });
-
-          // 7. Accordion & Contact ScrollTrigger Staggers
-          gsap.from(".faq-item", {
-            autoAlpha: 0,
-            y: 24,
-            duration: 0.5,
-            stagger: 0.08,
-            ease: "power2.out",
-            scrollTrigger: {
-              trigger: ".accordion-section",
-              start: "top 80%",
-              toggleActions: "play none none reverse",
-            },
-          });
-
+          // 5. Contact ScrollTrigger Stagger
           gsap.from(".contact > div > *", {
             autoAlpha: 0,
             y: 30,
@@ -393,10 +287,6 @@ export function Landing() {
       <main>
         <Hero onEnterDojo={() => navigateTo("#journey")} />
         <Journey />
-        <Projects />
-        <Experience />
-        <Expertise />
-        <Accordion />
         <Contact />
       </main>
       <Footer />
