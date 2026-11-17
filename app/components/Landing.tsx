@@ -11,10 +11,13 @@ import { DrawSVGPlugin } from "gsap/DrawSVGPlugin";
 import { Header } from "./Header";
 import { Hero } from "./Hero";
 import { Journey } from "./Journey";
+import { Experience } from "./Experience";
 import { Estimator, type EstimatePayload } from "./Estimator";
+import { Accordion } from "./Accordion";
 import { Contact } from "./Contact";
 import { Footer } from "./Footer";
 import { Fabs } from "./Fabs";
+import { KineticCursor } from "./KineticCursor";
 import { useTheme } from "./useTheme";
 
 gsap.registerPlugin(
@@ -29,14 +32,14 @@ gsap.registerPlugin(
 const SECTION_LABELS: Array<{ selector: string; label: string }> = [
   { selector: "#top", label: "01 // DESIGN" },
   { selector: "#journey", label: "02 // 3D PIPELINE" },
-  { selector: "#estimator", label: "03 // ESTIMATOR" },
-  { selector: "#contact", label: "04 // QUOTE" },
+  { selector: "#experience", label: "03 // BRANDS" },
+  { selector: "#estimator", label: "04 // ESTIMATOR" },
+  { selector: "#friction", label: "05 // FAQ" },
+  { selector: "#contact", label: "06 // QUOTE" },
 ];
 
 export function Landing() {
   const root = useRef<HTMLDivElement>(null);
-  const cursorDotRef = useRef<HTMLDivElement>(null);
-  const cursorRingRef = useRef<HTMLDivElement>(null);
   const [theme, toggleTheme] = useTheme();
   const [activeSection, setActiveSection] = useState("01 // DESIGN");
   const [selectedColorway, setSelectedColorway] = useState(
@@ -49,33 +52,8 @@ export function Landing() {
     () => {
       const mm = gsap.matchMedia();
 
-      mm.add(
-        {
-          motion: "(prefers-reduced-motion: no-preference)",
-          desktop: "(min-width: 768px) and (prefers-reduced-motion: no-preference)",
-          reduce: "(prefers-reduced-motion: reduce)",
-        },
-        (ctx) => {
-          const { motion, desktop } = ctx.conditions!;
-
-          if (!motion) {
-            gsap.set(
-              [
-                ".site-logo",
-                ".site-pill",
-                ".site-cta",
-                ".hero-title",
-                ".hero-sub",
-                ".hero-actions",
-                ".hero-scroll",
-                ".contact",
-              ],
-              { clearProps: "all", autoAlpha: 1 },
-            );
-            return;
-          }
-
-          // 1. Global Scroll Progress Bar
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
+        // 1. Global Scroll Progress Bar
           gsap.to(".scroll-progress-bar", {
             scaleX: 1,
             ease: "none",
@@ -162,8 +140,8 @@ export function Landing() {
 
           // Hero Video Scroll Scrub
           gsap.to(".hero-video", {
-            scale: 1.1,
-            opacity: 0.25,
+            scale: 1.08,
+            opacity: 0.35,
             ease: "none",
             scrollTrigger: {
               trigger: ".hero",
@@ -173,64 +151,60 @@ export function Landing() {
             },
           });
 
-          // 4. Desktop Dual-Ring Kinetic Cursor
-          let onPointerMove: ((e: PointerEvent) => void) | null = null;
-          let onPointerOver: ((e: Event) => void) | null = null;
-          let onPointerOut: ((e: Event) => void) | null = null;
-
-          if (desktop && cursorDotRef.current && cursorRingRef.current) {
-            const dotX = gsap.quickTo(cursorDotRef.current, "x", {
-              duration: 0.08,
-              ease: "power3.out",
+          // 4. Brands & Global Hubs Velocity-Reactive Dual Marquee
+          const rowLeft = document.querySelector<HTMLElement>(".marquee-row-left");
+          const rowRight = document.querySelector<HTMLElement>(".marquee-row-right");
+          if (rowLeft && rowRight) {
+            const tweenLeft = gsap.to(rowLeft, {
+              xPercent: -50,
+              duration: 28,
+              ease: "none",
+              repeat: -1,
             });
-            const dotY = gsap.quickTo(cursorDotRef.current, "y", {
-              duration: 0.08,
-              ease: "power3.out",
+            gsap.set(rowRight, { xPercent: -50 });
+            const tweenRight = gsap.to(rowRight, {
+              xPercent: 0,
+              duration: 32,
+              ease: "none",
+              repeat: -1,
             });
-            const ringX = gsap.quickTo(cursorRingRef.current, "x", {
-              duration: 0.28,
-              ease: "power3.out",
+            const clampSkew = gsap.utils.clamp(-6, 6);
+            const resetVelocity = gsap.delayedCall(0.18, () => {
+              gsap.to([tweenLeft, tweenRight], { timeScale: 1, duration: 0.5 });
+              gsap.to([rowLeft, rowRight], { skewX: 0, duration: 0.5 });
+            }).pause();
+
+            ScrollTrigger.create({
+              trigger: ".experience",
+              start: "top bottom",
+              end: "bottom top",
+              onUpdate: (self) => {
+                const vel = self.getVelocity();
+                const boost = 1 + Math.min(Math.abs(vel) / 500, 3.2);
+                const skew = clampSkew(vel / -450);
+                tweenLeft.timeScale(boost);
+                tweenRight.timeScale(boost);
+                gsap.to(rowLeft, { skewX: skew, duration: 0.2, overwrite: "auto" });
+                gsap.to(rowRight, { skewX: -skew, duration: 0.2, overwrite: "auto" });
+                resetVelocity.restart(true);
+              },
             });
-            const ringY = gsap.quickTo(cursorRingRef.current, "y", {
-              duration: 0.28,
-              ease: "power3.out",
-            });
-
-            onPointerMove = (e: PointerEvent) => {
-              dotX(e.clientX - 4);
-              dotY(e.clientY - 4);
-              ringX(e.clientX - 18);
-              ringY(e.clientY - 18);
-            };
-
-            onPointerOver = (e: Event) => {
-              const target = e.target as HTMLElement | null;
-              if (target?.closest('[data-cursor="magnet"]')) {
-                gsap.to(cursorRingRef.current, {
-                  scale: 1.65,
-                  borderColor: "#fe4101",
-                  duration: 0.25,
-                });
-              }
-            };
-
-            onPointerOut = (e: Event) => {
-              const target = e.target as HTMLElement | null;
-              if (target?.closest('[data-cursor="magnet"]')) {
-                gsap.to(cursorRingRef.current, {
-                  scale: 1,
-                  borderColor: "rgba(254, 65, 1, 0.55)",
-                  duration: 0.25,
-                });
-              }
-            };
-
-            window.addEventListener("pointermove", onPointerMove, { passive: true });
-            document.addEventListener("pointerover", onPointerOver);
-            document.addEventListener("pointerout", onPointerOut);
           }
 
-          // 5. Contact ScrollTrigger Entrance (never hidden from a11y tree initially)
+          // 6. FAQ Accordion & Contact ScrollTrigger Entrances
+          gsap.from(".faq-item", {
+            y: 20,
+            duration: 0.45,
+            stagger: 0.07,
+            ease: "power2.out",
+            immediateRender: false,
+            scrollTrigger: {
+              trigger: ".accordion-section",
+              start: "top 88%",
+              toggleActions: "play none none none",
+            },
+          });
+
           gsap.from(".contact > div > *", {
             y: 26,
             duration: 0.6,
@@ -243,14 +217,7 @@ export function Landing() {
               toggleActions: "play none none none",
             },
           });
-
-          return () => {
-            if (onPointerMove) window.removeEventListener("pointermove", onPointerMove);
-            if (onPointerOver) document.removeEventListener("pointerover", onPointerOver);
-            if (onPointerOut) document.removeEventListener("pointerout", onPointerOut);
-          };
-        },
-      );
+      });
 
       return () => mm.revert();
     },
@@ -267,22 +234,13 @@ export function Landing() {
 
   return (
     <div ref={root} className="relative min-h-svh bg-background text-foreground">
-      {/* Desktop Dual-Ring Kinetic Cursor */}
-      <div
-        ref={cursorDotRef}
-        aria-hidden
-        className="pointer-events-none fixed top-0 left-0 z-50 hidden h-2 w-2 rounded-full bg-brand md:block"
-      />
-      <div
-        ref={cursorRingRef}
-        aria-hidden
-        className="pointer-events-none fixed top-0 left-0 z-50 hidden h-9 w-9 rounded-full border border-brand/55 md:block"
-      />
+      <KineticCursor />
 
       <Header activeSection={activeSection} mode="home" onNavigate={navigateTo} />
       <main>
         <Hero onEnterDojo={() => navigateTo("#journey")} />
         <Journey theme={theme} onColorwayChange={setSelectedColorway} />
+        <Experience />
         <Estimator
           selectedColorway={selectedColorway}
           onLockEstimate={(payload) => {
@@ -290,6 +248,7 @@ export function Landing() {
             navigateTo("#contact");
           }}
         />
+        <Accordion />
         <Contact
           key={estimatePrefill?.summary ?? "default"}
           estimatePrefill={estimatePrefill}

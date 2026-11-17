@@ -3,31 +3,73 @@ export const projects = [
     title: "HEAVYWEIGHT OUTERWEAR",
     image: "/images/apparel-outerwear.jpg",
     meta: "Design · Tech Pack",
+    category: "design",
+    moq: "150 pcs",
+    gsm: "420 GSM",
+    qc: "AQL 2.5",
+    freight: "Air / FCL",
+    summary:
+      "Multi-pocket weatherproof shell engineered from 3D drape simulation to factory-ready graded tech pack.",
   },
   {
     title: "3D VIRTUAL ATELIER",
     image: "/images/apparel-atelier.jpg",
     meta: "3D Sampling · Fit",
+    category: "design",
+    moq: "100 pcs",
+    gsm: "3D Fit",
+    qc: "Virtual + Gold",
+    freight: "Global Express",
+    summary:
+      "Photorealistic 3D garment fit rounds, Pantone lab-dip matching, and seam construction specs before physical cutting.",
   },
   {
     title: "CUT & SEW LINE 04",
     image: "/images/apparel-factory.jpg",
     meta: "Factory · CMT / FPP",
+    category: "production",
+    moq: "300 pcs",
+    gsm: "380 GSM",
+    qc: "Inline + Final",
+    freight: "Port Drayage",
+    summary:
+      "Dedicated knit & fleece cut-and-sew production bays with inline stitch inspection and enzyme-wash finishing.",
   },
   {
     title: "QC & CARTON LAB",
     image: "/images/apparel-cartons.jpg",
     meta: "AQL 2.5 · Packaging",
+    category: "production",
+    moq: "200 pcs",
+    gsm: "Export Kraft",
+    qc: "Barcode + Seal",
+    freight: "Euro Pallet",
+    summary:
+      "Steamed, folded, polybagged, hang-tagged, and stretch-wrapped on 4-way Euro pallets with serialized barcode labels.",
   },
   {
     title: "INLAND CARGO FLEET",
     image: "/images/apparel-truck.jpg",
     meta: "Drayage · Port Run",
+    category: "logistics",
+    moq: "1–40HC",
+    gsm: "GPS Sealed",
+    qc: "Gate Verified",
+    freight: "Factory → Port",
+    summary:
+      "Sealed container trucking straight from the factory loading dock through export customs clearance to the terminal.",
   },
   {
     title: "GLOBAL OCEAN FREIGHT",
     image: "/images/apparel-ship.jpg",
     meta: "FCL / LCL · Delivery",
+    category: "logistics",
+    moq: "FCL / LCL",
+    gsm: "40ft High Cube",
+    qc: "Customs Cleared",
+    freight: "Ocean Vessel",
+    summary:
+      "Scheduled sea-freight consolidation and door-to-warehouse delivery into US, EU, UK, and APAC fulfillment hubs.",
   },
 ] as const;
 

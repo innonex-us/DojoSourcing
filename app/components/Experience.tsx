@@ -13,10 +13,10 @@ export function Experience() {
     >
       <div className="mx-auto max-w-[900px] px-5 text-center md:px-8">
         <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-brand">
-          • The Arena
+          • Global Brands &amp; Network
         </p>
         <h2 className="mt-4 text-3xl font-semibold uppercase leading-tight tracking-wide text-chrome md:text-5xl">
-          Global Experience
+          Trusted Across Apparel Hubs
         </h2>
         <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-foreground/80 md:text-base">
           From emerging streetwear labels to global retail collections, Dojo

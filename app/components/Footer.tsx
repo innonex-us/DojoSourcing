@@ -57,7 +57,7 @@ export function Footer() {
               </Link>
             </li>
             <li>
-              <Link href="/showcase#friction" className="focus-ring transition-colors hover:text-chrome">
+              <Link href="/#friction" className="focus-ring transition-colors hover:text-chrome">
                 Supply Chain FAQ
               </Link>
             </li>
