@@ -1,11 +1,44 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 import { interestChips } from "./data";
 
+gsap.registerPlugin(useGSAP);
+
 export function Contact() {
+  const sectionRef = useRef<HTMLElement>(null);
   const [selected, setSelected] = useState<string[]>(["PRODUCT LAUNCH"]);
   const [sent, setSent] = useState(false);
+
+  const { contextSafe } = useGSAP({ scope: sectionRef });
+
+  const handleMagneticMove = contextSafe(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      const btn = e.currentTarget;
+      const rect = btn.getBoundingClientRect();
+      const dx = (e.clientX - (rect.left + rect.width / 2)) * 0.28;
+      const dy = (e.clientY - (rect.top + rect.height / 2)) * 0.28;
+      gsap.to(btn, {
+        x: dx,
+        y: dy,
+        duration: 0.35,
+        ease: "power3.out",
+      });
+    },
+  );
+
+  const handleMagneticLeave = contextSafe(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      gsap.to(e.currentTarget, {
+        x: 0,
+        y: 0,
+        duration: 0.55,
+        ease: "elastic.out(1, 0.4)",
+      });
+    },
+  );
 
   function toggleChip(chip: string) {
     setSelected((prev) =>
@@ -21,6 +54,7 @@ export function Contact() {
   return (
     <section
       id="contact"
+      ref={sectionRef}
       className="contact relative border-t border-border px-5 py-24 md:px-8 md:py-32"
     >
       <div className="mx-auto grid max-w-[1400px] gap-14 lg:grid-cols-12 lg:gap-16">
@@ -146,7 +180,10 @@ export function Contact() {
 
               <button
                 type="submit"
-                className="focus-ring inline-flex items-center gap-3 rounded-full bg-brand px-8 py-4 text-[11px] font-bold uppercase tracking-[0.25em] text-white transition-opacity hover:opacity-90"
+                onMouseMove={handleMagneticMove}
+                onMouseLeave={handleMagneticLeave}
+                data-cursor="magnet"
+                className="focus-ring inline-flex items-center gap-3 rounded-full bg-brand px-8 py-4 text-[11px] font-bold uppercase tracking-[0.25em] text-white transition-opacity hover:opacity-95"
               >
                 Send Message
                 <span aria-hidden>↗</span>

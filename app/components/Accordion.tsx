@@ -1,14 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+import { ScrambleTextPlugin } from "gsap/ScrambleTextPlugin";
 import { faqs } from "./data";
 
+gsap.registerPlugin(useGSAP, ScrambleTextPlugin);
+
 export function Accordion() {
+  const sectionRef = useRef<HTMLElement>(null);
   const [open, setOpen] = useState(0);
+
+  const { contextSafe } = useGSAP({ scope: sectionRef });
+
+  const handleToggle = contextSafe(
+    (e: React.MouseEvent<HTMLButtonElement>, index: number, title: string) => {
+      const next = open === index ? -1 : index;
+      setOpen(next);
+      if (next !== -1) {
+        const target = e.currentTarget.querySelector(
+          `[data-faq-title="${index}"]`,
+        );
+        if (target) {
+          gsap.to(target, {
+            duration: 0.45,
+            scrambleText: {
+              text: title,
+              chars: "XO/\\01",
+              speed: 0.6,
+            },
+          });
+        }
+      }
+    },
+  );
 
   return (
     <section
       id="friction"
+      ref={sectionRef}
       className="accordion-section grid-bg relative px-5 py-24 md:px-8 md:py-32"
     >
       <div className="mx-auto max-w-[1100px]">
@@ -27,13 +58,17 @@ export function Accordion() {
                 <button
                   type="button"
                   aria-expanded={isOpen}
-                  onClick={() => setOpen(isOpen ? -1 : i)}
+                  onClick={(e) => handleToggle(e, i, item.title)}
+                  data-cursor="magnet"
                   className="focus-ring flex w-full items-center gap-4 py-6 text-left md:gap-8 md:py-8"
                 >
-                  <span className="shrink-0 text-sm font-bold tracking-[0.2em] text-brand">
+                  <span className="shrink-0 font-mono text-sm font-bold tracking-[0.2em] text-brand">
                     {item.num}
                   </span>
-                  <span className="flex-1 text-lg font-bold uppercase tracking-wide text-chrome md:text-2xl">
+                  <span
+                    data-faq-title={i}
+                    className="flex-1 text-lg font-bold uppercase tracking-wide text-chrome md:text-2xl"
+                  >
                     {item.title}
                   </span>
                   <span

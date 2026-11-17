@@ -1,134 +1,179 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
-import { heroCards } from "./data";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+import { Flip } from "gsap/Flip";
+import { Draggable } from "gsap/Draggable";
+import { InertiaPlugin } from "gsap/InertiaPlugin";
+import { projects } from "./data";
 
-const STAGE_WORDS = ["PRACTICE", "BUILD", "SHIP"] as const;
+gsap.registerPlugin(useGSAP, Flip, Draggable, InertiaPlugin);
+
+type LabMode = "deck" | "grid";
 
 export function Projects() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const flipStateRef = useRef<Flip.FlipState | null>(null);
+  const [mode, setMode] = useState<LabMode>("deck");
+
+  function switchMode(next: LabMode) {
+    if (next === mode) return;
+    flipStateRef.current = Flip.getState(".lab-card", {
+      props: "borderRadius",
+    });
+    setMode(next);
+  }
+
+  useGSAP(
+    () => {
+      const mm = gsap.matchMedia();
+
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
+        if (flipStateRef.current) {
+          Flip.from(flipStateRef.current, {
+            duration: 0.72,
+            ease: "power3.inOut",
+            stagger: 0.04,
+            absolute: true,
+            scale: true,
+            onComplete: () => {
+              flipStateRef.current = null;
+            },
+          });
+        }
+
+        if (mode === "deck") {
+          const track = sectionRef.current?.querySelector(".deck-track");
+          const viewport = sectionRef.current?.querySelector(".deck-viewport");
+          if (track && viewport) {
+            Draggable.create(track, {
+              type: "x",
+              bounds: viewport,
+              inertia: true,
+              edgeResistance: 0.75,
+              dragClickables: true,
+              cursor: "grab",
+              activeCursor: "grabbing",
+            });
+          }
+        } else {
+          gsap.set(".deck-track", { x: 0 });
+        }
+      });
+
+      return () => mm.revert();
+    },
+    { scope: sectionRef, dependencies: [mode] },
+  );
+
   return (
     <section
       id="work"
-      className="showcase-section relative overflow-hidden bg-background"
-      aria-label="Design Lab Showcase"
+      ref={sectionRef}
+      className="showcase-section relative overflow-hidden border-t border-border bg-background py-24 md:py-32"
+      aria-label="Dojo Lab Projects"
     >
-      {/* Desktop: Pinned Radial Collage Stage | Mobile: Clean editorial grid */}
-      <div className="showcase-stage relative hidden h-svh min-h-[680px] w-full items-center justify-center overflow-hidden md:flex">
-        {/* Subtle radial vignette */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,var(--background)_88%)]"
-        />
-
-        {/* Central Cycling Display Words */}
-        <div className="relative z-10 flex flex-col items-center text-center pointer-events-none select-none">
-          <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.35em] text-brand">
-            • Design Lab Archive
-          </p>
-          <div className="relative h-[1.05em] w-[90vw] max-w-[1100px] text-7xl font-bold uppercase leading-none tracking-[0.04em] text-chrome lg:text-[8rem]">
-            {STAGE_WORDS.map((word, idx) => (
-              <span
-                key={word}
-                className="stage-word absolute inset-x-0 top-0 block"
-                style={{ opacity: idx === 0 ? 1 : 0 }}
-              >
-                {word}
-              </span>
-            ))}
+      <div className="mx-auto max-w-[1400px] px-5 md:px-8">
+        {/* Section Header + Flip Mode Toggle */}
+        <div className="mb-12 flex flex-col gap-6 md:mb-16 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-brand">
+              • The Dojo Lab
+            </p>
+            <h2 className="mt-3 text-3xl font-bold uppercase tracking-wide text-chrome md:text-5xl">
+              Selected Builds
+            </h2>
+            <p className="mt-3 max-w-md text-sm leading-relaxed text-muted">
+              {mode === "deck"
+                ? "Grab & flick the deck horizontally with GSAP Draggable + Inertia, or morph into Studio Grid."
+                : "Morphed via GSAP Flip. Switch back to Drag Deck anytime."}
+            </p>
           </div>
-          <p className="mt-5 max-w-md text-xs font-medium uppercase tracking-[0.22em] text-muted">
-            Scroll to explore systems, launches &amp; visual craft
-          </p>
-        </div>
 
-        {/* Radial Collage Cards */}
-        <div className="absolute inset-0 z-20 pointer-events-none">
-          {heroCards.map((card, i) => {
-            const style = {
-              left: card.x,
-              top: card.y,
-              width: card.w,
-              zIndex: card.z,
-            } as CSSProperties;
-
-            if (card.kind === "photo") {
-              return (
-                <a
-                  key={`stage-photo-${i}`}
-                  href="#contact"
-                  className="showcase-card group pointer-events-auto absolute aspect-[3/4] origin-center overflow-hidden bg-surface-deep shadow-[0_24px_50px_rgba(0,0,0,0.55)]"
-                  style={style}
-                  data-rotate={card.rotate}
-                >
-                  <Image
-                    src={card.src}
-                    alt={card.alt}
-                    fill
-                    sizes="220px"
-                    className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-brand/90 via-brand/25 to-transparent opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100" />
-                  <span className="absolute inset-x-3 bottom-3 translate-y-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                    {card.alt}
-                  </span>
-                </a>
-              );
-            }
-
-            return (
-              <a
-                key={`stage-graphic-${i}`}
-                href="#contact"
-                className="showcase-card group pointer-events-auto absolute aspect-[3/4] origin-center overflow-hidden bg-brand p-4 text-white shadow-[0_24px_50px_rgba(254,65,1,0.3)]"
-                style={style}
-                data-rotate={card.rotate}
-              >
-                <div className="flex h-full w-full flex-col justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/80">
-                    {card.sub ?? "DOJO"}
-                  </span>
-                  <span className="text-xl font-extrabold uppercase leading-none tracking-wide lg:text-2xl">
-                    {card.label}
-                  </span>
-                </div>
-                <div className="absolute inset-0 bg-black/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-              </a>
-            );
-          })}
+          <div
+            role="group"
+            aria-label="Layout mode"
+            className="inline-flex w-fit items-center rounded-full border border-border bg-surface-deep/80 p-1"
+          >
+            <button
+              type="button"
+              onClick={() => switchMode("deck")}
+              data-cursor="magnet"
+              className={`focus-ring rounded-full px-5 py-2 text-[11px] font-bold uppercase tracking-[0.18em] transition-colors ${
+                mode === "deck"
+                  ? "bg-brand text-white"
+                  : "text-muted hover:text-chrome"
+              }`}
+            >
+              Drag Deck
+            </button>
+            <button
+              type="button"
+              onClick={() => switchMode("grid")}
+              data-cursor="magnet"
+              className={`focus-ring rounded-full px-5 py-2 text-[11px] font-bold uppercase tracking-[0.18em] transition-colors ${
+                mode === "grid"
+                  ? "bg-brand text-white"
+                  : "text-muted hover:text-chrome"
+              }`}
+            >
+              Studio Grid
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Mobile Fallback Grid */}
-      <div className="px-5 py-20 md:hidden">
-        <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-brand">
-          • Design Lab Archive
-        </p>
-        <h2 className="mt-3 text-4xl font-bold uppercase tracking-wide text-chrome">
-          Practice · Build · Ship
-        </h2>
-        <div className="mt-8 grid grid-cols-2 gap-4">
-          {heroCards
-            .filter((c) => c.kind === "photo")
-            .slice(0, 6)
-            .map((card, i) =>
-              card.kind === "photo" ? (
-                <a
-                  key={`mob-${i}`}
-                  href="#contact"
-                  className="group relative aspect-[3/4] overflow-hidden bg-surface-deep"
-                >
+      {/* Deck / Grid Container */}
+      <div
+        className={`deck-viewport relative mx-auto max-w-[1400px] px-5 md:px-8 ${
+          mode === "deck" ? "overflow-hidden" : ""
+        }`}
+      >
+        <div
+          className={`deck-track ${
+            mode === "deck"
+              ? "flex w-max gap-6 pb-4 select-none"
+              : "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+          }`}
+        >
+          {projects.map((project, idx) => (
+            <article
+              key={project.title}
+              data-flip-id={`lab-card-${idx}`}
+              className={`lab-card group relative overflow-hidden border border-border bg-surface-deep ${
+                mode === "deck"
+                  ? "w-[78vw] shrink-0 sm:w-[420px] md:w-[440px]"
+                  : "w-full"
+              }`}
+            >
+              <a href="#contact" className="focus-ring block">
+                <div className="relative aspect-[4/3] overflow-hidden bg-surface">
                   <Image
-                    src={card.src}
-                    alt={card.alt}
+                    src={project.image}
+                    alt={project.title}
                     fill
-                    sizes="50vw"
-                    className="object-cover"
+                    sizes="(max-width: 768px) 80vw, 440px"
+                    draggable={false}
+                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-brand/85 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                </a>
-              ) : null,
-            )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-brand/85 via-brand/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <span className="absolute top-4 left-4 bg-background/80 px-2.5 py-1 font-mono text-[10px] font-bold tracking-[0.2em] text-brand backdrop-blur-sm">
+                    0{idx + 1}
+                  </span>
+                </div>
+                <div className="flex items-baseline justify-between gap-4 p-5">
+                  <h3 className="text-base font-bold uppercase tracking-wide text-chrome md:text-lg">
+                    {project.title}
+                  </h3>
+                  <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">
+                    {project.meta}
+                  </span>
+                </div>
+              </a>
+            </article>
+          ))}
         </div>
       </div>
     </section>

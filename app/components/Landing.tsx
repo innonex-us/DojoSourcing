@@ -4,6 +4,10 @@ import { useRef, useState } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ScrollToPlugin } from "gsap/ScrollToPlugin";
+import { SplitText } from "gsap/SplitText";
+import { ScrambleTextPlugin } from "gsap/ScrambleTextPlugin";
+import { DrawSVGPlugin } from "gsap/DrawSVGPlugin";
 import { Header } from "./Header";
 import { Hero } from "./Hero";
 import { Projects } from "./Projects";
@@ -14,14 +18,32 @@ import { Contact } from "./Contact";
 import { Footer } from "./Footer";
 import { Fabs } from "./Fabs";
 
-gsap.registerPlugin(useGSAP, ScrollTrigger);
+gsap.registerPlugin(
+  useGSAP,
+  ScrollTrigger,
+  ScrollToPlugin,
+  SplitText,
+  ScrambleTextPlugin,
+  DrawSVGPlugin,
+);
+
+const SECTION_LABELS: Array<{ selector: string; label: string }> = [
+  { selector: "#top", label: "01 // HERO" },
+  { selector: "#work", label: "02 // LAB" },
+  { selector: "#experience", label: "03 // ARENA" },
+  { selector: "#expertise", label: "04 // CRAFT" },
+  { selector: "#friction", label: "05 // FRICTION" },
+  { selector: "#contact", label: "06 // CONTACT" },
+];
 
 export function Landing() {
   const root = useRef<HTMLDivElement>(null);
-  const glowRef = useRef<HTMLDivElement>(null);
+  const cursorDotRef = useRef<HTMLDivElement>(null);
+  const cursorRingRef = useRef<HTMLDivElement>(null);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [activeSection, setActiveSection] = useState("01 // HERO");
 
-  useGSAP(
+  const { contextSafe } = useGSAP(
     () => {
       const mm = gsap.matchMedia();
 
@@ -33,8 +55,6 @@ export function Landing() {
         },
         (ctx) => {
           const { motion, desktop } = ctx.conditions!;
-          const stageWords = gsap.utils.toArray<HTMLElement>(".stage-word");
-          const stageCards = gsap.utils.toArray<HTMLElement>(".showcase-card");
 
           if (!motion) {
             gsap.set(
@@ -42,8 +62,10 @@ export function Landing() {
                 ".site-logo",
                 ".site-pill",
                 ".site-cta",
+                ".hero-title",
+                ".hero-sub",
+                ".hero-actions",
                 ".hero-scroll",
-                ".showcase-card",
                 ".experience",
                 ".expertise-row",
                 ".faq-item",
@@ -51,24 +73,98 @@ export function Landing() {
               ],
               { clearProps: "all", autoAlpha: 1 },
             );
-            stageWords.forEach((el, i) => {
-              gsap.set(el, { autoAlpha: i === 0 ? 1 : 0, y: 0 });
-            });
             return;
           }
 
-          // 1. Header & Hero Intro
+          // 1. Global Scroll Progress Bar
+          gsap.to(".scroll-progress-bar", {
+            scaleX: 1,
+            ease: "none",
+            scrollTrigger: {
+              trigger: root.current,
+              start: "top top",
+              end: "bottom bottom",
+              scrub: 0.2,
+            },
+          });
+
+          // 2. Live Section Telemetry in Header Pill
+          SECTION_LABELS.forEach(({ selector, label }) => {
+            const el = document.querySelector(selector);
+            if (!el) return;
+            ScrollTrigger.create({
+              trigger: el,
+              start: "top 45%",
+              end: "bottom 45%",
+              onEnter: () => setActiveSection(label),
+              onEnterBack: () => setActiveSection(label),
+            });
+          });
+
+          // 3. Hero DrawSVG + SplitText + ScrambleText Intro
+          const heroSplit = SplitText.create(".hero-title", {
+            type: "words,chars",
+            mask: "chars",
+          });
+
           const intro = gsap.timeline({ defaults: { ease: "power3.out" } });
           intro
-            .from(".site-logo", { autoAlpha: 0, y: -12, duration: 0.45 })
-            .from(".site-pill", { autoAlpha: 0, y: -10, duration: 0.4 }, "-=0.25")
-            .from(".site-cta", { autoAlpha: 0, y: -10, duration: 0.4 }, "-=0.3")
-            .from(".hero-scroll", { autoAlpha: 0, y: 12, duration: 0.45 }, "-=0.2");
+            .from(".site-logo", { autoAlpha: 0, y: -12, duration: 0.4 })
+            .from(".site-pill", { autoAlpha: 0, y: -10, duration: 0.35 }, "-=0.2")
+            .from(".site-cta", { autoAlpha: 0, y: -10, duration: 0.35 }, "-=0.25")
+            .from(
+              ".hero-draw-path",
+              {
+                drawSVG: 0,
+                duration: 0.9,
+                stagger: 0.08,
+                ease: "power2.inOut",
+              },
+              "-=0.25",
+            )
+            .to(
+              ".hero-scramble",
+              {
+                duration: 0.8,
+                scrambleText: {
+                  text: "SYSTEMS // MOTION // PRODUCT // CODE",
+                  chars: "01/\\XO",
+                  speed: 0.5,
+                },
+              },
+              "-=0.7",
+            )
+            .from(
+              heroSplit.chars,
+              {
+                yPercent: 110,
+                autoAlpha: 0,
+                duration: 0.7,
+                stagger: 0.024,
+                ease: "power4.out",
+              },
+              "-=0.6",
+            )
+            .from(
+              ".hero-sub",
+              { autoAlpha: 0, y: 18, duration: 0.5 },
+              "-=0.35",
+            )
+            .from(
+              ".hero-actions",
+              { autoAlpha: 0, y: 16, duration: 0.45 },
+              "-=0.3",
+            )
+            .from(
+              ".hero-scroll",
+              { autoAlpha: 0, y: 10, duration: 0.35 },
+              "-=0.2",
+            );
 
-          // Subtle Hero Video Scrub on Scroll
+          // Hero Video Scroll Scrub
           gsap.to(".hero-video", {
-            scale: 1.08,
-            opacity: 0.45,
+            scale: 1.1,
+            opacity: 0.25,
             ease: "none",
             scrollTrigger: {
               trigger: ".hero",
@@ -78,178 +174,146 @@ export function Landing() {
             },
           });
 
-          // 2. Desktop Interactive Cursor Glow (60fps quickTo)
+          // 4. Desktop Dual-Ring Kinetic Cursor
           let onPointerMove: ((e: PointerEvent) => void) | null = null;
-          if (desktop && glowRef.current) {
-            const xTo = gsap.quickTo(glowRef.current, "x", {
-              duration: 0.35,
+          let onPointerOver: ((e: Event) => void) | null = null;
+          let onPointerOut: ((e: Event) => void) | null = null;
+
+          if (desktop && cursorDotRef.current && cursorRingRef.current) {
+            const dotX = gsap.quickTo(cursorDotRef.current, "x", {
+              duration: 0.08,
               ease: "power3.out",
             });
-            const yTo = gsap.quickTo(glowRef.current, "y", {
-              duration: 0.35,
+            const dotY = gsap.quickTo(cursorDotRef.current, "y", {
+              duration: 0.08,
               ease: "power3.out",
             });
+            const ringX = gsap.quickTo(cursorRingRef.current, "x", {
+              duration: 0.28,
+              ease: "power3.out",
+            });
+            const ringY = gsap.quickTo(cursorRingRef.current, "y", {
+              duration: 0.28,
+              ease: "power3.out",
+            });
+
             onPointerMove = (e: PointerEvent) => {
-              xTo(e.clientX - 150);
-              yTo(e.clientY - 150);
+              dotX(e.clientX - 4);
+              dotY(e.clientY - 4);
+              ringX(e.clientX - 18);
+              ringY(e.clientY - 18);
             };
-            window.addEventListener("pointermove", onPointerMove, {
-              passive: true,
-            });
-          }
 
-          // 3. Pinned Radial Showcase Stage (Desktop)
-          if (desktop && stageCards.length > 0) {
-            stageCards.forEach((card, i) => {
-              const baseRot = Number(card.dataset.rotate ?? 0);
-              const angle = (i / stageCards.length) * Math.PI * 2;
-              const startDist = 140 + (i % 3) * 60;
-              gsap.set(card, {
-                rotation: baseRot * 1.35,
-                scale: 0.72,
-                autoAlpha: 0.2,
-                x: Math.cos(angle) * -startDist * 0.45,
-                y: Math.sin(angle) * -startDist * 0.45,
-              });
-            });
+            onPointerOver = (e: Event) => {
+              const target = e.target as HTMLElement | null;
+              if (target?.closest('[data-cursor="magnet"]')) {
+                gsap.to(cursorRingRef.current, {
+                  scale: 1.65,
+                  borderColor: "#fe4101",
+                  duration: 0.25,
+                });
+              }
+            };
 
-            gsap.set(stageWords, { autoAlpha: 0, y: 28 });
-            if (stageWords[0]) {
-              gsap.set(stageWords[0], { autoAlpha: 1, y: 0 });
-            }
-
-            const stageTl = gsap.timeline({
-              scrollTrigger: {
-                trigger: ".showcase-stage",
-                start: "top top",
-                end: "+=2600",
-                pin: true,
-                scrub: 1,
-                anticipatePin: 1,
-              },
-            });
-
-            // Phase 1: Cards bloom outward & settle into their editorial collage
-            stageCards.forEach((card, i) => {
-              const baseRot = Number(card.dataset.rotate ?? 0);
-              const drift = (i % 2 === 0 ? 1 : -1) * (18 + (i % 4) * 10);
-              stageTl.to(
-                card,
-                {
-                  x: drift,
-                  y: -drift * 0.7,
-                  rotation: baseRot,
+            onPointerOut = (e: Event) => {
+              const target = e.target as HTMLElement | null;
+              if (target?.closest('[data-cursor="magnet"]')) {
+                gsap.to(cursorRingRef.current, {
                   scale: 1,
-                  autoAlpha: 1,
-                  duration: 1,
-                  ease: "power2.out",
-                },
-                0.03 * (i % 5),
-              );
-            });
+                  borderColor: "rgba(254, 65, 1, 0.55)",
+                  duration: 0.25,
+                });
+              }
+            };
 
-            // Phase 2: Cycle central typography PRACTICE -> BUILD -> SHIP
-            if (stageWords.length >= 3) {
-              stageTl
-                .to(
-                  stageWords[0],
-                  { autoAlpha: 0, y: -32, duration: 0.35, ease: "power2.in" },
-                  0.45,
-                )
-                .fromTo(
-                  stageWords[1],
-                  { autoAlpha: 0, y: 32 },
-                  { autoAlpha: 1, y: 0, duration: 0.4, ease: "power2.out" },
-                  0.65,
-                )
-                .to(
-                  stageWords[1],
-                  { autoAlpha: 0, y: -32, duration: 0.35, ease: "power2.in" },
-                  1.25,
-                )
-                .fromTo(
-                  stageWords[2],
-                  { autoAlpha: 0, y: 32 },
-                  { autoAlpha: 1, y: 0, duration: 0.4, ease: "power2.out" },
-                  1.45,
-                );
-            }
-
-            // Phase 3: Subtle parallax drift at end of pinned runway
-            stageCards.forEach((card, i) => {
-              const baseRot = Number(card.dataset.rotate ?? 0);
-              const outDir = i % 2 === 0 ? 1 : -1;
-              stageTl.to(
-                card,
-                {
-                  y: outDir * (45 + (i % 3) * 20),
-                  rotation: baseRot + outDir * 6,
-                  duration: 0.8,
-                  ease: "none",
-                },
-                1.2,
-              );
-            });
+            window.addEventListener("pointermove", onPointerMove, { passive: true });
+            document.addEventListener("pointerover", onPointerOver);
+            document.addEventListener("pointerout", onPointerOut);
           }
 
-          // 4. Global Experience Infinite Marquee
-          const marqueeTrack = document.querySelector<HTMLElement>(".marquee-track");
-          const marqueeWrapper =
-            document.querySelector<HTMLElement>(".marquee-wrapper");
-          let marqueeTween: gsap.core.Tween | null = null;
-          let onMarqueeEnter: (() => void) | null = null;
-          let onMarqueeLeave: (() => void) | null = null;
+          // 5. Velocity-Reactive Dual Marquee
+          const rowLeft = document.querySelector<HTMLElement>(".marquee-row-left");
+          const rowRight = document.querySelector<HTMLElement>(".marquee-row-right");
+          let tweenLeft: gsap.core.Tween | null = null;
+          let tweenRight: gsap.core.Tween | null = null;
 
-          if (marqueeTrack) {
-            marqueeTween = gsap.to(marqueeTrack, {
+          if (rowLeft && rowRight) {
+            tweenLeft = gsap.to(rowLeft, {
               xPercent: -50,
               duration: 28,
               ease: "none",
               repeat: -1,
             });
 
-            if (marqueeWrapper) {
-              onMarqueeEnter = () => {
-                gsap.to(marqueeTween, { timeScale: 0.25, duration: 0.4 });
-              };
-              onMarqueeLeave = () => {
-                gsap.to(marqueeTween, { timeScale: 1, duration: 0.4 });
-              };
-              marqueeWrapper.addEventListener("mouseenter", onMarqueeEnter);
-              marqueeWrapper.addEventListener("mouseleave", onMarqueeLeave);
-            }
+            gsap.set(rowRight, { xPercent: -50 });
+            tweenRight = gsap.to(rowRight, {
+              xPercent: 0,
+              duration: 32,
+              ease: "none",
+              repeat: -1,
+            });
+
+            const clampSkew = gsap.utils.clamp(-6, 6);
+            const resetVelocity = gsap.delayedCall(0.18, () => {
+              gsap.to([tweenLeft, tweenRight], { timeScale: 1, duration: 0.5 });
+              gsap.to([rowLeft, rowRight], { skewX: 0, duration: 0.5 });
+            }).pause();
+
+            ScrollTrigger.create({
+              trigger: ".experience",
+              start: "top bottom",
+              end: "bottom top",
+              onUpdate: (self) => {
+                const vel = self.getVelocity();
+                const boost = 1 + Math.min(Math.abs(vel) / 500, 3.2);
+                const skew = clampSkew(vel / -450);
+                if (tweenLeft) tweenLeft.timeScale(boost);
+                if (tweenRight) tweenRight.timeScale(boost);
+                gsap.to(rowLeft, { skewX: skew, duration: 0.2, overwrite: "auto" });
+                gsap.to(rowRight, { skewX: -skew, duration: 0.2, overwrite: "auto" });
+                resetVelocity.restart(true);
+              },
+            });
           }
 
-          gsap.from(".experience > div:first-child > *", {
-            autoAlpha: 0,
-            y: 28,
-            duration: 0.6,
-            stagger: 0.1,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: ".experience",
-              start: "top 80%",
-              toggleActions: "play none none reverse",
-            },
-          });
-
-          // 5. Areas of Expertise Staggered Row Reveals
+          // 6. Expertise SplitText + Row Reveals
           gsap.utils.toArray<HTMLElement>(".expertise-row").forEach((row) => {
-            gsap.from(row.children, {
-              autoAlpha: 0,
-              y: 36,
-              duration: 0.65,
-              stagger: 0.14,
-              ease: "power3.out",
+            const title = row.querySelector<HTMLElement>(".expertise-title");
+            const titleSplit = title
+              ? SplitText.create(title, { type: "lines", mask: "lines" })
+              : null;
+
+            const tl = gsap.timeline({
               scrollTrigger: {
                 trigger: row,
                 start: "top 80%",
                 toggleActions: "play none none reverse",
               },
             });
+
+            tl.from(row, {
+              autoAlpha: 0,
+              y: 36,
+              duration: 0.6,
+              ease: "power3.out",
+            });
+
+            if (titleSplit) {
+              tl.from(
+                titleSplit.lines,
+                {
+                  yPercent: 100,
+                  autoAlpha: 0,
+                  duration: 0.55,
+                  stagger: 0.08,
+                  ease: "power3.out",
+                },
+                "-=0.4",
+              );
+            }
           });
 
-          // 6. Accordion Rows
+          // 7. Accordion & Contact ScrollTrigger Staggers
           gsap.from(".faq-item", {
             autoAlpha: 0,
             y: 24,
@@ -263,7 +327,6 @@ export function Landing() {
             },
           });
 
-          // 7. Contact Columns
           gsap.from(".contact > div > *", {
             autoAlpha: 0,
             y: 30,
@@ -278,13 +341,9 @@ export function Landing() {
           });
 
           return () => {
-            if (onPointerMove) {
-              window.removeEventListener("pointermove", onPointerMove);
-            }
-            if (marqueeWrapper && onMarqueeEnter && onMarqueeLeave) {
-              marqueeWrapper.removeEventListener("mouseenter", onMarqueeEnter);
-              marqueeWrapper.removeEventListener("mouseleave", onMarqueeLeave);
-            }
+            if (onPointerMove) window.removeEventListener("pointermove", onPointerMove);
+            if (onPointerOver) document.removeEventListener("pointerover", onPointerOver);
+            if (onPointerOut) document.removeEventListener("pointerout", onPointerOut);
           };
         },
       );
@@ -293,6 +352,14 @@ export function Landing() {
     },
     { scope: root },
   );
+
+  const navigateTo = contextSafe((selector: string) => {
+    gsap.to(window, {
+      scrollTo: { y: selector, offsetY: 40 },
+      duration: 0.9,
+      ease: "power3.inOut",
+    });
+  });
 
   function toggleTheme() {
     setTheme((t) => {
@@ -308,20 +375,21 @@ export function Landing() {
 
   return (
     <div ref={root} className="relative min-h-svh bg-background text-foreground">
-      {/* Interactive Cursor Glow (desktop) */}
+      {/* Desktop Dual-Ring Kinetic Cursor */}
       <div
-        ref={glowRef}
+        ref={cursorDotRef}
         aria-hidden
-        className="pointer-events-none fixed top-0 left-0 z-40 hidden h-[300px] w-[300px] rounded-full md:block"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(254, 65, 1, 0.16) 0%, rgba(254, 65, 1, 0) 70%)",
-        }}
+        className="pointer-events-none fixed top-0 left-0 z-50 hidden h-2 w-2 rounded-full bg-brand md:block"
+      />
+      <div
+        ref={cursorRingRef}
+        aria-hidden
+        className="pointer-events-none fixed top-0 left-0 z-50 hidden h-9 w-9 rounded-full border border-brand/55 md:block"
       />
 
-      <Header />
+      <Header activeSection={activeSection} onNavigate={navigateTo} />
       <main>
-        <Hero />
+        <Hero onEnterDojo={() => navigateTo("#work")} />
         <Projects />
         <Experience />
         <Expertise />

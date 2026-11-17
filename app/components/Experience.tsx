@@ -3,7 +3,8 @@
 import { partnerTiles } from "./data";
 
 export function Experience() {
-  const repeatedTiles = [...partnerTiles, ...partnerTiles];
+  const rowOne = [...partnerTiles, ...partnerTiles];
+  const rowTwo = [...partnerTiles.slice().reverse(), ...partnerTiles.slice().reverse()];
 
   return (
     <section
@@ -12,7 +13,7 @@ export function Experience() {
     >
       <div className="mx-auto max-w-[900px] px-5 text-center md:px-8">
         <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-brand">
-          • Global Experience
+          • The Arena
         </p>
         <h2 className="mt-4 text-3xl font-semibold uppercase leading-tight tracking-wide text-chrome md:text-5xl">
           Global Experience
@@ -24,13 +25,25 @@ export function Experience() {
         </p>
       </div>
 
-      {/* Continuous GSAP Marquee */}
-      <div className="marquee-wrapper relative mt-14 w-full overflow-hidden">
-        <div className="marquee-track flex w-max gap-4 px-2">
-          {repeatedTiles.map((tile, idx) => (
+      {/* Velocity-Reactive Dual Counter-Scrolling Marquee */}
+      <div className="marquee-wrapper relative mt-14 space-y-4 overflow-hidden">
+        <div className="marquee-row-left flex w-max gap-4 px-2 will-change-transform">
+          {rowOne.map((tile, idx) => (
             <div
-              key={`${tile.name}-${idx}`}
-              className="flex h-36 w-36 shrink-0 items-center justify-center border border-border/50 text-sm font-extrabold uppercase tracking-[0.2em] transition-transform duration-300 hover:scale-[1.03] md:h-44 md:w-44 md:text-base"
+              key={`r1-${tile.name}-${idx}`}
+              className="flex h-32 w-36 shrink-0 items-center justify-center border border-border/50 text-xs font-extrabold uppercase tracking-[0.2em] transition-transform duration-300 hover:scale-[1.04] md:h-40 md:w-44 md:text-sm"
+              style={{ backgroundColor: tile.bg, color: tile.fg }}
+            >
+              {tile.name}
+            </div>
+          ))}
+        </div>
+
+        <div className="marquee-row-right flex w-max gap-4 px-2 will-change-transform">
+          {rowTwo.map((tile, idx) => (
+            <div
+              key={`r2-${tile.name}-${idx}`}
+              className="flex h-32 w-36 shrink-0 items-center justify-center border border-border/50 text-xs font-extrabold uppercase tracking-[0.2em] transition-transform duration-300 hover:scale-[1.04] md:h-40 md:w-44 md:text-sm"
               style={{ backgroundColor: tile.bg, color: tile.fg }}
             >
               {tile.name}

@@ -1,30 +1,61 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+import { Flip } from "gsap/Flip";
+import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import { expertise, expertiseMedia } from "./data";
 
+gsap.registerPlugin(useGSAP, Flip, ScrollToPlugin);
+
 export function Expertise() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const tabFlipRef = useRef<Flip.FlipState | null>(null);
   const [active, setActive] = useState(0);
 
   function handleTabClick(index: number, id: string) {
-    setActive(index);
+    if (index !== active) {
+      tabFlipRef.current = Flip.getState(".expertise-tab-indicator");
+      setActive(index);
+    }
     const el = document.getElementById(`expertise-${id}`);
     if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      gsap.to(window, {
+        scrollTo: { y: el, offsetY: 110 },
+        duration: 0.85,
+        ease: "power3.inOut",
+      });
     }
   }
+
+  useGSAP(
+    () => {
+      if (tabFlipRef.current) {
+        Flip.from(tabFlipRef.current, {
+          duration: 0.4,
+          ease: "power3.out",
+          onComplete: () => {
+            tabFlipRef.current = null;
+          },
+        });
+      }
+    },
+    { scope: sectionRef, dependencies: [active] },
+  );
 
   return (
     <section
       id="expertise"
+      ref={sectionRef}
       className="expertise grid-bg relative px-5 py-24 md:px-8 md:py-32"
     >
       <div className="mx-auto max-w-[1400px]">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-brand">
-              • Capabilities
+              • The Craft
             </p>
             <h2 className="mt-3 text-3xl font-semibold uppercase tracking-wide text-chrome md:text-5xl">
               Areas of Expertise
@@ -36,7 +67,7 @@ export function Expertise() {
           </p>
         </div>
 
-        {/* Sticky / Horizontal Tab Bar with Active Orange Underline */}
+        {/* Flip-Animated Horizontal Tab Bar */}
         <div
           role="tablist"
           aria-label="Areas of expertise"
@@ -51,20 +82,20 @@ export function Expertise() {
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => handleTabClick(i, item.id)}
+                data-cursor="magnet"
                 className={`focus-ring relative shrink-0 pb-4 text-xs font-bold uppercase tracking-[0.18em] transition-colors ${
-                  isActive
-                    ? "text-chrome"
-                    : "text-muted hover:text-chrome"
+                  isActive ? "text-chrome" : "text-muted hover:text-chrome"
                 }`}
               >
-                <span className="mr-2 text-brand">0{i + 1}</span>
+                <span className="mr-2 font-mono text-brand">0{i + 1}</span>
                 {item.label}
-                <span
-                  aria-hidden
-                  className={`absolute inset-x-0 bottom-0 h-[2px] bg-brand transition-transform duration-300 origin-left ${
-                    isActive ? "scale-x-100" : "scale-x-0"
-                  }`}
-                />
+                {isActive ? (
+                  <span
+                    data-flip-id="expertise-tab-indicator"
+                    aria-hidden
+                    className="expertise-tab-indicator absolute inset-x-0 bottom-0 h-[2px] bg-brand"
+                  />
+                ) : null}
               </button>
             );
           })}
@@ -82,7 +113,6 @@ export function Expertise() {
                 data-expertise-index={i}
                 className="expertise-row grid items-center gap-10 md:grid-cols-12 md:gap-14"
               >
-                {/* Media Column */}
                 <div
                   className={`md:col-span-6 ${
                     reversed ? "md:order-2" : "md:order-1"
@@ -97,22 +127,21 @@ export function Expertise() {
                       className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
-                    <span className="absolute bottom-4 left-4 bg-background/80 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-brand backdrop-blur-sm">
+                    <span className="absolute bottom-4 left-4 bg-background/80 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-brand backdrop-blur-sm">
                       0{i + 1} · {item.label}
                     </span>
                   </div>
                 </div>
 
-                {/* Editorial Content Column */}
                 <div
                   className={`md:col-span-6 ${
                     reversed ? "md:order-1" : "md:order-2"
                   }`}
                 >
-                  <span className="text-sm font-bold tracking-[0.22em] text-brand">
+                  <span className="font-mono text-sm font-bold tracking-[0.22em] text-brand">
                     0{i + 1}
                   </span>
-                  <h3 className="mt-3 text-3xl font-bold uppercase leading-[1.05] tracking-wide text-chrome md:text-5xl lg:text-[3.75rem]">
+                  <h3 className="expertise-title mt-3 text-3xl font-bold uppercase leading-[1.05] tracking-wide text-chrome md:text-5xl lg:text-[3.75rem]">
                     {item.title}
                   </h3>
                   <p className="mt-4 text-xs font-bold uppercase tracking-[0.22em] text-brand">
@@ -123,6 +152,7 @@ export function Expertise() {
                   </p>
                   <a
                     href="#contact"
+                    data-cursor="magnet"
                     className="focus-ring group mt-8 inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.22em] text-chrome transition-colors hover:text-brand"
                   >
                     <span className="flex h-9 w-9 items-center justify-center rounded-full border border-border transition-colors group-hover:border-brand group-hover:bg-brand group-hover:text-white">
