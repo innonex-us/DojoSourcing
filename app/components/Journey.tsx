@@ -7,44 +7,45 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import { buildRealisticStages } from "./three";
 
-gsap.registerPlugin(useGSAP, ScrollTrigger);
+gsap.registerPlugin(useGSAP, ScrollTrigger, ScrollToPlugin);
 
 const STAGES = [
   {
     num: "01",
     tag: "DESIGN A T-SHIRT",
     title: "Start With The Garment",
-    subtitle: "Silhouette · Tech Pack · 3D Fit",
-    body: "Everything begins on the digital drafting table. We sculpt your T-shirt silhouette, cotton GSM, stitching specs, and colorway before a single yard is cut.",
+    subtitle: "Silhouette · Cotton GSM · 3D Swatches",
+    body: "Everything begins on the digital drafting table. We sculpt your cotton T-shirt silhouette, Pantone swatches, stitching specs, and colorway before a single yard is cut.",
   },
   {
     num: "02",
     tag: "FACTORY PRODUCTION",
     title: "Into The Factory",
-    subtitle: "Rise Of Manufacturing · Cut & Sew",
-    body: "Your approved design flies straight into our vetted garment factory — precision cutting, knitting, dyeing, and assembly lines built for scale.",
+    subtitle: "Industrial Cut & Sew · QC Labs",
+    body: "Your approved design flies straight into our multi-wing garment plant — precision cutting, knitting, dyeing, and assembly lines built for scale.",
   },
   {
     num: "03",
     tag: "READY TO SHIP",
     title: "Packed & QC Cleared",
-    subtitle: "AQL 2.5 · Export Cartons",
-    body: "Finished tees are steamed, folded, polybagged, hang-tagged, and sealed into barcoded export cartons — 100% inspection cleared.",
+    subtitle: "Euro Pallet · Stretch-Wrap · Barcode Scan",
+    body: "Finished tees are folded, polybagged, strapped onto Euro pallets, barcode-scanned, and stretch-wrapped — 100% AQL 2.5 inspection cleared.",
   },
   {
     num: "04",
     tag: "CARGO TRUCK",
     title: "Cargo Truck Dispatch",
-    subtitle: "Factory Floor To Export Port",
-    body: "Sealed cargo trucks haul your cartons straight from the factory loading dock through export customs to the container terminal.",
+    subtitle: "Factory Dock To Export Port",
+    body: "Sealed 40ft container trucks haul your palletized inventory along the highway from the factory loading dock straight to the export terminal.",
   },
   {
     num: "05",
     tag: "OCEAN SHIP",
     title: "Global Ship Journey",
-    subtitle: "Port To Brand Warehouse",
+    subtitle: "Container Vessel To Brand Warehouse",
     body: "Loaded onto ocean cargo vessels and tracked across the sea until final delivery at your brand's fulfillment center.",
   },
 ] as const;
@@ -56,7 +57,7 @@ export function Journey() {
   const canvasHostRef = useRef<HTMLDivElement>(null);
   const [activeStep, setActiveStep] = useState(0);
 
-  useGSAP(
+  const { contextSafe } = useGSAP(
     () => {
       const mm = gsap.matchMedia();
 
@@ -89,42 +90,41 @@ export function Journey() {
           renderer.shadowMap.enabled = true;
           renderer.shadowMap.type = THREE.PCFSoftShadowMap;
           renderer.toneMapping = THREE.ACESFilmicToneMapping;
-          renderer.toneMappingExposure = 1.15;
+          renderer.toneMappingExposure = 1.18;
 
           host.innerHTML = "";
           host.appendChild(renderer.domElement);
 
           const scene = new THREE.Scene();
-          scene.fog = new THREE.FogExp2(0x120f0e, 0.036);
+          scene.fog = new THREE.FogExp2(0x120f0e, 0.032);
 
-          // Physically-Based Studio IBL Environment Map for Realistic Reflections
+          // Physically-Based Studio IBL Environment Map
           const pmrem = new THREE.PMREMGenerator(renderer);
           const envRT = pmrem.fromScene(new RoomEnvironment(), 0.04);
           scene.environment = envRT.texture;
-          scene.environmentIntensity = 0.65;
+          scene.environmentIntensity = 0.78;
 
           const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
-          camera.position.set(-1.15, 1.1, 8.6);
+          camera.position.set(-1.15, 1.15, 8.7);
           camera.lookAt(0.85, -0.15, 0);
 
-          // Studio Key + Fill + Rim Lighting with Real Soft Shadows
-          const hemi = new THREE.HemisphereLight(0xfff5ec, 0x1a1513, 0.55);
-          scene.add(hemi);
+          // Studio 3-Point Lighting with 2048px Soft Shadows
+          scene.add(new THREE.HemisphereLight(0xfff5ec, 0x1a1513, 0.55));
 
-          const keyLight = new THREE.DirectionalLight(0xfffaf4, 2.4);
+          const keyLight = new THREE.DirectionalLight(0xfffaf4, 2.5);
           keyLight.position.set(5, 9, 6);
           keyLight.castShadow = true;
-          keyLight.shadow.mapSize.set(1024, 1024);
+          keyLight.shadow.mapSize.set(2048, 2048);
           keyLight.shadow.camera.near = 1;
           keyLight.shadow.camera.far = 26;
           keyLight.shadow.camera.left = -6;
           keyLight.shadow.camera.right = 6;
           keyLight.shadow.camera.top = 6;
           keyLight.shadow.camera.bottom = -6;
-          keyLight.shadow.bias = -0.0005;
+          keyLight.shadow.bias = -0.0004;
           scene.add(keyLight);
 
-          const rimLight = new THREE.SpotLight(0xfe4101, 18, 22, Math.PI / 3, 0.6);
+          const rimLight = new THREE.SpotLight(0xfe4101, 20, 22, Math.PI / 3, 0.6);
           rimLight.position.set(-3.5, 4, 4);
           scene.add(rimLight);
 
@@ -134,9 +134,9 @@ export function Journey() {
           stageAnchor.position.set(1.55, 0, 0);
           scene.add(stageAnchor);
 
-          // Shadow-receiving dark matte stage floor + subtle horizon ring
-          const floorGeo = new THREE.CircleGeometry(9, 64);
-          const floorMat = new THREE.ShadowMaterial({ opacity: 0.45 });
+          // Shadow-Receiving Matte Floor + Subtle Horizon Ring
+          const floorGeo = new THREE.CircleGeometry(9.5, 64);
+          const floorMat = new THREE.ShadowMaterial({ opacity: 0.5 });
           const shadowFloor = new THREE.Mesh(floorGeo, floorMat);
           shadowFloor.rotation.x = -Math.PI / 2;
           shadowFloor.position.y = GROUND_Y + 0.005;
@@ -146,11 +146,11 @@ export function Journey() {
           const horizonGrid = new THREE.GridHelper(18, 30, 0xfe4101, 0x241f1d);
           horizonGrid.position.y = GROUND_Y;
           (horizonGrid.material as THREE.Material).transparent = true;
-          (horizonGrid.material as THREE.Material).opacity = 0.25;
+          (horizonGrid.material as THREE.Material).opacity = 0.22;
           stageAnchor.add(horizonGrid);
 
           const portalRing = new THREE.Mesh(
-            new THREE.RingGeometry(2.35, 2.42, 72),
+            new THREE.RingGeometry(2.45, 2.52, 72),
             new THREE.MeshBasicMaterial({
               color: 0xfe4101,
               side: THREE.DoubleSide,
@@ -162,17 +162,43 @@ export function Journey() {
           portalRing.position.y = GROUND_Y + 0.012;
           stageAnchor.add(portalRing);
 
-          // Build all 5 realistic multi-part 3D models
+          // Floating Atmospheric Studio Dust Particles
+          const particleCount = 120;
+          const particlePos = new Float32Array(particleCount * 3);
+          for (let i = 0; i < particleCount; i++) {
+            particlePos[i * 3] = (Math.random() - 0.5) * 10;
+            particlePos[i * 3 + 1] = GROUND_Y + Math.random() * 5.2;
+            particlePos[i * 3 + 2] = (Math.random() - 0.5) * 8;
+          }
+          const particleGeo = new THREE.BufferGeometry();
+          particleGeo.setAttribute(
+            "position",
+            new THREE.BufferAttribute(particlePos, 3),
+          );
+          const particleMat = new THREE.PointsMaterial({
+            color: 0xfe4101,
+            size: 0.038,
+            transparent: true,
+            opacity: 0.48,
+          });
+          const particles = new THREE.Points(particleGeo, particleMat);
+          stageAnchor.add(particles);
+
+          // Build all 5 separated realistic 3D components
           const assets = buildRealisticStages(stageAnchor, groundClip);
           const {
             tshirtGroup,
+            swatches,
             factoryGroup,
             steamPuffs,
+            hvacFans,
             readyGroup,
+            laserBeam,
             truckGroup,
             wheels,
             shipStageGroup,
             shipHullGroup,
+            radarBar,
             waveGeo,
           } = assets;
 
@@ -186,12 +212,12 @@ export function Journey() {
             ease: "power3.out",
           });
           const onPointerMove = (e: PointerEvent) => {
-            rotYTo((e.clientX / window.innerWidth - 0.5) * 0.4);
+            rotYTo((e.clientX / window.innerWidth - 0.5) * 0.42);
             rotXTo((e.clientY / window.innerHeight - 0.5) * 0.16);
           };
           window.addEventListener("pointermove", onPointerMove, { passive: true });
 
-          // Continuous realistic motion (steam, ocean swell, garment hang sway)
+          // Continuous Realistic Micro-Animations
           let rafId = 0;
           const clock = new THREE.Clock();
           const wavePos = waveGeo.attributes.position as THREE.BufferAttribute;
@@ -199,22 +225,32 @@ export function Journey() {
           const renderLoop = () => {
             const t = clock.getElapsedTime();
 
-            tshirtGroup.rotation.y = Math.sin(t * 0.7) * 0.4;
-            readyGroup.rotation.y = Math.sin(t * 0.55) * 0.3;
+            particles.rotation.y = t * 0.03;
+
+            tshirtGroup.rotation.y = Math.sin(t * 0.65) * 0.36;
+            swatches.rotation.y = t * 0.45;
+
+            hvacFans.forEach((fan) => {
+              fan.rotation.y = t * 6.5;
+            });
 
             steamPuffs.forEach((puff) => {
               const phase = (t * 0.45 + (puff.userData.offset as number)) % 1;
-              puff.position.y = 1.9 + phase * 1.4;
+              puff.position.y = 1.9 + phase * 1.45;
               puff.position.x =
-                (puff.userData.baseX as number) + Math.sin(phase * 4 + t) * 0.12;
-              puff.scale.setScalar(0.8 + phase * 1.3);
+                (puff.userData.baseX as number) + Math.sin(phase * 4 + t) * 0.14;
+              puff.scale.setScalar(0.8 + phase * 1.35);
               (puff.material as THREE.MeshStandardMaterial).opacity =
-                0.45 * (1 - phase);
+                0.42 * (1 - phase);
             });
 
+            readyGroup.rotation.y = Math.sin(t * 0.55) * 0.28;
+            laserBeam.rotation.x = Math.sin(t * 4.5) * 0.22;
+
             shipHullGroup.position.y = Math.sin(t * 1.6) * 0.07;
-            shipHullGroup.rotation.z = Math.sin(t * 1.1) * 0.025;
+            shipHullGroup.rotation.z = Math.sin(t * 1.1) * 0.024;
             shipHullGroup.rotation.x = Math.cos(t * 1.3) * 0.015;
+            radarBar.rotation.y = t * 3.0;
 
             for (let i = 0; i < wavePos.count; i++) {
               const vx = wavePos.getX(i);
@@ -243,12 +279,10 @@ export function Journey() {
           };
           window.addEventListener("resize", onResize);
 
-          // =========================================================
-          // GSAP SCROLLTRIGGER MASTER TIMELINE:
-          // Underground Emergence + Fly-Out Choreography
-          // =========================================================
+          // GSAP ScrollTrigger Master Timeline: Underground Emergence + Fly-Out
           const tl = gsap.timeline({
             scrollTrigger: {
+              id: "journey-pipeline",
               trigger: ".journey-stage",
               start: "top top",
               end: "+=4800",
@@ -270,7 +304,7 @@ export function Journey() {
           // STAGE 1 -> 2: T-Shirt FLIES OUT, Factory RISES FROM UNDERGROUND
           tl.to(
             tshirtGroup.position,
-            { y: 5.5, x: 1.8, z: -2.2, duration: 0.75, ease: "power2.in" },
+            { y: 8.5, x: 2.2, z: -2.2, duration: 0.75, ease: "power2.in" },
             0.75,
           )
             .to(
@@ -278,6 +312,7 @@ export function Journey() {
               { z: 0.4, x: -0.3, duration: 0.75, ease: "power2.in" },
               0.75,
             )
+            .set(tshirtGroup, { visible: false }, 1.5)
             .to(texts[0], { autoAlpha: 0, y: -28, duration: 0.35 }, 0.75)
             .to(
               factoryGroup.position,
@@ -289,10 +324,11 @@ export function Journey() {
           // STAGE 2 -> 3: Factory FLIES OUT, Ready Cartons RISE FROM UNDERGROUND
           tl.to(
             factoryGroup.position,
-            { y: 5.8, x: -2.2, duration: 0.75, ease: "power2.in" },
+            { y: 8.5, x: -2.5, duration: 0.75, ease: "power2.in" },
             1.8,
           )
             .to(factoryGroup.rotation, { y: -0.35, duration: 0.75 }, 1.8)
+            .set(factoryGroup, { visible: false }, 2.55)
             .to(texts[1], { autoAlpha: 0, y: -28, duration: 0.35 }, 1.8)
             .to(
               readyGroup.position,
@@ -304,34 +340,36 @@ export function Journey() {
           // STAGE 3 -> 4: Ready Cartons FLY OUT, Cargo Truck RISES FROM UNDERGROUND & Drives
           tl.to(
             readyGroup.position,
-            { y: 5.5, x: 2.0, duration: 0.75, ease: "power2.in" },
+            { y: 8.5, x: 2.2, duration: 0.75, ease: "power2.in" },
             2.8,
           )
             .to(readyGroup.rotation, { z: -0.25, duration: 0.75 }, 2.8)
+            .set(readyGroup, { visible: false }, 3.55)
             .to(texts[2], { autoAlpha: 0, y: -28, duration: 0.35 }, 2.8)
             .to(
               truckGroup.position,
-              { y: -0.02, duration: 0.75, ease: "power3.out" },
+              { y: -0.02, duration: 0.7, ease: "power3.out" },
               2.95,
             )
             .fromTo(
               truckGroup.position,
-              { x: -1.6 },
-              { x: 1.2, duration: 1.0, ease: "power1.inOut" },
-              3.1,
+              { x: -2.0 },
+              { x: 0.8, duration: 0.85, ease: "power1.inOut" },
+              3.05,
             )
             .to(texts[3], { autoAlpha: 1, y: 0, duration: 0.45 }, 3.2);
 
           wheels.forEach((w) => {
-            tl.to(w.rotation, { z: -Math.PI * 6, duration: 1.0, ease: "none" }, 3.1);
+            tl.to(w.rotation, { z: -Math.PI * 10, duration: 1.6, ease: "none" }, 3.05);
           });
 
-          // STAGE 4 -> 5: Cargo Truck DRIVES/FLIES OUT, Ocean Ship RISES FROM UNDERGROUND & Sails
+          // STAGE 4 -> 5: Cargo Truck DRIVES COMPLETELY OFF-SCREEN, Ocean Ship RISES FROM UNDERGROUND
           tl.to(
             truckGroup.position,
-            { x: 7.5, y: 2.5, duration: 0.75, ease: "power2.in" },
+            { x: 18, y: 2.5, duration: 0.7, ease: "power2.in" },
             3.95,
           )
+            .set(truckGroup, { visible: false }, 4.65)
             .to(texts[3], { autoAlpha: 0, y: -28, duration: 0.35 }, 3.95)
             .to(
               shipStageGroup.position,
@@ -341,7 +379,7 @@ export function Journey() {
             .fromTo(
               shipStageGroup.position,
               { x: -1.3 },
-              { x: 0.75, duration: 0.9, ease: "power1.inOut" },
+              { x: 0.75, duration: 0.85, ease: "power1.inOut" },
               4.25,
             )
             .to(texts[4], { autoAlpha: 1, y: 0, duration: 0.45 }, 4.35);
@@ -351,6 +389,8 @@ export function Journey() {
             window.removeEventListener("pointermove", onPointerMove);
             window.removeEventListener("resize", onResize);
             assets.dispose();
+            particleGeo.dispose();
+            particleMat.dispose();
             floorGeo.dispose();
             floorMat.dispose();
             envRT.dispose();
@@ -364,6 +404,18 @@ export function Journey() {
     },
     { scope: sectionRef },
   );
+
+  const jumpToStage = contextSafe((idx: number) => {
+    const st = ScrollTrigger.getById("journey-pipeline");
+    if (!st) return;
+    const progress = (idx + 0.18) / STAGES.length;
+    const targetY = st.start + (st.end - st.start) * progress;
+    gsap.to(window, {
+      scrollTo: { y: targetY },
+      duration: 0.9,
+      ease: "power3.inOut",
+    });
+  });
 
   return (
     <section
@@ -386,25 +438,28 @@ export function Journey() {
           className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-[50%] bg-gradient-to-r from-background via-background/75 to-transparent"
         />
 
-        {/* Top 5-Step Pipeline HUD */}
+        {/* Top Clickable 5-Step Pipeline HUD */}
         <div className="relative z-10 mx-auto w-full max-w-[1400px]">
           <div className="flex items-center justify-between gap-2">
             {STAGES.map((stage, idx) => {
               const isActive = idx === activeStep;
               const isDone = idx < activeStep;
               return (
-                <div
+                <button
                   key={stage.num}
-                  className={`flex items-center gap-2.5 text-xs font-bold uppercase tracking-[0.18em] transition-colors ${
+                  type="button"
+                  onClick={() => jumpToStage(idx)}
+                  data-cursor="magnet"
+                  className={`focus-ring flex items-center gap-2.5 text-xs font-bold uppercase tracking-[0.18em] transition-colors ${
                     isActive
                       ? "text-brand"
                       : isDone
                         ? "text-chrome"
-                        : "text-muted/60"
+                        : "text-muted/65 hover:text-chrome"
                   }`}
                 >
                   <span
-                    className={`flex h-7 w-7 items-center justify-center rounded-full border font-mono text-[10px] ${
+                    className={`flex h-7 w-7 items-center justify-center rounded-full border font-mono text-[10px] transition-colors ${
                       isActive
                         ? "border-brand bg-brand text-white"
                         : isDone
@@ -415,7 +470,7 @@ export function Journey() {
                     {stage.num}
                   </span>
                   <span className="hidden lg:inline">{stage.tag}</span>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -464,7 +519,7 @@ export function Journey() {
 
         {/* Bottom Telemetry Bar */}
         <div className="relative z-10 mx-auto flex w-full max-w-[1400px] items-center justify-between font-mono text-[11px] uppercase tracking-[0.22em] text-muted">
-          <span>Scroll To Erupt Next Stage From Ground</span>
+          <span>Scroll Or Click Stage 01–05 To Inspect</span>
           <Link href="/showcase" className="transition-colors hover:text-brand">
             Product Showcase ↗
           </Link>

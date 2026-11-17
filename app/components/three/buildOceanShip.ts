@@ -4,11 +4,12 @@ import type { SharedStageMaterials } from "./materials";
 export type OceanShipBuild = {
   shipStageGroup: THREE.Group;
   shipHullGroup: THREE.Group;
+  radarBar: THREE.Mesh;
   waveGeo: THREE.PlaneGeometry;
 };
 
 /**
- * Stage 05: Builds an ocean container vessel with 18 containers and a glossy undulating sea mesh.
+ * Stage 05: Builds a sculpted Panamax container vessel with cranes, radar, 24 containers, and glossy waves.
  */
 export function buildOceanShip(
   mats: SharedStageMaterials,
@@ -21,75 +22,123 @@ export function buildOceanShip(
     matChrome,
     matGlass,
     matBrand,
+    matGlowWindow,
     containerMats,
-    waterBump,
+    waterNormal,
   } = mats;
 
   const shipStageGroup = new THREE.Group();
   const shipHullGroup = new THREE.Group();
 
+  // Flared Bow & Transom Vessel Hull
   const hullShape = new THREE.Shape();
-  hullShape.moveTo(-2.4, -0.35);
-  hullShape.lineTo(2.15, -0.35);
-  hullShape.lineTo(2.95, 0.32);
-  hullShape.lineTo(-2.55, 0.32);
+  hullShape.moveTo(-2.55, -0.35);
+  hullShape.lineTo(2.25, -0.35);
+  hullShape.lineTo(3.15, 0.36);
+  hullShape.lineTo(-2.68, 0.36);
   hullShape.closePath();
 
   const upperHullGeo = track(
     new THREE.ExtrudeGeometry(hullShape, {
-      depth: 1.45,
+      depth: 1.52,
       bevelEnabled: true,
-      bevelThickness: 0.12,
+      bevelThickness: 0.14,
       bevelSize: 0.08,
-      bevelSegments: 3,
+      bevelSegments: 4,
     }),
   );
   upperHullGeo.center();
   const upperHull = new THREE.Mesh(upperHullGeo, matObsidian);
-  upperHull.position.set(0, -0.45, 0);
+  upperHull.position.set(0, -0.42, 0);
   upperHull.castShadow = true;
   upperHull.receiveShadow = true;
 
-  const lowerHull = new THREE.Mesh(
-    track(new THREE.BoxGeometry(4.7, 0.28, 1.46)),
+  // Bulbous Bow Underwater Nose
+  const bulb = new THREE.Mesh(
+    track(new THREE.SphereGeometry(0.32, 20, 16)),
     matRedHull,
   );
-  lowerHull.position.set(-0.08, -0.82, 0);
+  bulb.scale.set(1.9, 0.75, 0.75);
+  bulb.position.set(2.55, -0.8, 0);
 
-  const deck1 = new THREE.Mesh(
-    track(new THREE.BoxGeometry(0.9, 0.7, 1.32)),
+  // Crimson Anti-Fouling Lower Hull + White Plimsoll Waterline
+  const lowerHull = new THREE.Mesh(
+    track(new THREE.BoxGeometry(4.95, 0.28, 1.54)),
+    matRedHull,
+  );
+  lowerHull.position.set(-0.1, -0.82, 0);
+
+  const waterline = new THREE.Mesh(
+    track(new THREE.BoxGeometry(5.1, 0.05, 1.58)),
     matChrome,
   );
-  deck1.position.set(-1.75, 0.28, 0);
+  waterline.position.set(-0.08, -0.68, 0);
+
+  // 4-Tier Accommodation Bridge Superstructure + Wing Bridges + Nav Lights
+  const deck1 = new THREE.Mesh(
+    track(new THREE.BoxGeometry(0.92, 0.75, 1.38)),
+    matChrome,
+  );
+  deck1.position.set(-1.82, 0.32, 0);
   deck1.castShadow = true;
 
   const deck2 = new THREE.Mesh(
-    track(new THREE.BoxGeometry(0.72, 0.45, 1.56)),
+    track(new THREE.BoxGeometry(0.74, 0.48, 1.72)),
     matChrome,
   );
-  deck2.position.set(-1.72, 0.82, 0);
+  deck2.position.set(-1.78, 0.88, 0);
   deck2.castShadow = true;
 
   const bridgeWindows = new THREE.Mesh(
-    track(new THREE.BoxGeometry(0.74, 0.18, 1.58)),
+    track(new THREE.BoxGeometry(0.76, 0.18, 1.74)),
     matGlass,
   );
-  bridgeWindows.position.set(-1.72, 0.88, 0);
+  bridgeWindows.position.set(-1.78, 0.94, 0);
 
   const radarMast = new THREE.Mesh(
-    track(new THREE.CylinderGeometry(0.025, 0.04, 0.65, 8)),
+    track(new THREE.CylinderGeometry(0.025, 0.045, 0.72, 8)),
     matChrome,
   );
-  radarMast.position.set(-1.72, 1.35, 0);
+  radarMast.position.set(-1.78, 1.44, 0);
 
-  const funnel = new THREE.Mesh(
-    track(new THREE.CylinderGeometry(0.18, 0.24, 0.55, 16)),
+  const radarBar = new THREE.Mesh(
+    track(new THREE.BoxGeometry(0.45, 0.045, 0.06)),
     matBrand,
   );
-  funnel.position.set(-2.05, 0.92, 0);
+  radarBar.position.set(-1.78, 1.78, 0);
 
-  const cols = [-0.65, 0.25, 1.15, 2.0];
-  const rowsZ = [-0.36, 0.36];
+  const funnel = new THREE.Mesh(
+    track(new THREE.CylinderGeometry(0.18, 0.24, 0.62, 16)),
+    matBrand,
+  );
+  funnel.position.set(-2.15, 0.96, 0);
+
+  // Navigation Light (Warm Bridge Beacon)
+  const mastBeacon = new THREE.Mesh(
+    track(new THREE.SphereGeometry(0.05, 10, 10)),
+    matGlowWindow,
+  );
+  mastBeacon.position.set(-1.78, 1.84, 0);
+
+  // Twin Deck Cargo Gantry Cranes
+  [-0.2, 1.15].forEach((cx) => {
+    const pedestal = new THREE.Mesh(
+      track(new THREE.CylinderGeometry(0.08, 0.1, 0.65, 12)),
+      matBrand,
+    );
+    pedestal.position.set(cx, 0.35, 0.68);
+    const jib = new THREE.Mesh(
+      track(new THREE.BoxGeometry(0.88, 0.08, 0.08)),
+      matBrand,
+    );
+    jib.position.set(cx + 0.3, 0.72, 0.56);
+    jib.rotation.z = 0.25;
+    shipHullGroup.add(pedestal, jib);
+  });
+
+  // 24 Corrugated Shipping Containers in 3 Tiers
+  const cols = [-0.75, 0.15, 1.05, 1.95];
+  const rowsZ = [-0.38, 0.38];
   cols.forEach((cx, ci) => {
     rowsZ.forEach((cz, zi) => {
       const tiers = ci === 3 ? 2 : 3;
@@ -98,7 +147,7 @@ export function buildOceanShip(
           track(new THREE.BoxGeometry(0.84, 0.42, 0.62)),
           containerMats[(ci + zi + t) % containerMats.length],
         );
-        box.position.set(cx, 0.12 + t * 0.44, cz);
+        box.position.set(cx, 0.14 + t * 0.44, cz);
         box.castShadow = true;
         box.receiveShadow = true;
         shipHullGroup.add(box);
@@ -108,25 +157,30 @@ export function buildOceanShip(
 
   shipHullGroup.add(
     upperHull,
+    bulb,
     lowerHull,
+    waterline,
     deck1,
     deck2,
     bridgeWindows,
     radarMast,
+    radarBar,
+    mastBeacon,
     funnel,
   );
 
-  const waveGeo = track(new THREE.PlaneGeometry(14, 7, 48, 24));
+  // Glossy Shaded 3D Ocean Surface with Normal Map Ripples
+  const waveGeo = track(new THREE.PlaneGeometry(16, 8, 56, 28));
   waveGeo.rotateX(-Math.PI / 2);
   const waveMat = track(
     new THREE.MeshPhysicalMaterial({
-      color: 0x0d1c26,
-      roughness: 0.14,
-      metalness: 0.18,
-      clearcoat: 0.9,
-      clearcoatRoughness: 0.12,
-      bumpMap: waterBump,
-      bumpScale: 0.08,
+      color: 0x0b1d28,
+      roughness: 0.1,
+      metalness: 0.15,
+      clearcoat: 1,
+      clearcoatRoughness: 0.08,
+      normalMap: waterNormal,
+      normalScale: new THREE.Vector2(0.75, 0.75),
       clippingPlanes: [groundClip],
     }),
   );
@@ -135,6 +189,6 @@ export function buildOceanShip(
   waveMesh.receiveShadow = true;
 
   shipStageGroup.add(shipHullGroup, waveMesh);
-  shipStageGroup.position.set(0, -5.2, 0);
-  return { shipStageGroup, shipHullGroup, waveGeo };
+  shipStageGroup.position.set(0, -5.4, 0);
+  return { shipStageGroup, shipHullGroup, radarBar, waveGeo };
 }

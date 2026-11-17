@@ -5,141 +5,276 @@ export type DisposableTracker = <T extends { dispose: () => void }>(item: T) => 
 export type SharedStageMaterials = {
   track: DisposableTracker;
   makeStd: (params: THREE.MeshStandardMaterialParameters) => THREE.MeshStandardMaterial;
-  matTee: THREE.MeshStandardMaterial;
-  matTeeCollar: THREE.MeshStandardMaterial;
+  makePhys: (params: THREE.MeshPhysicalMaterialParameters) => THREE.MeshPhysicalMaterial;
+  matTee: THREE.MeshPhysicalMaterial;
+  matTeeCollar: THREE.MeshPhysicalMaterial;
   matTeeInner: THREE.MeshStandardMaterial;
-  matBrand: THREE.MeshStandardMaterial;
+  matWoodStand: THREE.MeshStandardMaterial;
+  matBrand: THREE.MeshPhysicalMaterial;
   matObsidian: THREE.MeshStandardMaterial;
-  matChrome: THREE.MeshStandardMaterial;
+  matChrome: THREE.MeshPhysicalMaterial;
   matGlass: THREE.MeshPhysicalMaterial;
   matGlowWindow: THREE.MeshStandardMaterial;
+  matHeadlight: THREE.MeshStandardMaterial;
   matFactoryWall: THREE.MeshStandardMaterial;
   matCardboard: THREE.MeshStandardMaterial;
+  matTape: THREE.MeshPhysicalMaterial;
+  matWrapFilm: THREE.MeshPhysicalMaterial;
   matWood: THREE.MeshStandardMaterial;
-  matTrailer: THREE.MeshStandardMaterial;
+  matTrailer: THREE.MeshPhysicalMaterial;
   matRedHull: THREE.MeshStandardMaterial;
+  matAsphalt: THREE.MeshStandardMaterial;
   containerMats: THREE.MeshStandardMaterial[];
-  waterBump: THREE.CanvasTexture;
+  waterNormal: THREE.CanvasTexture;
   disposeAll: () => void;
 };
 
-function createCottonTextures() {
-  const size = 256;
-  const bumpCanvas = document.createElement("canvas");
-  bumpCanvas.width = size;
-  bumpCanvas.height = size;
-  const bCtx = bumpCanvas.getContext("2d")!;
-  bCtx.fillStyle = "#808080";
-  bCtx.fillRect(0, 0, size, size);
+/**
+ * Converts a grayscale height canvas into a tangent-space normal map via Sobel gradients.
+ */
+function heightToNormalTexture(
+  heightCanvas: HTMLCanvasElement,
+  strength = 2.2,
+  repeatX = 1,
+  repeatY = 1,
+): THREE.CanvasTexture {
+  const w = heightCanvas.width;
+  const h = heightCanvas.height;
+  const hCtx = heightCanvas.getContext("2d")!;
+  const src = hCtx.getImageData(0, 0, w, h).data;
 
-  for (let y = 0; y < size; y += 2) {
-    for (let x = 0; x < size; x += 2) {
-      const v = 112 + ((x + y) % 4 === 0 ? 28 : -16) + Math.sin(x * 0.4) * 8;
-      bCtx.fillStyle = `rgb(${v},${v},${v})`;
-      bCtx.fillRect(x, y, 2, 2);
+  const outCanvas = document.createElement("canvas");
+  outCanvas.width = w;
+  outCanvas.height = h;
+  const oCtx = outCanvas.getContext("2d")!;
+  const out = oCtx.createImageData(w, h);
+
+  const sample = (x: number, y: number) => {
+    const cx = (x + w) % w;
+    const cy = (y + h) % h;
+    return src[(cy * w + cx) * 4] / 255;
+  };
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const tl = sample(x - 1, y - 1);
+      const t = sample(x, y - 1);
+      const tr = sample(x + 1, y - 1);
+      const l = sample(x - 1, y);
+      const r = sample(x + 1, y);
+      const bl = sample(x - 1, y + 1);
+      const b = sample(x, y + 1);
+      const br = sample(x + 1, y + 1);
+
+      const dx = tr + 2 * r + br - (tl + 2 * l + bl);
+      const dy = bl + 2 * b + br - (tl + 2 * t + tr);
+
+      const nx = -dx * strength;
+      const ny = -dy * strength;
+      const nz = 1.0;
+      const len = Math.hypot(nx, ny, nz);
+
+      const idx = (y * w + x) * 4;
+      out.data[idx] = Math.round(((nx / len) * 0.5 + 0.5) * 255);
+      out.data[idx + 1] = Math.round(((ny / len) * 0.5 + 0.5) * 255);
+      out.data[idx + 2] = Math.round(((nz / len) * 0.5 + 0.5) * 255);
+      out.data[idx + 3] = 255;
     }
   }
 
-  const bumpMap = new THREE.CanvasTexture(bumpCanvas);
-  bumpMap.wrapS = THREE.RepeatWrapping;
-  bumpMap.wrapT = THREE.RepeatWrapping;
-  bumpMap.repeat.set(6, 6);
-  return { bumpMap };
+  oCtx.putImageData(out, 0, 0);
+  const tex = new THREE.CanvasTexture(outCanvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(repeatX, repeatY);
+  return tex;
 }
 
-function createCardboardTexture() {
-  const w = 512;
-  const h = 512;
-  const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext("2d")!;
+function createCottonNormalMap() {
+  const size = 256;
+  const c = document.createElement("canvas");
+  c.width = size;
+  c.height = size;
+  const ctx = c.getContext("2d")!;
+  ctx.fillStyle = "#808080";
+  ctx.fillRect(0, 0, size, size);
 
-  ctx.fillStyle = "#b89068";
-  ctx.fillRect(0, 0, w, h);
-
-  for (let y = 0; y < h; y += 4) {
-    ctx.fillStyle = y % 8 === 0 ? "rgba(80,55,30,0.08)" : "rgba(255,235,210,0.05)";
-    ctx.fillRect(0, y, w, 2);
+  // Interlocking jersey knit V-stitch height pattern
+  for (let y = 0; y < size; y += 4) {
+    for (let x = 0; x < size; x += 4) {
+      const wave = Math.sin(x * 0.78) * 38 + Math.cos((y + (x % 8)) * 0.78) * 28;
+      const v = Math.max(0, Math.min(255, Math.round(128 + wave)));
+      ctx.fillStyle = `rgb(${v},${v},${v})`;
+      ctx.fillRect(x, y, 4, 4);
+    }
   }
-  for (let i = 0; i < 900; i++) {
-    ctx.fillStyle = i % 2 === 0 ? "rgba(60,40,20,0.12)" : "rgba(240,215,180,0.1)";
-    ctx.fillRect(Math.random() * w, Math.random() * h, 3, 1);
-  }
-
-  ctx.fillStyle = "#f2efe9";
-  ctx.fillRect(46, 56, 210, 145);
-  ctx.strokeStyle = "#181513";
-  ctx.lineWidth = 3;
-  ctx.strokeRect(46, 56, 210, 145);
-
-  ctx.fillStyle = "#fe4101";
-  ctx.fillRect(56, 66, 190, 26);
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 15px monospace";
-  ctx.fillText("DOJO APPAREL · AQL", 64, 84);
-
-  ctx.fillStyle = "#181513";
-  ctx.font = "bold 12px monospace";
-  ctx.fillText("LOT #DJ-402 · 100 PCS", 58, 114);
-  ctx.fillText("STATUS: QC PASSED", 58, 134);
-
-  let bx = 58;
-  while (bx < 235) {
-    const bw = 2 + ((bx * 7) % 5);
-    ctx.fillRect(bx, 148, bw, 40);
-    bx += bw + 3 + ((bx * 3) % 4);
-  }
-
-  const map = new THREE.CanvasTexture(canvas);
-  map.colorSpace = THREE.SRGBColorSpace;
-  return map;
+  return heightToNormalTexture(c, 1.6, 10, 10);
 }
 
-function createCorrugatedTexture(baseColor: string, accentText?: string) {
-  const w = 512;
-  const h = 256;
+function createCardboardTextures() {
+  const w = 1024;
+  const h = 1024;
   const albedo = document.createElement("canvas");
   albedo.width = w;
   albedo.height = h;
   const ctx = albedo.getContext("2d")!;
 
-  const bump = document.createElement("canvas");
-  bump.width = w;
-  bump.height = h;
-  const bCtx = bump.getContext("2d")!;
+  const heightC = document.createElement("canvas");
+  heightC.width = 512;
+  heightC.height = 512;
+  const hCtx = heightC.getContext("2d")!;
+
+  ctx.fillStyle = "#b98e62";
+  ctx.fillRect(0, 0, w, h);
+  hCtx.fillStyle = "#808080";
+  hCtx.fillRect(0, 0, 512, 512);
+
+  for (let y = 0; y < h; y += 6) {
+    ctx.fillStyle = y % 12 === 0 ? "rgba(75,48,22,0.08)" : "rgba(255,232,204,0.05)";
+    ctx.fillRect(0, y, w, 3);
+  }
+  for (let y = 0; y < 512; y += 6) {
+    const v = y % 12 === 0 ? 116 : 140;
+    hCtx.fillStyle = `rgb(${v},${v},${v})`;
+    hCtx.fillRect(0, y, 512, 3);
+  }
+  for (let i = 0; i < 3200; i++) {
+    ctx.fillStyle = i % 2 === 0 ? "rgba(65,42,20,0.12)" : "rgba(245,215,180,0.09)";
+    ctx.fillRect(Math.random() * w, Math.random() * h, 4, 1.5);
+  }
+
+  // Printed Crisp Shipping Manifest & Barcode Sticker
+  ctx.fillStyle = "#f5f2eb";
+  ctx.fillRect(92, 110, 420, 290);
+  ctx.strokeStyle = "#161311";
+  ctx.lineWidth = 5;
+  ctx.strokeRect(92, 110, 420, 290);
+
+  ctx.fillStyle = "#fe4101";
+  ctx.fillRect(110, 128, 384, 52);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 28px monospace";
+  ctx.fillText("DOJO APPAREL · EXPORT", 128, 164);
+
+  ctx.fillStyle = "#161311";
+  ctx.font = "bold 22px monospace";
+  ctx.fillText("SKU: DJ-HVY-TEE-01", 116, 218);
+  ctx.fillText("QTY: 120 PCS · AQL 2.5 PASS", 116, 250);
+
+  let bx = 118;
+  while (bx < 480) {
+    const bw = 4 + ((bx * 7) % 10);
+    ctx.fillRect(bx, 276, bw, 94);
+    bx += bw + 6 + ((bx * 3) % 7);
+  }
+
+  // Handling Stencils on Carton Face
+  ctx.strokeStyle = "rgba(35,24,14,0.65)";
+  ctx.lineWidth = 5;
+  ctx.strokeRect(640, 130, 260, 110);
+  ctx.fillStyle = "rgba(35,24,14,0.75)";
+  ctx.font = "bold 30px monospace";
+  ctx.fillText("QC PASSED", 686, 196);
+
+  const map = new THREE.CanvasTexture(albedo);
+  map.colorSpace = THREE.SRGBColorSpace;
+  map.anisotropy = 8;
+  const normalMap = heightToNormalTexture(heightC, 1.5);
+  return { map, normalMap };
+}
+
+function createCorrugatedTextures(baseColor: string, accentText?: string) {
+  const w = 1024;
+  const h = 512;
+  const albedo = document.createElement("canvas");
+  albedo.width = w;
+  albedo.height = h;
+  const ctx = albedo.getContext("2d")!;
+
+  const heightC = document.createElement("canvas");
+  heightC.width = 512;
+  heightC.height = 256;
+  const hCtx = heightC.getContext("2d")!;
 
   ctx.fillStyle = baseColor;
   ctx.fillRect(0, 0, w, h);
+  hCtx.fillStyle = "#808080";
+  hCtx.fillRect(0, 0, 512, 256);
 
-  bCtx.fillStyle = "#808080";
-  bCtx.fillRect(0, 0, w, h);
-
-  for (let x = 0; x < w; x += 16) {
-    ctx.fillStyle = "rgba(0,0,0,0.18)";
-    ctx.fillRect(x, 0, 5, h);
-    ctx.fillStyle = "rgba(255,255,255,0.08)";
-    ctx.fillRect(x + 6, 0, 3, h);
-
-    bCtx.fillStyle = "#353535";
-    bCtx.fillRect(x, 0, 6, h);
-    bCtx.fillStyle = "#d5d5d5";
-    bCtx.fillRect(x + 7, 0, 6, h);
+  for (let x = 0; x < w; x += 24) {
+    ctx.fillStyle = "rgba(0,0,0,0.22)";
+    ctx.fillRect(x, 0, 8, h);
+    ctx.fillStyle = "rgba(255,255,255,0.09)";
+    ctx.fillRect(x + 9, 0, 4, h);
+  }
+  for (let x = 0; x < 512; x += 12) {
+    hCtx.fillStyle = "#303030";
+    hCtx.fillRect(x, 0, 5, 256);
+    hCtx.fillStyle = "#e0e0e0";
+    hCtx.fillRect(x + 6, 0, 5, 256);
   }
 
   if (accentText) {
-    ctx.fillStyle = "rgba(255,255,255,0.92)";
-    ctx.font = "bold 34px sans-serif";
-    ctx.fillText(accentText, 36, 138);
+    ctx.fillStyle = "rgba(255,255,255,0.94)";
+    ctx.font = "800 74px sans-serif";
+    ctx.fillText(accentText, 64, 275);
+    ctx.font = "bold 24px monospace";
+    ctx.fillText("GLOBAL LOGISTICS · CONTAINER 40HC", 68, 322);
   }
 
   const map = new THREE.CanvasTexture(albedo);
   map.colorSpace = THREE.SRGBColorSpace;
-  const bumpMap = new THREE.CanvasTexture(bump);
-  return { map, bumpMap };
+  map.anisotropy = 8;
+  const normalMap = heightToNormalTexture(heightC, 2.4);
+  return { map, normalMap };
 }
 
-function createWaterBumpTexture() {
+function createAsphaltTextures() {
+  const size = 512;
+  const albedo = document.createElement("canvas");
+  albedo.width = size;
+  albedo.height = size;
+  const ctx = albedo.getContext("2d")!;
+
+  const heightC = document.createElement("canvas");
+  heightC.width = size;
+  heightC.height = size;
+  const hCtx = heightC.getContext("2d")!;
+
+  ctx.fillStyle = "#1d1b1a";
+  ctx.fillRect(0, 0, size, size);
+  hCtx.fillStyle = "#808080";
+  hCtx.fillRect(0, 0, size, size);
+
+  for (let i = 0; i < 6000; i++) {
+    const x = Math.random() * size;
+    const y = Math.random() * size;
+    const shade = 20 + Math.floor(Math.random() * 28);
+    ctx.fillStyle = `rgb(${shade},${shade - 1},${shade - 2})`;
+    ctx.fillRect(x, y, 2, 2);
+
+    const hv = 100 + Math.floor(Math.random() * 56);
+    hCtx.fillStyle = `rgb(${hv},${hv},${hv})`;
+    hCtx.fillRect(x, y, 2, 2);
+  }
+
+  // Center dashed road markings
+  ctx.fillStyle = "#e4e2df";
+  for (let x = 20; x < size; x += 128) {
+    ctx.fillRect(x, size / 2 - 5, 72, 10);
+  }
+
+  const map = new THREE.CanvasTexture(albedo);
+  map.colorSpace = THREE.SRGBColorSpace;
+  map.wrapS = THREE.RepeatWrapping;
+  map.wrapT = THREE.RepeatWrapping;
+  map.repeat.set(4, 1);
+
+  const normalMap = heightToNormalTexture(heightC, 1.4, 4, 1);
+  return { map, normalMap };
+}
+
+function createWaterNormalTexture() {
   const size = 256;
   const canvas = document.createElement("canvas");
   canvas.width = size;
@@ -147,27 +282,24 @@ function createWaterBumpTexture() {
   const ctx = canvas.getContext("2d")!;
   ctx.fillStyle = "#808080";
   ctx.fillRect(0, 0, size, size);
-  for (let i = 0; i < 450; i++) {
+
+  for (let i = 0; i < 550; i++) {
     const x = Math.random() * size;
     const y = Math.random() * size;
-    const r = 8 + Math.random() * 24;
+    const r = 6 + Math.random() * 22;
     const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
-    grad.addColorStop(0, "rgba(210,210,210,0.22)");
+    grad.addColorStop(0, "rgba(220,220,220,0.28)");
     grad.addColorStop(1, "rgba(128,128,128,0)");
     ctx.fillStyle = grad;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();
   }
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(8, 8);
-  return tex;
+  return heightToNormalTexture(canvas, 2.5, 10, 10);
 }
 
 /**
- * Creates shared procedural PBR textures, clipped studio materials, and a disposal tracker.
+ * Creates shared procedural PBR normal/albedo maps, clipped studio materials, and disposal tracker.
  */
 export function createSharedMaterials(groundClip: THREE.Plane): SharedStageMaterials {
   const disposables: Array<{ dispose: () => void }> = [];
@@ -185,118 +317,174 @@ export function createSharedMaterials(groundClip: THREE.Plane): SharedStageMater
       }),
     );
 
-  const cotton = createCottonTextures();
-  track(cotton.bumpMap);
-  const cardboardMap = track(createCardboardTexture());
+  const makePhys = (params: THREE.MeshPhysicalMaterialParameters) =>
+    track(
+      new THREE.MeshPhysicalMaterial({
+        ...params,
+        clippingPlanes: [groundClip],
+        clipShadows: true,
+      }),
+    );
 
-  const containerBrand = createCorrugatedTexture("#fe4101", "DOJO CARGO");
+  const cottonNormal = track(createCottonNormalMap());
+  const cardboard = createCardboardTextures();
+  track(cardboard.map);
+  track(cardboard.normalMap);
+
+  const containerBrand = createCorrugatedTextures("#fe4101", "DOJO CARGO");
   track(containerBrand.map);
-  track(containerBrand.bumpMap);
-  const containerDark = createCorrugatedTexture("#24292e");
+  track(containerBrand.normalMap);
+  const containerDark = createCorrugatedTextures("#20262c");
   track(containerDark.map);
-  track(containerDark.bumpMap);
-  const containerSteel = createCorrugatedTexture("#343a40");
+  track(containerDark.normalMap);
+  const containerSteel = createCorrugatedTextures("#36404a");
   track(containerSteel.map);
-  track(containerSteel.bumpMap);
-  const containerCream = createCorrugatedTexture("#d8d3ca");
+  track(containerSteel.normalMap);
+  const containerCream = createCorrugatedTextures("#d8d3ca");
   track(containerCream.map);
-  track(containerCream.bumpMap);
+  track(containerCream.normalMap);
 
-  const waterBump = track(createWaterBumpTexture());
+  const asphalt = createAsphaltTextures();
+  track(asphalt.map);
+  track(asphalt.normalMap);
 
-  const matTrailer = makeStd({
+  const waterNormal = track(createWaterNormalTexture());
+
+  const matTrailer = makePhys({
     map: containerBrand.map,
-    bumpMap: containerBrand.bumpMap,
-    bumpScale: 0.035,
-    roughness: 0.42,
+    normalMap: containerBrand.normalMap,
+    normalScale: new THREE.Vector2(0.8, 0.8),
+    roughness: 0.34,
     metalness: 0.25,
+    clearcoat: 0.45,
+    clearcoatRoughness: 0.28,
   });
 
   const containerMats = [
     matTrailer,
-    makeStd({ map: containerDark.map, bumpMap: containerDark.bumpMap, bumpScale: 0.03, roughness: 0.5 }),
-    makeStd({ map: containerCream.map, bumpMap: containerCream.bumpMap, bumpScale: 0.03, roughness: 0.5 }),
-    makeStd({ map: containerSteel.map, bumpMap: containerSteel.bumpMap, bumpScale: 0.03, roughness: 0.5 }),
+    makeStd({ map: containerDark.map, normalMap: containerDark.normalMap, roughness: 0.45, metalness: 0.3 }),
+    makeStd({ map: containerCream.map, normalMap: containerCream.normalMap, roughness: 0.48, metalness: 0.2 }),
+    makeStd({ map: containerSteel.map, normalMap: containerSteel.normalMap, roughness: 0.42, metalness: 0.35 }),
   ];
 
   return {
     track,
     makeStd,
-    matTee: makeStd({
-      color: 0xe6e2dc,
-      roughness: 0.88,
-      metalness: 0.02,
-      bumpMap: cotton.bumpMap,
-      bumpScale: 0.015,
+    makePhys,
+    matTee: makePhys({
+      color: 0xeae6df,
+      roughness: 0.9,
+      metalness: 0.0,
+      sheen: 0.85,
+      sheenRoughness: 0.65,
+      sheenColor: new THREE.Color(0xffffff),
+      normalMap: cottonNormal,
+      normalScale: new THREE.Vector2(0.55, 0.55),
     }),
-    matTeeCollar: makeStd({
-      color: 0xd4cfc7,
-      roughness: 0.92,
-      bumpMap: cotton.bumpMap,
-      bumpScale: 0.02,
+    matTeeCollar: makePhys({
+      color: 0xd8d2c9,
+      roughness: 0.94,
+      sheen: 0.9,
+      sheenRoughness: 0.7,
+      sheenColor: new THREE.Color(0xffffff),
+      normalMap: cottonNormal,
+      normalScale: new THREE.Vector2(0.7, 0.7),
     }),
     matTeeInner: makeStd({
-      color: 0x1a1614,
-      roughness: 0.95,
+      color: 0x181412,
+      roughness: 0.96,
       side: THREE.DoubleSide,
     }),
-    matBrand: makeStd({
+    matWoodStand: makeStd({
+      color: 0x7b5636,
+      roughness: 0.62,
+      metalness: 0.05,
+    }),
+    matBrand: makePhys({
       color: 0xfe4101,
-      roughness: 0.32,
-      metalness: 0.18,
+      roughness: 0.24,
+      metalness: 0.15,
+      clearcoat: 0.75,
+      clearcoatRoughness: 0.18,
     }),
     matObsidian: makeStd({
-      color: 0x1b1817,
+      color: 0x181514,
       roughness: 0.45,
       metalness: 0.45,
     }),
-    matChrome: makeStd({
-      color: 0xdedad4,
-      roughness: 0.18,
-      metalness: 0.92,
+    matChrome: makePhys({
+      color: 0xe6e2dc,
+      roughness: 0.14,
+      metalness: 0.96,
+      clearcoat: 0.4,
     }),
-    matGlass: track(
-      new THREE.MeshPhysicalMaterial({
-        color: 0x8fb4cc,
-        roughness: 0.08,
-        metalness: 0.15,
-        clearcoat: 1,
-        transparent: true,
-        opacity: 0.78,
-        clippingPlanes: [groundClip],
-      }),
-    ),
+    matGlass: makePhys({
+      color: 0x8fb4cc,
+      roughness: 0.05,
+      metalness: 0.1,
+      clearcoat: 1,
+      transparent: true,
+      opacity: 0.72,
+    }),
     matGlowWindow: makeStd({
-      color: 0xffc699,
+      color: 0xffd0a6,
       emissive: 0xff6a2b,
-      emissiveIntensity: 1.35,
-      roughness: 0.25,
+      emissiveIntensity: 1.5,
+      roughness: 0.2,
+    }),
+    matHeadlight: makeStd({
+      color: 0xffffff,
+      emissive: 0xfff0d6,
+      emissiveIntensity: 2.2,
+      roughness: 0.1,
     }),
     matFactoryWall: makeStd({
       map: containerSteel.map,
-      bumpMap: containerSteel.bumpMap,
-      bumpScale: 0.03,
-      roughness: 0.55,
-      metalness: 0.4,
+      normalMap: containerSteel.normalMap,
+      normalScale: new THREE.Vector2(0.7, 0.7),
+      roughness: 0.52,
+      metalness: 0.42,
     }),
     matCardboard: makeStd({
-      map: cardboardMap,
-      roughness: 0.85,
+      map: cardboard.map,
+      normalMap: cardboard.normalMap,
+      normalScale: new THREE.Vector2(0.6, 0.6),
+      roughness: 0.86,
       metalness: 0.02,
+    }),
+    matTape: makePhys({
+      color: 0xfe4101,
+      roughness: 0.2,
+      clearcoat: 1,
+      clearcoatRoughness: 0.1,
+    }),
+    matWrapFilm: makePhys({
+      color: 0xffffff,
+      roughness: 0.08,
+      metalness: 0.0,
+      clearcoat: 1,
+      transparent: true,
+      opacity: 0.16,
     }),
     matWood: makeStd({
       color: 0x8d6741,
-      roughness: 0.9,
+      roughness: 0.88,
       metalness: 0.02,
     }),
     matTrailer,
     matRedHull: makeStd({
-      color: 0x7a1f16,
-      roughness: 0.5,
-      metalness: 0.2,
+      color: 0x7f1e14,
+      roughness: 0.45,
+      metalness: 0.22,
+    }),
+    matAsphalt: makeStd({
+      map: asphalt.map,
+      normalMap: asphalt.normalMap,
+      roughness: 0.9,
+      metalness: 0.05,
     }),
     containerMats,
-    waterBump,
+    waterNormal,
     disposeAll: () => {
       disposables.forEach((d) => d.dispose());
     },
