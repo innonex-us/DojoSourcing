@@ -8,7 +8,7 @@ export type FactoryBuild = {
 };
 
 /**
- * Stage 02: Builds a multi-wing industrial garment plant with glass office wing, HVAC fans, water tower, and steam.
+ * Stage 02: Builds a multi-wing industrial garment plant with architectural glass office, HVAC fans, and subtle exhaust wisps.
  */
 export function buildFactory(
   mats: SharedStageMaterials,
@@ -26,7 +26,6 @@ export function buildFactory(
 
   const factoryGroup = new THREE.Group();
 
-  // Concrete Foundation Apron
   const plinth = new THREE.Mesh(
     track(new THREE.BoxGeometry(4.6, 0.22, 3.1)),
     matObsidian,
@@ -34,7 +33,7 @@ export function buildFactory(
   plinth.position.y = -1.24;
   plinth.receiveShadow = true;
 
-  // Main Double-Height Garment Production Hall
+  // Main Corrugated Garment Production Hall
   const hall = new THREE.Mesh(
     track(new THREE.BoxGeometry(3.4, 1.5, 2.2)),
     matFactoryWall,
@@ -43,12 +42,21 @@ export function buildFactory(
   hall.castShadow = true;
   hall.receiveShadow = true;
 
-  // Glazed 2-Story Design & QA Office Wing on Right Side
+  // Glazed 2-Story Office Wing (Dark Structural Core + Warm Window Strips + Outer Glass)
   const officeCore = new THREE.Mesh(
-    track(new THREE.BoxGeometry(1.05, 1.28, 1.85)),
-    matGlowWindow,
+    track(new THREE.BoxGeometry(1.02, 1.24, 1.82)),
+    matObsidian,
   );
   officeCore.position.set(1.62, -0.49, 0.05);
+
+  [-0.75, -0.22].forEach((wy) => {
+    const strip = new THREE.Mesh(
+      track(new THREE.BoxGeometry(1.06, 0.16, 1.86)),
+      matGlowWindow,
+    );
+    strip.position.set(1.62, wy, 0.05);
+    factoryGroup.add(strip);
+  });
 
   const officeGlass = new THREE.Mesh(
     track(new THREE.BoxGeometry(1.16, 1.38, 1.96)),
@@ -56,8 +64,7 @@ export function buildFactory(
   );
   officeGlass.position.set(1.62, -0.49, 0.05);
 
-  // Horizontal Steel Mullions on Glass Office
-  [-0.85, -0.45, -0.05].forEach((my) => {
+  [-0.95, -0.49, -0.02].forEach((my) => {
     const mullion = new THREE.Mesh(
       track(new THREE.BoxGeometry(1.2, 0.05, 2.0)),
       matObsidian,
@@ -66,7 +73,7 @@ export function buildFactory(
     factoryGroup.add(mullion);
   });
 
-  // External Steel I-Beam Columns along Front Facade
+  // External Steel I-Beam Columns
   [-1.9, -1.1, -0.3, 0.5, 1.1].forEach((bx) => {
     const beam = new THREE.Mesh(
       track(new THREE.BoxGeometry(0.08, 1.56, 0.1)),
@@ -76,7 +83,7 @@ export function buildFactory(
     factoryGroup.add(beam);
   });
 
-  // North-Light Sawtooth Skylight Bays
+  // North-Light Sawtooth Skylights
   [-1.4, -0.35, 0.7].forEach((rx) => {
     const bay = new THREE.Mesh(
       track(new THREE.CylinderGeometry(0.01, 0.78, 2.2, 3)),
@@ -89,15 +96,15 @@ export function buildFactory(
     factoryGroup.add(bay);
 
     const skylight = new THREE.Mesh(
-      track(new THREE.BoxGeometry(0.1, 0.3, 2.08)),
+      track(new THREE.BoxGeometry(0.08, 0.24, 2.04)),
       matGlowWindow,
     );
-    skylight.position.set(rx + 0.28, 0.58, -0.1);
+    skylight.position.set(rx + 0.28, 0.56, -0.1);
     skylight.rotation.z = -0.45;
     factoryGroup.add(skylight);
   });
 
-  // 3 Loading Bay Doors + Safety Bollards
+  // Loading Bay Roll-Up Doors
   [-1.45, -0.7, 0.05].forEach((dx) => {
     const door = new THREE.Mesh(
       track(new THREE.BoxGeometry(0.56, 0.68, 0.06)),
@@ -129,59 +136,60 @@ export function buildFactory(
     factoryGroup.add(box, fan);
   });
 
-  // Elevated Water / Dye Tower on Steel Frame
+  // Grounded Dye / Water Tank Tower on Office Roof
   const towerTank = new THREE.Mesh(
-    track(new THREE.CylinderGeometry(0.32, 0.32, 0.55, 20)),
+    track(new THREE.CylinderGeometry(0.3, 0.3, 0.52, 24)),
     matBrand,
   );
-  towerTank.position.set(1.65, 0.92, -0.65);
+  towerTank.position.set(1.65, 0.72, -0.45);
   towerTank.castShadow = true;
-  const towerStand = new THREE.Mesh(
-    track(new THREE.CylinderGeometry(0.24, 0.32, 0.52, 4)),
+  const towerLegs = new THREE.Mesh(
+    track(new THREE.CylinderGeometry(0.22, 0.28, 0.35, 8, 1, true)),
     matObsidian,
   );
-  towerStand.position.set(1.65, 0.42, -0.65);
+  towerLegs.position.set(1.65, 0.35, -0.45);
 
-  // Twin Chimneys + Volumetric Steam Puffs
+  // Twin Chimneys + Soft Translucent Steam Wisps (no solid grey balloons)
   const steamPuffs: THREE.Mesh[] = [];
   const matSteam = track(
-    new THREE.MeshStandardMaterial({
-      color: 0xeae6df,
+    new THREE.MeshBasicMaterial({
+      color: 0xe4e2df,
       transparent: true,
-      opacity: 0.42,
-      roughness: 1,
+      opacity: 0.14,
+      depthWrite: false,
       clippingPlanes: [groundClip],
     }),
   );
 
   [-1.65, -1.15].forEach((cx, ci) => {
     const chimney = new THREE.Mesh(
-      track(new THREE.CylinderGeometry(0.1, 0.16, 1.65, 20)),
+      track(new THREE.CylinderGeometry(0.1, 0.15, 1.35, 20)),
       matChrome,
     );
-    chimney.position.set(cx, 1.18, -0.78);
+    chimney.position.set(cx, 1.05, -0.78);
     chimney.castShadow = true;
 
     const band = new THREE.Mesh(
-      track(new THREE.CylinderGeometry(0.115, 0.115, 0.18, 20)),
+      track(new THREE.CylinderGeometry(0.115, 0.115, 0.16, 20)),
       matBrand,
     );
-    band.position.set(cx, 1.85, -0.78);
+    band.position.set(cx, 1.62, -0.78);
     factoryGroup.add(chimney, band);
 
-    for (let p = 0; p < 4; p++) {
+    for (let p = 0; p < 3; p++) {
       const puff = new THREE.Mesh(
-        track(new THREE.SphereGeometry(0.11 + p * 0.045, 14, 14)),
-        matSteam,
+        track(new THREE.SphereGeometry(0.14 + p * 0.05, 12, 12)),
+        matSteam.clone(),
       );
-      puff.position.set(cx, 2.0 + p * 0.32 + ci * 0.12, -0.78);
-      puff.userData = { baseX: cx, offset: p * 0.25 + ci * 0.5 };
+      puff.scale.set(1.3, 0.55, 1.3);
+      puff.position.set(cx, 1.82 + p * 0.24 + ci * 0.1, -0.78);
+      puff.userData = { baseX: cx, offset: p * 0.33 + ci * 0.5 };
       steamPuffs.push(puff);
       factoryGroup.add(puff);
     }
   });
 
-  factoryGroup.add(plinth, hall, officeCore, officeGlass, towerTank, towerStand);
+  factoryGroup.add(plinth, hall, officeCore, officeGlass, towerTank, towerLegs);
   factoryGroup.position.set(0, -5.4, 0);
   return { factoryGroup, steamPuffs, hvacFans };
 }

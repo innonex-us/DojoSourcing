@@ -12,7 +12,7 @@ export function Fabs({ theme, onToggleTheme }: FabsProps) {
         type="button"
         onClick={onToggleTheme}
         aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-        className="focus-ring fixed bottom-6 left-6 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-border bg-surface text-chrome shadow-lg transition-colors hover:border-brand hover:text-brand"
+        className="focus-ring fixed bottom-6 right-20 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-border bg-surface text-chrome shadow-lg transition-colors hover:border-brand hover:text-brand"
       >
         {theme === "dark" ? (
           <SunIcon />

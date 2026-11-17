@@ -9,9 +9,9 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "DOJO — Practice. Build. Ship.",
+  title: "DOJO — Apparel Design, Manufacturing & Global Shipment",
   description:
-    "DOJO is a modern build and practice studio for product teams who ship with intention.",
+    "Complete end-to-end clothing brand partner — from 3D garment design and tech packs to factory production, cargo trucking, and global ocean freight.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

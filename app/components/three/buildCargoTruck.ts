@@ -10,16 +10,16 @@ function createAerodynamicCabShape(): THREE.Shape {
   const s = new THREE.Shape();
   s.moveTo(0, -0.62);
   s.lineTo(1.55, -0.62);
-  s.lineTo(1.55, -0.05); // bumper/grille front
-  s.lineTo(1.12, 0.12);  // sloped aero hood
-  s.lineTo(0.86, 0.68);  // raked windshield
-  s.lineTo(0.0, 0.68);   // sleeper roof
+  s.lineTo(1.55, -0.05);
+  s.lineTo(1.12, 0.12);
+  s.lineTo(0.86, 0.68);
+  s.lineTo(0.0, 0.68);
   s.closePath();
   return s;
 }
 
 /**
- * Stage 04: Builds a realistic aerodynamic semi-trailer cargo truck with asphalt strip and 6 alloy wheels.
+ * Stage 04: Builds an aerodynamic semi-trailer cargo truck with asphalt road strip and 6 alloy wheels.
  */
 export function buildCargoTruck(mats: SharedStageMaterials): CargoTruckBuild {
   const {
@@ -35,7 +35,6 @@ export function buildCargoTruck(mats: SharedStageMaterials): CargoTruckBuild {
 
   const truckGroup = new THREE.Group();
 
-  // Ribbed 40ft Container Trailer + Rear Swing Doors + Lock Rods
   const trailer = new THREE.Mesh(
     track(new THREE.BoxGeometry(3.45, 1.48, 1.46)),
     matTrailer,
@@ -44,7 +43,6 @@ export function buildCargoTruck(mats: SharedStageMaterials): CargoTruckBuild {
   trailer.castShadow = true;
   trailer.receiveShadow = true;
 
-  // Reflective DOT Side Conspicuity Tape
   [-0.74, 0.74].forEach((sz) => {
     const dotStrip = new THREE.Mesh(
       track(new THREE.BoxGeometry(3.42, 0.05, 0.02)),
@@ -54,7 +52,6 @@ export function buildCargoTruck(mats: SharedStageMaterials): CargoTruckBuild {
     truckGroup.add(dotStrip);
   });
 
-  // Rear Door Lock Rods
   [-0.36, -0.14, 0.14, 0.36].forEach((lz) => {
     const rod = new THREE.Mesh(
       track(new THREE.CylinderGeometry(0.018, 0.018, 1.42, 8)),
@@ -64,7 +61,6 @@ export function buildCargoTruck(mats: SharedStageMaterials): CargoTruckBuild {
     truckGroup.add(rod);
   });
 
-  // Steel Chassis Frame
   const chassis = new THREE.Mesh(
     track(new THREE.BoxGeometry(4.95, 0.18, 1.15)),
     matObsidian,
@@ -72,7 +68,6 @@ export function buildCargoTruck(mats: SharedStageMaterials): CargoTruckBuild {
   chassis.position.set(-0.1, -0.74, 0);
   chassis.castShadow = true;
 
-  // Sculpted Aerodynamic Tractor Cab
   const cabGeo = track(
     new THREE.ExtrudeGeometry(createAerodynamicCabShape(), {
       depth: 1.32,
@@ -87,7 +82,6 @@ export function buildCargoTruck(mats: SharedStageMaterials): CargoTruckBuild {
   cab.position.set(1.05, -0.02, 0);
   cab.castShadow = true;
 
-  // Roof Aero Wind Deflector
   const deflector = new THREE.Mesh(
     track(new THREE.BoxGeometry(0.75, 0.28, 1.24)),
     matBrand,
@@ -95,7 +89,6 @@ export function buildCargoTruck(mats: SharedStageMaterials): CargoTruckBuild {
   deflector.position.set(1.32, 0.76, 0);
   deflector.rotation.z = -0.22;
 
-  // Wrap-Around Tinted Windshield + Side Mirrors
   const windshield = new THREE.Mesh(
     track(new THREE.BoxGeometry(0.12, 0.44, 1.2)),
     matGlass,
@@ -117,7 +110,6 @@ export function buildCargoTruck(mats: SharedStageMaterials): CargoTruckBuild {
     truckGroup.add(mirrorArm, mirror);
   });
 
-  // Chrome Radiator Grille + LED Headlights + Volumetric Light Cones
   const grille = new THREE.Mesh(
     track(new THREE.BoxGeometry(0.06, 0.48, 0.88)),
     matObsidian,
@@ -131,22 +123,6 @@ export function buildCargoTruck(mats: SharedStageMaterials): CargoTruckBuild {
     );
     lamp.position.set(2.64, -0.44, hz);
 
-    const beam = new THREE.Mesh(
-      track(new THREE.ConeGeometry(0.45, 2.2, 16, 1, true)),
-      track(
-        new THREE.MeshBasicMaterial({
-          color: 0xfff0d4,
-          transparent: true,
-          opacity: 0.09,
-          depthWrite: false,
-          side: THREE.DoubleSide,
-        }),
-      ),
-    );
-    beam.rotation.z = Math.PI / 2;
-    beam.position.set(3.75, -0.5, hz);
-
-    // Chrome exhaust stack + cylindrical fuel tank
     const stack = new THREE.Mesh(
       track(new THREE.CylinderGeometry(0.045, 0.045, 1.45, 14)),
       matChrome,
@@ -160,10 +136,9 @@ export function buildCargoTruck(mats: SharedStageMaterials): CargoTruckBuild {
     tank.rotation.z = Math.PI / 2;
     tank.position.set(1.42, -0.78, hz * 1.28);
 
-    truckGroup.add(lamp, beam, stack, tank);
+    truckGroup.add(lamp, stack, tank);
   });
 
-  // 6 Detailed Alloy Wheels
   const wheels: THREE.Group[] = [];
   const wheelCoords: Array<[number, number, number]> = [
     [-2.0, -0.98, 0.7],
@@ -200,9 +175,8 @@ export function buildCargoTruck(mats: SharedStageMaterials): CargoTruckBuild {
     truckGroup.add(wg);
   });
 
-  // Asphalt Highway Strip Underneath Truck
   const roadStrip = new THREE.Mesh(
-    track(new THREE.BoxGeometry(7.5, 0.08, 2.8)),
+    track(new THREE.BoxGeometry(6.2, 0.08, 2.4)),
     matAsphalt,
   );
   roadStrip.position.set(0, -1.36, 0);

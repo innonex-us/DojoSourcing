@@ -4,9 +4,11 @@ import Link from "next/link";
 
 export function Header({
   activeSection = "01 // DESIGN",
+  mode = "home",
   onNavigate,
 }: {
   activeSection?: string;
+  mode?: "home" | "showcase";
   onNavigate?: (selector: string) => void;
 }) {
   function handleNav(e: React.MouseEvent<HTMLAnchorElement>, selector: string) {
@@ -17,14 +19,14 @@ export function Header({
   }
 
   return (
-    <header className="site-header fixed inset-x-0 top-0 z-50 h-20 bg-gradient-to-b from-background/85 via-background/40 to-transparent backdrop-blur-[2px]">
+    <header className="site-header fixed inset-x-0 top-0 z-50 h-20 border-b border-border/50 bg-background/85 backdrop-blur-md">
       {/* Scroll Progress Rail */}
       <div
         aria-hidden
         className="scroll-progress-bar fixed inset-x-0 top-0 z-50 h-[2px] origin-left scale-x-0 bg-brand"
       />
 
-      <div className="mx-auto flex h-full max-w-[1400px] items-center justify-between px-5 md:px-8">
+      <div className="mx-auto flex h-full max-w-[1400px] items-center justify-between gap-3 px-5 md:px-8">
         <Link
           href="/"
           data-cursor="magnet"
@@ -37,18 +39,29 @@ export function Header({
           <span>DOJO</span>
         </Link>
 
-        <div className="site-pill hidden items-center gap-2 md:inline-flex">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-deep/85 px-4 py-2 text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-muted backdrop-blur-md">
+        <div className="site-pill flex items-center gap-2">
+          <span className="hidden items-center gap-2 rounded-full border border-border bg-surface-deep/85 px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted md:inline-flex">
             <span className="h-1.5 w-1.5 rounded-full bg-brand animate-pulse" />
             <span>{activeSection}</span>
           </span>
-          <Link
-            href="/showcase"
-            data-cursor="magnet"
-            className="focus-ring rounded-full border border-border bg-surface-deep/85 px-5 py-2 text-[11px] font-bold uppercase tracking-[0.2em] text-chrome backdrop-blur-md transition-colors hover:border-brand/60 hover:text-brand"
-          >
-            Product Showcase ↗
-          </Link>
+
+          {mode === "showcase" ? (
+            <Link
+              href="/#journey"
+              data-cursor="magnet"
+              className="focus-ring rounded-full border border-border bg-surface-deep/85 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-chrome transition-colors hover:border-brand/60 hover:text-brand md:px-5 md:text-[11px]"
+            >
+              ← 3D Pipeline
+            </Link>
+          ) : (
+            <Link
+              href="/showcase"
+              data-cursor="magnet"
+              className="focus-ring rounded-full border border-border bg-surface-deep/85 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-chrome transition-colors hover:border-brand/60 hover:text-brand md:px-5 md:text-[11px]"
+            >
+              Showcase ↗
+            </Link>
+          )}
         </div>
 
         <Link
@@ -57,7 +70,7 @@ export function Header({
           data-cursor="magnet"
           className="focus-ring site-cta group inline-flex items-center gap-2 rounded-full border border-brand/40 bg-brand/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-brand transition-colors hover:bg-brand hover:text-white md:text-sm"
         >
-          <span>Lets Talk</span>
+          <span>Let&apos;s Talk</span>
           <span
             aria-hidden
             className="cta-arrow inline-block transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"

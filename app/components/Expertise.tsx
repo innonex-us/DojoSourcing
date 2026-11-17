@@ -62,14 +62,13 @@ export function Expertise() {
             </h2>
           </div>
           <p className="max-w-sm text-sm leading-relaxed text-muted">
-            Five core disciplines engineered to take product teams from
-            concept to production.
+            Five integrated stages taking your clothing brand from tech pack to
+            warehouse arrival.
           </p>
         </div>
 
-        {/* Flip-Animated Horizontal Tab Bar */}
-        <div
-          role="tablist"
+        {/* Flip-Animated Horizontal Navigation Bar */}
+        <nav
           aria-label="Areas of expertise"
           className="mt-12 flex gap-6 overflow-x-auto border-b border-border pb-0"
         >
@@ -79,8 +78,7 @@ export function Expertise() {
               <button
                 key={item.id}
                 type="button"
-                role="tab"
-                aria-selected={isActive}
+                aria-current={isActive ? "step" : undefined}
                 onClick={() => handleTabClick(i, item.id)}
                 data-cursor="magnet"
                 className={`focus-ring relative shrink-0 pb-4 text-xs font-bold uppercase tracking-[0.18em] transition-colors ${
@@ -99,7 +97,7 @@ export function Expertise() {
               </button>
             );
           })}
-        </div>
+        </nav>
 
         {/* Alternating 2-Column Asymmetric Split Blocks */}
         <div className="mt-16 space-y-24 md:space-y-32">

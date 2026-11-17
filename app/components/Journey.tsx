@@ -8,7 +8,7 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ScrollToPlugin } from "gsap/ScrollToPlugin";
-import { buildRealisticStages } from "./three";
+import { buildRealisticStages, type RealisticStageAssets } from "./three";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger, ScrollToPlugin);
 
@@ -17,8 +17,8 @@ const STAGES = [
     num: "01",
     tag: "DESIGN A T-SHIRT",
     title: "Start With The Garment",
-    subtitle: "Silhouette · Cotton GSM · 3D Swatches",
-    body: "Everything begins on the digital drafting table. We sculpt your cotton T-shirt silhouette, Pantone swatches, stitching specs, and colorway before a single yard is cut.",
+    subtitle: "Silhouette · Cotton GSM · Live Colorway",
+    body: "Everything begins on the digital drafting table. Test fabric GSM and custom colorways live in 3D before a single yard is cut.",
   },
   {
     num: "02",
@@ -50,12 +50,32 @@ const STAGES = [
   },
 ] as const;
 
+export const COLORWAYS = [
+  { name: "Off-White", hex: "#dad5cc", gsm: "420 GSM Heavy Jersey" },
+  { name: "Obsidian", hex: "#1b1817", gsm: "380 GSM Combed Cotton" },
+  { name: "Vermilion", hex: "#fe4101", gsm: "420 GSM Enzyme Wash" },
+  { name: "Sage", hex: "#647566", gsm: "340 GSM Organic Knit" },
+] as const;
+
 const GROUND_Y = -1.35;
 
-export function Journey() {
+export function Journey({
+  theme = "dark",
+  onColorwayChange,
+}: {
+  theme?: "dark" | "light";
+  onColorwayChange?: (colorName: string) => void;
+}) {
   const sectionRef = useRef<HTMLElement>(null);
   const canvasHostRef = useRef<HTMLDivElement>(null);
+  const assetsRef = useRef<RealisticStageAssets | null>(null);
+  const sceneEnvRef = useRef<{
+    scene: THREE.Scene;
+    renderer: THREE.WebGLRenderer;
+  } | null>(null);
+
   const [activeStep, setActiveStep] = useState(0);
+  const [selectedColor, setSelectedColor] = useState(0);
 
   const { contextSafe } = useGSAP(
     () => {
@@ -68,14 +88,14 @@ export function Journey() {
           const texts = gsap.utils.toArray<HTMLElement>(".journey-copy");
           if (!host) return;
 
-          gsap.set(texts, { autoAlpha: 0, y: 28 });
+          gsap.set(texts, { autoAlpha: 0, y: 24 });
           if (texts[0]) gsap.set(texts[0], { autoAlpha: 1, y: 0 });
 
           let renderer: THREE.WebGLRenderer | null = null;
           try {
             renderer = new THREE.WebGLRenderer({
               antialias: true,
-              alpha: true,
+              alpha: false,
               powerPreference: "high-performance",
             });
           } catch {
@@ -88,30 +108,33 @@ export function Journey() {
           renderer.setSize(width, height);
           renderer.localClippingEnabled = true;
           renderer.shadowMap.enabled = true;
-          renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+          renderer.shadowMap.type = THREE.PCFShadowMap;
           renderer.toneMapping = THREE.ACESFilmicToneMapping;
-          renderer.toneMappingExposure = 1.18;
+          renderer.toneMappingExposure = 0.96;
 
+          const bgHex = theme === "light" ? 0xf4f2ef : 0x120f0e;
+          renderer.setClearColor(bgHex, 1);
           host.innerHTML = "";
           host.appendChild(renderer.domElement);
 
           const scene = new THREE.Scene();
-          scene.fog = new THREE.FogExp2(0x120f0e, 0.032);
+          scene.background = new THREE.Color(bgHex);
+          scene.fog = new THREE.FogExp2(bgHex, 0.036);
+          sceneEnvRef.current = { scene, renderer };
 
-          // Physically-Based Studio IBL Environment Map
           const pmrem = new THREE.PMREMGenerator(renderer);
           const envRT = pmrem.fromScene(new RoomEnvironment(), 0.04);
           scene.environment = envRT.texture;
-          scene.environmentIntensity = 0.78;
+          scene.environmentIntensity = 0.48;
 
-          const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
-          camera.position.set(-1.15, 1.15, 8.7);
-          camera.lookAt(0.85, -0.15, 0);
+          const camera = new THREE.PerspectiveCamera(36, width / height, 0.1, 100);
+          camera.position.set(-0.9, 1.15, 9.8);
+          camera.lookAt(1.05, -0.15, 0);
 
-          // Studio 3-Point Lighting with 2048px Soft Shadows
-          scene.add(new THREE.HemisphereLight(0xfff5ec, 0x1a1513, 0.55));
+          // Studio 3-Point Lighting (balanced to prevent white blowout)
+          scene.add(new THREE.HemisphereLight(0xfff5ec, 0x1a1513, 0.45));
 
-          const keyLight = new THREE.DirectionalLight(0xfffaf4, 2.5);
+          const keyLight = new THREE.DirectionalLight(0xfffaf4, 1.85);
           keyLight.position.set(5, 9, 6);
           keyLight.castShadow = true;
           keyLight.shadow.mapSize.set(2048, 2048);
@@ -124,71 +147,49 @@ export function Journey() {
           keyLight.shadow.bias = -0.0004;
           scene.add(keyLight);
 
-          const rimLight = new THREE.SpotLight(0xfe4101, 20, 22, Math.PI / 3, 0.6);
-          rimLight.position.set(-3.5, 4, 4);
+          const rimLight = new THREE.SpotLight(0xfe4101, 12, 22, Math.PI / 3, 0.65);
+          rimLight.position.set(-3.2, 4, 4);
           scene.add(rimLight);
 
           const groundClip = new THREE.Plane(new THREE.Vector3(0, 1, 0), -GROUND_Y);
 
           const stageAnchor = new THREE.Group();
-          stageAnchor.position.set(1.55, 0, 0);
+          stageAnchor.position.set(2.05, 0, 0);
           scene.add(stageAnchor);
 
-          // Shadow-Receiving Matte Floor + Subtle Horizon Ring
-          const floorGeo = new THREE.CircleGeometry(9.5, 64);
-          const floorMat = new THREE.ShadowMaterial({ opacity: 0.5 });
+          // Shadow Floor & Subtle Horizon Ring
+          const floorGeo = new THREE.CircleGeometry(10, 64);
+          const floorMat = new THREE.ShadowMaterial({ opacity: 0.42 });
           const shadowFloor = new THREE.Mesh(floorGeo, floorMat);
           shadowFloor.rotation.x = -Math.PI / 2;
           shadowFloor.position.y = GROUND_Y + 0.005;
           shadowFloor.receiveShadow = true;
           stageAnchor.add(shadowFloor);
 
-          const horizonGrid = new THREE.GridHelper(18, 30, 0xfe4101, 0x241f1d);
+          const horizonGrid = new THREE.GridHelper(18, 30, 0xfe4101, 0x2a2422);
           horizonGrid.position.y = GROUND_Y;
           (horizonGrid.material as THREE.Material).transparent = true;
-          (horizonGrid.material as THREE.Material).opacity = 0.22;
+          (horizonGrid.material as THREE.Material).opacity = 0.2;
           stageAnchor.add(horizonGrid);
 
           const portalRing = new THREE.Mesh(
-            new THREE.RingGeometry(2.45, 2.52, 72),
+            new THREE.RingGeometry(2.45, 2.51, 96),
             new THREE.MeshBasicMaterial({
               color: 0xfe4101,
               side: THREE.DoubleSide,
               transparent: true,
-              opacity: 0.55,
+              opacity: 0.5,
             }),
           );
           portalRing.rotation.x = -Math.PI / 2;
           portalRing.position.y = GROUND_Y + 0.012;
           stageAnchor.add(portalRing);
 
-          // Floating Atmospheric Studio Dust Particles
-          const particleCount = 120;
-          const particlePos = new Float32Array(particleCount * 3);
-          for (let i = 0; i < particleCount; i++) {
-            particlePos[i * 3] = (Math.random() - 0.5) * 10;
-            particlePos[i * 3 + 1] = GROUND_Y + Math.random() * 5.2;
-            particlePos[i * 3 + 2] = (Math.random() - 0.5) * 8;
-          }
-          const particleGeo = new THREE.BufferGeometry();
-          particleGeo.setAttribute(
-            "position",
-            new THREE.BufferAttribute(particlePos, 3),
-          );
-          const particleMat = new THREE.PointsMaterial({
-            color: 0xfe4101,
-            size: 0.038,
-            transparent: true,
-            opacity: 0.48,
-          });
-          const particles = new THREE.Points(particleGeo, particleMat);
-          stageAnchor.add(particles);
-
-          // Build all 5 separated realistic 3D components
+          // Build 5 Separated Realistic 3D Components
           const assets = buildRealisticStages(stageAnchor, groundClip);
+          assetsRef.current = assets;
           const {
             tshirtGroup,
-            swatches,
             factoryGroup,
             steamPuffs,
             hvacFans,
@@ -202,54 +203,77 @@ export function Journey() {
             waveGeo,
           } = assets;
 
-          // Pointer Parallax
+          // 360° Drag-Orbit + Pointer Parallax
+          let isDragging = false;
+          let dragStartX = 0;
+          let orbitOffset = 0;
+          let baseOrbit = 0;
+
           const rotYTo = gsap.quickTo(stageAnchor.rotation, "y", {
-            duration: 0.6,
+            duration: 0.55,
             ease: "power3.out",
           });
           const rotXTo = gsap.quickTo(stageAnchor.rotation, "x", {
-            duration: 0.6,
+            duration: 0.55,
             ease: "power3.out",
           });
-          const onPointerMove = (e: PointerEvent) => {
-            rotYTo((e.clientX / window.innerWidth - 0.5) * 0.42);
-            rotXTo((e.clientY / window.innerHeight - 0.5) * 0.16);
+
+          const onPointerDown = (e: PointerEvent) => {
+            isDragging = true;
+            dragStartX = e.clientX;
+            baseOrbit = orbitOffset;
           };
+          const onPointerUp = () => {
+            isDragging = false;
+          };
+          const onPointerMove = (e: PointerEvent) => {
+            if (isDragging) {
+              orbitOffset = baseOrbit + (e.clientX - dragStartX) * 0.008;
+              rotYTo(orbitOffset);
+            } else {
+              rotYTo(orbitOffset + (e.clientX / window.innerWidth - 0.5) * 0.35);
+              rotXTo((e.clientY / window.innerHeight - 0.5) * 0.12);
+            }
+          };
+
+          host.addEventListener("pointerdown", onPointerDown);
+          window.addEventListener("pointerup", onPointerUp);
           window.addEventListener("pointermove", onPointerMove, { passive: true });
 
-          // Continuous Realistic Micro-Animations
+          // Continuous Realistic Micro-Animations using THREE.Timer (non-deprecated)
           let rafId = 0;
-          const clock = new THREE.Clock();
+          const timer = new THREE.Timer();
           const wavePos = waveGeo.attributes.position as THREE.BufferAttribute;
 
           const renderLoop = () => {
-            const t = clock.getElapsedTime();
+            timer.update();
+            const t = timer.getElapsed();
 
-            particles.rotation.y = t * 0.03;
-
-            tshirtGroup.rotation.y = Math.sin(t * 0.65) * 0.36;
-            swatches.rotation.y = t * 0.45;
-
+            tshirtGroup.rotation.y = Math.sin(t * 0.65) * 0.32;
             hvacFans.forEach((fan) => {
               fan.rotation.y = t * 6.5;
             });
 
             steamPuffs.forEach((puff) => {
-              const phase = (t * 0.45 + (puff.userData.offset as number)) % 1;
-              puff.position.y = 1.9 + phase * 1.45;
+              const phase = (t * 0.4 + (puff.userData.offset as number)) % 1;
+              puff.position.y = 1.78 + phase * 1.1;
               puff.position.x =
-                (puff.userData.baseX as number) + Math.sin(phase * 4 + t) * 0.14;
-              puff.scale.setScalar(0.8 + phase * 1.35);
-              (puff.material as THREE.MeshStandardMaterial).opacity =
-                0.42 * (1 - phase);
+                (puff.userData.baseX as number) + Math.sin(phase * 4 + t) * 0.12;
+              puff.scale.set(
+                1.2 + phase * 1.1,
+                0.5 + phase * 0.35,
+                1.2 + phase * 1.1,
+              );
+              (puff.material as THREE.MeshBasicMaterial).opacity =
+                0.15 * (1 - phase);
             });
 
-            readyGroup.rotation.y = Math.sin(t * 0.55) * 0.28;
+            readyGroup.rotation.y = Math.sin(t * 0.55) * 0.24;
             laserBeam.rotation.x = Math.sin(t * 4.5) * 0.22;
 
-            shipHullGroup.position.y = Math.sin(t * 1.6) * 0.07;
-            shipHullGroup.rotation.z = Math.sin(t * 1.1) * 0.024;
-            shipHullGroup.rotation.x = Math.cos(t * 1.3) * 0.015;
+            shipHullGroup.position.y = Math.sin(t * 1.6) * 0.06;
+            shipHullGroup.rotation.z = Math.sin(t * 1.1) * 0.022;
+            shipHullGroup.rotation.x = Math.cos(t * 1.3) * 0.012;
             radarBar.rotation.y = t * 3.0;
 
             for (let i = 0; i < wavePos.count; i++) {
@@ -257,8 +281,8 @@ export function Journey() {
               const vz = wavePos.getZ(i);
               wavePos.setY(
                 i,
-                Math.sin(vx * 0.75 + t * 2.0) * 0.11 +
-                  Math.cos(vz * 1.05 + t * 1.5) * 0.07,
+                Math.sin(vx * 0.65 + t * 1.9) * 0.09 +
+                  Math.cos(vz * 0.95 + t * 1.4) * 0.06,
               );
             }
             wavePos.needsUpdate = true;
@@ -279,7 +303,7 @@ export function Journey() {
           };
           window.addEventListener("resize", onResize);
 
-          // GSAP ScrollTrigger Master Timeline: Underground Emergence + Fly-Out
+          // GSAP ScrollTrigger Master Timeline with Exact Named Stage Labels
           const tl = gsap.timeline({
             scrollTrigger: {
               id: "journey-pipeline",
@@ -287,110 +311,118 @@ export function Journey() {
               start: "top top",
               end: "+=4800",
               pin: true,
-              scrub: 1,
+              scrub: 0.8,
               anticipatePin: 1,
               onUpdate: (self) => {
-                const idx = Math.min(
-                  STAGES.length - 1,
-                  Math.floor(self.progress * STAGES.length),
-                );
+                const p = self.progress * 5.2;
+                const idx =
+                  p < 0.85 ? 0 : p < 2.05 ? 1 : p < 3.25 ? 2 : p < 4.45 ? 3 : 4;
                 setActiveStep(idx);
               },
             },
           });
 
-          tl.to(".journey-rail-fill", { scaleX: 1, ease: "none", duration: 5 }, 0);
+          tl.addLabel("stage0", 0);
+          tl.to(".journey-rail-fill", { scaleX: 1, ease: "none", duration: 5.2 }, 0);
 
-          // STAGE 1 -> 2: T-Shirt FLIES OUT, Factory RISES FROM UNDERGROUND
+          // STAGE 1 -> 2 (0.55..1.25)
           tl.to(
             tshirtGroup.position,
-            { y: 8.5, x: 2.2, z: -2.2, duration: 0.75, ease: "power2.in" },
-            0.75,
+            { y: 8.5, x: 2.2, z: -2.2, duration: 0.55, ease: "power2.in" },
+            0.55,
           )
-            .to(
-              tshirtGroup.rotation,
-              { z: 0.4, x: -0.3, duration: 0.75, ease: "power2.in" },
-              0.75,
-            )
-            .set(tshirtGroup, { visible: false }, 1.5)
-            .to(texts[0], { autoAlpha: 0, y: -28, duration: 0.35 }, 0.75)
+            .to(tshirtGroup.rotation, { z: 0.4, x: -0.3, duration: 0.55 }, 0.55)
+            .set(tshirtGroup, { visible: false }, 1.1)
+            .to(texts[0], { autoAlpha: 0, y: -24, duration: 0.28 }, 0.55)
             .to(
               factoryGroup.position,
-              { y: 0, duration: 0.85, ease: "power3.out" },
-              0.9,
+              { y: 0, duration: 0.65, ease: "power3.out" },
+              0.65,
             )
-            .to(texts[1], { autoAlpha: 1, y: 0, duration: 0.45 }, 1.15);
+            .to(texts[1], { autoAlpha: 1, y: 0, duration: 0.35 }, 0.88)
+            .addLabel("stage1", 1.35);
 
-          // STAGE 2 -> 3: Factory FLIES OUT, Ready Cartons RISE FROM UNDERGROUND
+          // STAGE 2 -> 3 (1.75..2.45)
           tl.to(
             factoryGroup.position,
-            { y: 8.5, x: -2.5, duration: 0.75, ease: "power2.in" },
-            1.8,
+            { y: 8.5, x: -2.5, duration: 0.55, ease: "power2.in" },
+            1.75,
           )
-            .to(factoryGroup.rotation, { y: -0.35, duration: 0.75 }, 1.8)
-            .set(factoryGroup, { visible: false }, 2.55)
-            .to(texts[1], { autoAlpha: 0, y: -28, duration: 0.35 }, 1.8)
+            .to(factoryGroup.rotation, { y: -0.35, duration: 0.55 }, 1.75)
+            .set(factoryGroup, { visible: false }, 2.3)
+            .to(texts[1], { autoAlpha: 0, y: -24, duration: 0.28 }, 1.75)
             .to(
               readyGroup.position,
-              { y: 0, duration: 0.85, ease: "power3.out" },
-              1.95,
+              { y: 0, duration: 0.65, ease: "power3.out" },
+              1.85,
             )
-            .to(texts[2], { autoAlpha: 1, y: 0, duration: 0.45 }, 2.2);
+            .to(texts[2], { autoAlpha: 1, y: 0, duration: 0.35 }, 2.08)
+            .addLabel("stage2", 2.55);
 
-          // STAGE 3 -> 4: Ready Cartons FLY OUT, Cargo Truck RISES FROM UNDERGROUND & Drives
+          // STAGE 3 -> 4 (2.95..3.65)
           tl.to(
             readyGroup.position,
-            { y: 8.5, x: 2.2, duration: 0.75, ease: "power2.in" },
-            2.8,
+            { y: 8.5, x: 2.2, duration: 0.55, ease: "power2.in" },
+            2.95,
           )
-            .to(readyGroup.rotation, { z: -0.25, duration: 0.75 }, 2.8)
-            .set(readyGroup, { visible: false }, 3.55)
-            .to(texts[2], { autoAlpha: 0, y: -28, duration: 0.35 }, 2.8)
+            .to(readyGroup.rotation, { z: -0.25, duration: 0.55 }, 2.95)
+            .set(readyGroup, { visible: false }, 3.5)
+            .to(texts[2], { autoAlpha: 0, y: -24, duration: 0.28 }, 2.95)
             .to(
               truckGroup.position,
-              { y: -0.02, duration: 0.7, ease: "power3.out" },
-              2.95,
-            )
-            .fromTo(
-              truckGroup.position,
-              { x: -2.0 },
-              { x: 0.8, duration: 0.85, ease: "power1.inOut" },
+              { y: -0.02, duration: 0.55, ease: "power3.out" },
               3.05,
             )
-            .to(texts[3], { autoAlpha: 1, y: 0, duration: 0.45 }, 3.2);
+            .fromTo(
+              truckGroup.position,
+              { x: -1.8 },
+              { x: 0.6, duration: 0.65, ease: "power1.inOut" },
+              3.08,
+            )
+            .to(texts[3], { autoAlpha: 1, y: 0, duration: 0.35 }, 3.28)
+            .addLabel("stage3", 3.78);
 
           wheels.forEach((w) => {
-            tl.to(w.rotation, { z: -Math.PI * 10, duration: 1.6, ease: "none" }, 3.05);
+            tl.to(w.rotation, { z: -Math.PI * 10, duration: 1.5, ease: "none" }, 3.08);
           });
 
-          // STAGE 4 -> 5: Cargo Truck DRIVES COMPLETELY OFF-SCREEN, Ocean Ship RISES FROM UNDERGROUND
+          // STAGE 4 -> 5 (4.05..5.10): Truck exits 100% BEFORE Ocean Ship rises
           tl.to(
             truckGroup.position,
-            { x: 18, y: 2.5, duration: 0.7, ease: "power2.in" },
-            3.95,
+            { x: 18, y: 2.2, duration: 0.45, ease: "power2.in" },
+            4.05,
           )
-            .set(truckGroup, { visible: false }, 4.65)
-            .to(texts[3], { autoAlpha: 0, y: -28, duration: 0.35 }, 3.95)
+            .set(truckGroup, { visible: false }, 4.5)
+            .to(texts[3], { autoAlpha: 0, y: -24, duration: 0.25 }, 4.05)
+            .to(
+              horizonGrid.position,
+              { y: -4.5, duration: 0.35, ease: "power2.in" },
+              4.45,
+            )
             .to(
               shipStageGroup.position,
-              { y: -0.1, duration: 0.85, ease: "power3.out" },
-              4.1,
+              { y: -0.1, duration: 0.55, ease: "power3.out" },
+              4.52,
             )
             .fromTo(
               shipStageGroup.position,
-              { x: -1.3 },
-              { x: 0.75, duration: 0.85, ease: "power1.inOut" },
-              4.25,
+              { x: -0.4 },
+              { x: 1.0, duration: 0.55, ease: "power1.inOut" },
+              4.52,
             )
-            .to(texts[4], { autoAlpha: 1, y: 0, duration: 0.45 }, 4.35);
+            .to(texts[4], { autoAlpha: 1, y: 0, duration: 0.32 }, 4.68)
+            .addLabel("stage4", 5.1)
+            .to({}, { duration: 0.15 }, 5.1);
 
           return () => {
             cancelAnimationFrame(rafId);
+            host.removeEventListener("pointerdown", onPointerDown);
+            window.removeEventListener("pointerup", onPointerUp);
             window.removeEventListener("pointermove", onPointerMove);
             window.removeEventListener("resize", onResize);
+            sceneEnvRef.current = null;
+            assetsRef.current = null;
             assets.dispose();
-            particleGeo.dispose();
-            particleMat.dispose();
             floorGeo.dispose();
             floorMat.dispose();
             envRT.dispose();
@@ -405,17 +437,64 @@ export function Journey() {
     { scope: sectionRef },
   );
 
+  // Sync 3D Scene Background & Fog with Light/Dark Theme
+  useGSAP(
+    () => {
+      const env = sceneEnvRef.current;
+      if (!env) return;
+      const targetColor = new THREE.Color(theme === "light" ? 0xf4f2ef : 0x120f0e);
+      env.scene.background = targetColor;
+      if (env.scene.fog instanceof THREE.FogExp2) {
+        env.scene.fog.color.copy(targetColor);
+      }
+      env.renderer.setClearColor(targetColor, 1);
+    },
+    { scope: sectionRef, dependencies: [theme] },
+  );
+
+  // Smooth Colorway Tween on Stage 01
+  useGSAP(
+    () => {
+      const assets = assetsRef.current;
+      if (!assets) return;
+      const chosen = COLORWAYS[selectedColor];
+      const nextColor = new THREE.Color(chosen.hex);
+      const collarColor = nextColor.clone().multiplyScalar(0.92);
+
+      gsap.to(assets.mats.matTee.color, {
+        r: nextColor.r,
+        g: nextColor.g,
+        b: nextColor.b,
+        duration: 0.55,
+        ease: "power2.out",
+      });
+      gsap.to(assets.mats.matTeeCollar.color, {
+        r: collarColor.r,
+        g: collarColor.g,
+        b: collarColor.b,
+        duration: 0.55,
+        ease: "power2.out",
+      });
+    },
+    { scope: sectionRef, dependencies: [selectedColor] },
+  );
+
   const jumpToStage = contextSafe((idx: number) => {
     const st = ScrollTrigger.getById("journey-pipeline");
     if (!st) return;
-    const progress = (idx + 0.18) / STAGES.length;
-    const targetY = st.start + (st.end - st.start) * progress;
+    const targetY = st.labelToScroll(`stage${idx}`);
     gsap.to(window, {
       scrollTo: { y: targetY },
-      duration: 0.9,
+      duration: 0.85,
       ease: "power3.inOut",
     });
   });
+
+  function handleSelectColor(idx: number) {
+    setSelectedColor(idx);
+    const chosen = COLORWAYS[idx];
+    onColorwayChange?.(`${chosen.name} (${chosen.gsm})`);
+  }
 
   return (
     <section
@@ -426,21 +505,21 @@ export function Journey() {
     >
       {/* Desktop Full-Bleed Pinned 3D WebGL + GSAP Stage */}
       <div className="journey-stage relative hidden h-svh min-h-[700px] w-full flex-col justify-between overflow-hidden px-8 pt-24 pb-10 md:flex">
-        {/* Full-Bleed 3D WebGL Canvas */}
+        {/* Interactive 360° Drag-Orbit 3D WebGL Canvas */}
         <div
           ref={canvasHostRef}
-          className="pointer-events-none absolute inset-0 z-0"
+          className="absolute inset-0 z-0 cursor-grab active:cursor-grabbing"
         />
 
-        {/* Left Atmospheric Gradient so Copy stays Razor-Sharp */}
+        {/* Left Atmospheric Gradient */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-[50%] bg-gradient-to-r from-background via-background/75 to-transparent"
+          className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-[44%] bg-gradient-to-r from-background via-background/85 to-transparent"
         />
 
         {/* Top Clickable 5-Step Pipeline HUD */}
-        <div className="relative z-10 mx-auto w-full max-w-[1400px]">
-          <div className="flex items-center justify-between gap-2">
+        <div className="pointer-events-none relative z-10 mx-auto w-full max-w-[1400px]">
+          <div className="pointer-events-auto flex items-center justify-between gap-2">
             {STAGES.map((stage, idx) => {
               const isActive = idx === activeStep;
               const isDone = idx < activeStep;
@@ -455,7 +534,7 @@ export function Journey() {
                       ? "text-brand"
                       : isDone
                         ? "text-chrome"
-                        : "text-muted/65 hover:text-chrome"
+                        : "text-muted/75 hover:text-chrome"
                   }`}
                 >
                   <span
@@ -479,9 +558,9 @@ export function Journey() {
           </div>
         </div>
 
-        {/* Floating Editorial Narrative (Left) */}
-        <div className="relative z-10 mx-auto flex w-full max-w-[1400px] flex-1 items-center">
-          <div className="relative h-[340px] w-full max-w-[490px]">
+        {/* Floating Editorial Narrative + Live Colorway Picker (Left) */}
+        <div className="pointer-events-none relative z-10 mx-auto flex w-full max-w-[1400px] flex-1 items-center">
+          <div className="relative h-[400px] w-full max-w-[460px]">
             {STAGES.map((stage, idx) => (
               <div
                 key={stage.num}
@@ -500,15 +579,56 @@ export function Journey() {
                 <p className="mt-5 text-base leading-relaxed text-foreground/85">
                   {stage.body}
                 </p>
+
+                {/* Live 3D T-Shirt Colorway Customizer on Stage 01 */}
+                {idx === 0 ? (
+                  <div className="pointer-events-auto mt-6">
+                    <p className="mb-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-muted">
+                      Live 3D Fabric Colorway · {COLORWAYS[selectedColor].gsm}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      {COLORWAYS.map((c, ci) => {
+                        const on = ci === selectedColor;
+                        return (
+                          <button
+                            key={c.name}
+                            type="button"
+                            onClick={() => handleSelectColor(ci)}
+                            data-cursor="magnet"
+                            className={`focus-ring inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] transition-colors ${
+                              on
+                                ? "border-brand bg-brand/15 text-chrome"
+                                : "border-border bg-surface-deep/75 text-muted hover:border-chrome/40 hover:text-chrome"
+                            }`}
+                          >
+                            <span
+                              aria-hidden
+                              className="h-3 w-3 rounded-full border border-white/25"
+                              style={{ backgroundColor: c.hex }}
+                            />
+                            <span>{c.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
+
                 {idx === STAGES.length - 1 ? (
-                  <div className="mt-7">
-                    <Link
-                      href="/showcase"
+                  <div className="pointer-events-auto mt-7 flex flex-wrap gap-3">
+                    <a
+                      href="#estimator"
                       data-cursor="magnet"
                       className="focus-ring inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-[0_12px_28px_rgba(254,65,1,0.35)] transition-transform hover:scale-[1.03]"
                     >
-                      <span>Explore Product Showcase</span>
-                      <span aria-hidden>↗</span>
+                      <span>Estimate Your Run ↓</span>
+                    </a>
+                    <Link
+                      href="/showcase"
+                      data-cursor="magnet"
+                      className="focus-ring inline-flex items-center gap-2 rounded-full border border-border bg-surface-deep/80 px-6 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-chrome transition-colors hover:border-brand hover:text-brand"
+                    >
+                      <span>Product Showcase ↗</span>
                     </Link>
                   </div>
                 ) : null}
@@ -518,9 +638,12 @@ export function Journey() {
         </div>
 
         {/* Bottom Telemetry Bar */}
-        <div className="relative z-10 mx-auto flex w-full max-w-[1400px] items-center justify-between font-mono text-[11px] uppercase tracking-[0.22em] text-muted">
-          <span>Scroll Or Click Stage 01–05 To Inspect</span>
-          <Link href="/showcase" className="transition-colors hover:text-brand">
+        <div className="pointer-events-none relative z-10 mx-auto flex w-full max-w-[1400px] items-center justify-between font-mono text-[11px] uppercase tracking-[0.22em] text-muted">
+          <span>Drag 3D Stage To Orbit · Scroll Or Click 01–05</span>
+          <Link
+            href="/showcase"
+            className="pointer-events-auto transition-colors hover:text-brand"
+          >
             Product Showcase ↗
           </Link>
         </div>

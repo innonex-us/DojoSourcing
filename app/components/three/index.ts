@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { createSharedMaterials } from "./materials";
+import { createSharedMaterials, type SharedStageMaterials } from "./materials";
 import { buildTShirt } from "./buildTShirt";
 import { buildFactory } from "./buildFactory";
 import { buildCartons } from "./buildCartons";
@@ -7,6 +7,7 @@ import { buildCargoTruck } from "./buildCargoTruck";
 import { buildOceanShip } from "./buildOceanShip";
 
 export type RealisticStageAssets = {
+  mats: SharedStageMaterials;
   tshirtGroup: THREE.Group;
   swatches: THREE.Group;
   factoryGroup: THREE.Group;
@@ -50,6 +51,7 @@ export function buildRealisticStages(
   );
 
   return {
+    mats,
     tshirtGroup,
     swatches,
     factoryGroup,

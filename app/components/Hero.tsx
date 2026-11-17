@@ -10,12 +10,12 @@ export function Hero({
   return (
     <section
       id="top"
-      className="hero relative flex h-svh min-h-[680px] items-center justify-center overflow-hidden bg-background px-5 pt-20 md:px-8"
+      className="hero relative flex h-svh min-h-[680px] items-center justify-center overflow-hidden bg-[#120f0e] px-5 pt-20 md:px-8"
       aria-label="Hero"
     >
-      {/* Atmospheric Video Backdrop */}
+      {/* Atmospheric Video Backdrop (vividly visible) */}
       <video
-        className="hero-video absolute inset-0 h-full w-full object-cover opacity-55"
+        className="hero-video absolute inset-0 h-full w-full object-cover opacity-85"
         src="/DEZININ-WEB-HERO.mp4"
         autoPlay
         muted
@@ -24,14 +24,14 @@ export function Hero({
         preload="auto"
       />
 
-      {/* Editorial Vignette & Architectural Grid */}
+      {/* Light Edge Vignette for Text Legibility Without Dimming Video */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(18,15,14,0.35)_0%,var(--background)_85%)]"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-black/45"
       />
       <div
         aria-hidden
-        className="grid-bg pointer-events-none absolute inset-0 opacity-60"
+        className="grid-bg pointer-events-none absolute inset-0 opacity-25"
       />
 
       {/* DrawSVG Architectural Corner Frame */}
@@ -82,11 +82,11 @@ export function Hero({
           DESIGN // FACTORY // READY // TRUCK // SHIP
         </p>
 
-        <h1 className="hero-title text-5xl font-extrabold uppercase leading-[0.95] tracking-[0.04em] text-chrome sm:text-7xl md:text-8xl lg:text-[7.2rem]">
+        <h1 className="hero-title text-5xl font-extrabold uppercase leading-[0.95] tracking-[0.04em] text-white drop-shadow-[0_6px_28px_rgba(0,0,0,0.85)] sm:text-7xl md:text-8xl lg:text-[7.2rem]">
           Design. Produce. Ship.
         </h1>
 
-        <p className="hero-sub mt-7 max-w-xl text-sm leading-relaxed text-foreground/85 md:text-base">
+        <p className="hero-sub mt-7 max-w-xl text-sm leading-relaxed text-white/90 drop-shadow-[0_2px_14px_rgba(0,0,0,0.9)] md:text-base">
           Complete end-to-end apparel solution for clothing brands — starting
           from garment design &amp; tech packs, through factory production,
           cargo trucking, and ocean shipment.
@@ -105,7 +105,7 @@ export function Hero({
           <Link
             href="/showcase"
             data-cursor="magnet"
-            className="focus-ring inline-flex items-center gap-2 rounded-full border border-border bg-surface-deep/75 px-6 py-3.5 text-xs font-bold uppercase tracking-[0.2em] text-chrome backdrop-blur-md transition-colors hover:border-brand hover:text-brand"
+            className="focus-ring inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/45 px-6 py-3.5 text-xs font-bold uppercase tracking-[0.2em] text-white backdrop-blur-md transition-colors hover:border-brand hover:text-brand"
           >
             Product Showcase ↗
           </Link>

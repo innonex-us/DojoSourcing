@@ -1,32 +1,32 @@
 export const projects = [
   {
     title: "HEAVYWEIGHT OUTERWEAR",
-    image: "/images/project-neural.jpg",
+    image: "/images/apparel-outerwear.jpg",
     meta: "Design · Tech Pack",
   },
   {
     title: "3D VIRTUAL ATELIER",
-    image: "/images/project-atelier.jpg",
+    image: "/images/apparel-atelier.jpg",
     meta: "3D Sampling · Fit",
   },
   {
     title: "CUT & SEW LINE 04",
-    image: "/images/project-signal.jpg",
+    image: "/images/apparel-factory.jpg",
     meta: "Factory · CMT / FPP",
   },
   {
     title: "QC & CARTON LAB",
-    image: "/images/project-forge.jpg",
+    image: "/images/apparel-cartons.jpg",
     meta: "AQL 2.5 · Packaging",
   },
   {
     title: "INLAND CARGO FLEET",
-    image: "/images/project-canvas.jpg",
+    image: "/images/apparel-truck.jpg",
     meta: "Drayage · Port Run",
   },
   {
     title: "GLOBAL OCEAN FREIGHT",
-    image: "/images/project-pulse.jpg",
+    image: "/images/apparel-ship.jpg",
     meta: "FCL / LCL · Delivery",
   },
 ] as const;
@@ -103,7 +103,7 @@ export const interestChips = [
   "3D SAMPLING",
   "FACTORY PRODUCTION",
   "QC & PACKAGING",
-  "TRUCK & OCEAN FREIGHT",
+  "CARGO & GLOBAL FREIGHT",
 ] as const;
 
 export type HeroCard =
@@ -295,22 +295,22 @@ export const heroCards: HeroCard[] = [
 ];
 
 export const partnerTiles = [
-  { name: "VERCEL", bg: "#18181b", fg: "#ffffff" },
-  { name: "LINEAR", bg: "#262335", fg: "#e4e2df" },
-  { name: "FIGMA", bg: "#fe4101", fg: "#ffffff" },
-  { name: "STRIPE", bg: "#1e1b4b", fg: "#e4e2df" },
-  { name: "RAYCAST", bg: "#2a2422", fg: "#fe4101" },
-  { name: "NOTION", bg: "#e4e2df", fg: "#120f0e" },
-  { name: "FRAMER", bg: "#18181b", fg: "#fe4101" },
-  { name: "ARC", bg: "#3b1d14", fg: "#fcc3ae" },
-  { name: "SUPABASE", bg: "#14261c", fg: "#e4e2df" },
-  { name: "RESEND", bg: "#120f0e", fg: "#ffffff" },
+  { name: "MILAN ATELIER", bg: "#18181b", fg: "#ffffff" },
+  { name: "DHAKA MILLS", bg: "#262335", fg: "#e4e2df" },
+  { name: "ROTTERDAM PORT", bg: "#fe4101", fg: "#ffffff" },
+  { name: "TOKYO DENIM", bg: "#1e1b4b", fg: "#e4e2df" },
+  { name: "PORTO KNITS", bg: "#2a2422", fg: "#fe4101" },
+  { name: "LOS ANGELES 3PL", bg: "#e4e2df", fg: "#120f0e" },
+  { name: "HAMBURG CARGO", bg: "#18181b", fg: "#fe4101" },
+  { name: "BUSAN TERMINAL", bg: "#3b1d14", fg: "#fcc3ae" },
+  { name: "NY SHOWROOM", bg: "#14261c", fg: "#e4e2df" },
+  { name: "ANTWERP FREIGHT", bg: "#120f0e", fg: "#ffffff" },
 ] as const;
 
 export const expertiseMedia = [
-  "/images/project-atelier.jpg",
-  "/images/project-pulse.jpg",
-  "/images/project-forge.jpg",
-  "/images/project-signal.jpg",
-  "/images/project-neural.jpg",
+  "/images/apparel-atelier.jpg",
+  "/images/apparel-factory.jpg",
+  "/images/apparel-cartons.jpg",
+  "/images/apparel-truck.jpg",
+  "/images/apparel-ship.jpg",
 ] as const;

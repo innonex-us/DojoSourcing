@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -15,12 +15,13 @@ import { Accordion } from "../components/Accordion";
 import { Contact } from "../components/Contact";
 import { Footer } from "../components/Footer";
 import { Fabs } from "../components/Fabs";
+import { useTheme } from "../components/useTheme";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger, ScrollToPlugin, SplitText);
 
 export default function ShowcasePage() {
   const root = useRef<HTMLDivElement>(null);
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, toggleTheme] = useTheme();
 
   const { contextSafe } = useGSAP(
     () => {
@@ -121,21 +122,13 @@ export default function ShowcasePage() {
     });
   });
 
-  function toggleTheme() {
-    setTheme((t) => {
-      const next = t === "dark" ? "light" : "dark";
-      if (next === "light") {
-        document.documentElement.setAttribute("data-theme", "light");
-      } else {
-        document.documentElement.removeAttribute("data-theme");
-      }
-      return next;
-    });
-  }
-
   return (
     <div ref={root} className="relative min-h-svh bg-background text-foreground">
-      <Header activeSection="PRODUCT SHOWCASE" onNavigate={navigateTo} />
+      <Header
+        activeSection="SAMPLE ROOM"
+        mode="showcase"
+        onNavigate={navigateTo}
+      />
 
       <main className="pt-28">
         <section className="mx-auto max-w-[1400px] px-5 pb-10 md:px-8">

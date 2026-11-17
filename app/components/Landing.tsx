@@ -11,9 +11,11 @@ import { DrawSVGPlugin } from "gsap/DrawSVGPlugin";
 import { Header } from "./Header";
 import { Hero } from "./Hero";
 import { Journey } from "./Journey";
+import { Estimator, type EstimatePayload } from "./Estimator";
 import { Contact } from "./Contact";
 import { Footer } from "./Footer";
 import { Fabs } from "./Fabs";
+import { useTheme } from "./useTheme";
 
 gsap.registerPlugin(
   useGSAP,
@@ -27,15 +29,21 @@ gsap.registerPlugin(
 const SECTION_LABELS: Array<{ selector: string; label: string }> = [
   { selector: "#top", label: "01 // DESIGN" },
   { selector: "#journey", label: "02 // 3D PIPELINE" },
-  { selector: "#contact", label: "03 // CONTACT" },
+  { selector: "#estimator", label: "03 // ESTIMATOR" },
+  { selector: "#contact", label: "04 // QUOTE" },
 ];
 
 export function Landing() {
   const root = useRef<HTMLDivElement>(null);
   const cursorDotRef = useRef<HTMLDivElement>(null);
   const cursorRingRef = useRef<HTMLDivElement>(null);
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, toggleTheme] = useTheme();
   const [activeSection, setActiveSection] = useState("01 // DESIGN");
+  const [selectedColorway, setSelectedColorway] = useState(
+    "Off-White (420 GSM Heavy Jersey)",
+  );
+  const [estimatePrefill, setEstimatePrefill] =
+    useState<EstimatePayload | null>(null);
 
   const { contextSafe } = useGSAP(
     () => {
@@ -222,17 +230,17 @@ export function Landing() {
             document.addEventListener("pointerout", onPointerOut);
           }
 
-          // 5. Contact ScrollTrigger Stagger
+          // 5. Contact ScrollTrigger Entrance (never hidden from a11y tree initially)
           gsap.from(".contact > div > *", {
-            autoAlpha: 0,
-            y: 30,
+            y: 26,
             duration: 0.6,
             stagger: 0.12,
             ease: "power3.out",
+            immediateRender: false,
             scrollTrigger: {
               trigger: ".contact",
-              start: "top 80%",
-              toggleActions: "play none none reverse",
+              start: "top 90%",
+              toggleActions: "play none none none",
             },
           });
 
@@ -257,18 +265,6 @@ export function Landing() {
     });
   });
 
-  function toggleTheme() {
-    setTheme((t) => {
-      const next = t === "dark" ? "light" : "dark";
-      if (next === "light") {
-        document.documentElement.setAttribute("data-theme", "light");
-      } else {
-        document.documentElement.removeAttribute("data-theme");
-      }
-      return next;
-    });
-  }
-
   return (
     <div ref={root} className="relative min-h-svh bg-background text-foreground">
       {/* Desktop Dual-Ring Kinetic Cursor */}
@@ -283,11 +279,21 @@ export function Landing() {
         className="pointer-events-none fixed top-0 left-0 z-50 hidden h-9 w-9 rounded-full border border-brand/55 md:block"
       />
 
-      <Header activeSection={activeSection} onNavigate={navigateTo} />
+      <Header activeSection={activeSection} mode="home" onNavigate={navigateTo} />
       <main>
         <Hero onEnterDojo={() => navigateTo("#journey")} />
-        <Journey />
-        <Contact />
+        <Journey theme={theme} onColorwayChange={setSelectedColorway} />
+        <Estimator
+          selectedColorway={selectedColorway}
+          onLockEstimate={(payload) => {
+            setEstimatePrefill(payload);
+            navigateTo("#contact");
+          }}
+        />
+        <Contact
+          key={estimatePrefill?.summary ?? "default"}
+          estimatePrefill={estimatePrefill}
+        />
       </main>
       <Footer />
       <Fabs theme={theme} onToggleTheme={toggleTheme} />

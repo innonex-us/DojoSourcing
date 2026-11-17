@@ -19,9 +19,9 @@ export function Experience() {
           Global Experience
         </h2>
         <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-foreground/80 md:text-base">
-          From early-stage launches to platform redesigns, Dojo partners with
-          founders, design leads, and engineering orgs who want a studio that
-          can move from thesis to shipping surface without losing craft.
+          From emerging streetwear labels to global retail collections, Dojo
+          connects patternmakers, vetted garment mills, and ocean freight
+          terminals into one accountable pipeline.
         </p>
       </div>
 

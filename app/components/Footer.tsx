@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function Footer() {
   return (
     <footer className="border-t border-border px-5 py-16 md:px-8">
@@ -7,30 +9,31 @@ export function Footer() {
             DOJO
           </p>
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted">
-            Practice studio for product teams. We design, architect, and ship
-            interfaces with editorial precision and engineering discipline.
+            Complete apparel supply-chain partner for clothing brands — from
+            garment design and 3D sampling to factory production, cargo
+            trucking, and global ocean freight.
           </p>
         </div>
 
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand">
-            Company
+            Pipeline
           </p>
           <ul className="mt-4 space-y-2.5 text-sm text-muted">
             <li>
-              <a href="#work" className="focus-ring transition-colors hover:text-chrome">
-                Work
-              </a>
+              <Link href="/#journey" className="focus-ring transition-colors hover:text-chrome">
+                3D Supply Journey
+              </Link>
             </li>
             <li>
-              <a href="#expertise" className="focus-ring transition-colors hover:text-chrome">
-                Expertise
-              </a>
+              <Link href="/#estimator" className="focus-ring transition-colors hover:text-chrome">
+                Run Estimator
+              </Link>
             </li>
             <li>
-              <a href="#contact" className="focus-ring transition-colors hover:text-chrome">
-                Contact
-              </a>
+              <Link href="/showcase" className="focus-ring transition-colors hover:text-chrome">
+                Product Showcase
+              </Link>
             </li>
           </ul>
         </div>
@@ -49,19 +52,21 @@ export function Footer() {
               </a>
             </li>
             <li>
-              <a href="#friction" className="focus-ring transition-colors hover:text-chrome">
-                FAQ
-              </a>
+              <Link href="/showcase#expertise" className="focus-ring transition-colors hover:text-chrome">
+                Capabilities
+              </Link>
             </li>
             <li>
-              <span>Remote · Worldwide</span>
+              <Link href="/showcase#friction" className="focus-ring transition-colors hover:text-chrome">
+                Supply Chain FAQ
+              </Link>
             </li>
           </ul>
         </div>
       </div>
 
       <div className="mx-auto mt-14 border-t border-border pt-6 text-center text-[11px] uppercase tracking-[0.18em] text-muted">
-        ©2026 All rights reserved by DOJO
+        ©2026 All rights reserved by DOJO Apparel Studio
       </div>
     </footer>
   );
