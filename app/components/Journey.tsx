@@ -1,5 +1,6 @@
 "use client";
 
+import NextImage from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -351,6 +352,9 @@ export function Journey({
             waveGeo,
           } = assets;
 
+          // Design & Innovation: 3D jacket temporarily disabled in favor of a studio still.
+          tshirtGroup.visible = false;
+
           // 360° Drag-Orbit + Pointer Parallax
           let isDragging = false;
           let dragStartX = 0;
@@ -399,9 +403,10 @@ export function Journey({
             timer.update();
             const t = timer.getElapsed();
 
-            designStudio.setMode(studioModeRef.current);
-            designStudio.update(t, timer.getDelta());
-            tshirtGroup.rotation.y = Math.sin(t * 0.65) * designStudio.getSway();
+            // Design & Innovation 3D studio update — commented out while the still image is shown.
+            // designStudio.setMode(studioModeRef.current);
+            // designStudio.update(t, timer.getDelta());
+            // tshirtGroup.rotation.y = Math.sin(t * 0.65) * designStudio.getSway();
             hvacFans.forEach((fan) => {
               fan.rotation.y = t * 6.5;
             });
@@ -444,15 +449,13 @@ export function Journey({
 
             renderer?.render(scene, camera);
 
-            // Studio annotations fade out as the jacket leaves for Stage 02.
-            const lift = tshirtGroup.position.y - 0.12;
-            const fade = tshirtGroup.visible ? 1 - Math.min(1, Math.max(0, lift / 0.6)) : 0;
+            // Design & Innovation callouts disabled while the studio still image is shown.
             calloutsRef.current?.update(
               camera,
               host.clientWidth,
               host.clientHeight,
               designStudio.anchors,
-              fade,
+              0,
             );
             const sourcingFade = sourcingGroup.visible
               ? 1 - Math.min(1, Math.abs(sourcingGroup.position.y) / 0.6)
@@ -563,13 +566,11 @@ export function Journey({
           );
 
           // STAGE 1 -> 2: Design → Sourcing (0.55..1.25)
-          tl.to(
-            tshirtGroup.position,
-            { y: 8.5, x: 2.2, z: -2.2, duration: 0.55, ease: "power2.in" },
-            0.55,
-          )
-            .to(tshirtGroup.rotation, { z: 0.4, x: -0.3, duration: 0.55 }, 0.55)
-            .set(tshirtGroup, { visible: false }, 1.1)
+          // 3D jacket exit kept for easy restore; image fade is what users see for now.
+          // tl.to(tshirtGroup.position, { y: 8.5, x: 2.2, z: -2.2, duration: 0.55, ease: "power2.in" }, 0.55)
+          //   .to(tshirtGroup.rotation, { z: 0.4, x: -0.3, duration: 0.55 }, 0.55)
+          //   .set(tshirtGroup, { visible: false }, 1.1)
+          tl.to(".journey-design-image", { autoAlpha: 0, duration: 0.4, ease: "power2.in" }, 0.55)
             .to(texts[0], { autoAlpha: 0, y: -24, duration: 0.28 }, 0.55)
             .to(
               sourcingGroup.position,
@@ -789,9 +790,22 @@ export function Journey({
           className="absolute inset-0 z-0 cursor-grab touch-pan-y active:cursor-grabbing"
         />
 
+        {/* Design & Innovation still — temporarily replaces the Stage 01 3D jacket */}
+        <div className="journey-design-image pointer-events-none absolute inset-0 z-[1]">
+          <NextImage
+            src="/images/design-innovation-studio.jpg"
+            alt="Design and Innovation studio with tech packs, fabric boards, and 3D garment sampling"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-[68%_center]"
+          />
+        </div>
+
         {/* Stage 01 design-studio annotations projected from the 3D jacket */}
         {/* (Leader-line labels need the wide layout; hidden on narrow screens.) */}
         <div className="hidden xl:contents">
+          {/* Temporarily unused while Stage 01 uses the still image */}
           <DesignCallouts ref={calloutsRef} items={calloutItems} />
           {/* Stage 04 quality-assurance annotations */}
           <DesignCallouts ref={qaCalloutsRef} items={QA_CALLOUTS} />
