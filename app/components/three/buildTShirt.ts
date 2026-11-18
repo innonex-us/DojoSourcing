@@ -839,6 +839,89 @@ export function buildTShirt(
   });
   jacket.add(outlineGroup);
 
+  /* ── Display mannequin wearing the jacket (head in the hood, hands, hip form) ── */
+  const mannequin = new THREE.Group();
+  const matMannequin = mats.makePhys({
+    color: 0xe9e6e0,
+    roughness: 0.42,
+    metalness: 0,
+    clearcoat: 0.35,
+    clearcoatRoughness: 0.35,
+    sheen: 0.2,
+    sheenColor: new THREE.Color(0xffffff),
+  });
+
+  // Head: featureless egg form tilted slightly forward, sitting inside the hood.
+  const head = new THREE.Mesh(track(new THREE.SphereGeometry(1, 48, 36)), matMannequin);
+  head.scale.set(0.19, 0.25, 0.22);
+  head.position.set(0, 1.32, 0.03);
+  head.rotation.x = 0.08;
+  head.castShadow = true;
+  const neck = new THREE.Mesh(track(new THREE.CylinderGeometry(0.095, 0.11, 0.3, 32)), matMannequin);
+  neck.position.set(0, 1.0, 0.005);
+  mannequin.add(head, neck);
+
+  // Hands emerging from the cuffs, palms turned toward the body.
+  const palmGeo = track(new THREE.SphereGeometry(1, 28, 20));
+  const thumbGeo = track(new THREE.CapsuleGeometry(0.018, 0.05, 6, 12));
+  const wristGeo = track(new THREE.CylinderGeometry(0.045, 0.05, 0.1, 20));
+  ([[-1, sleevePaths.left], [1, sleevePaths.right]] as const).forEach(([side, path]) => {
+    const end = path.getPointAt(1);
+    const down = path.getTangentAt(1).normalize();
+    // Basis: y runs back up the arm, x points toward the body, z completes the frame.
+    const yAxis = down.clone().negate();
+    const xAxis = new THREE.Vector3(-side, 0, 0);
+    xAxis.addScaledVector(yAxis, -xAxis.dot(yAxis)).normalize();
+    const zAxis = new THREE.Vector3().crossVectors(xAxis, yAxis).normalize();
+    const hand = new THREE.Group();
+    hand.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis));
+    hand.position.copy(end);
+
+    const wrist = new THREE.Mesh(wristGeo, matMannequin);
+    wrist.position.y = -0.02;
+    const palm = new THREE.Mesh(palmGeo, matMannequin);
+    palm.scale.set(0.044, 0.115, 0.07);
+    palm.position.y = -0.13;
+    palm.castShadow = true;
+    const thumb = new THREE.Mesh(thumbGeo, matMannequin);
+    thumb.position.set(0.02, -0.09, 0.05);
+    thumb.rotation.set(0.5, 0, -0.35);
+    hand.add(wrist, palm, thumb);
+    mannequin.add(hand);
+  });
+
+  // Hip form below the hem, joining the stand pole.
+  const hipProfile = [
+    new THREE.Vector2(0.0001, -1.2),
+    new THREE.Vector2(0.12, -1.19),
+    new THREE.Vector2(0.3, -1.15),
+    new THREE.Vector2(0.45, -1.08),
+    new THREE.Vector2(0.52, -1.0),
+    new THREE.Vector2(0.54, -0.9),
+    new THREE.Vector2(0.52, -0.75),
+  ];
+  const hips = new THREE.Mesh(track(new THREE.LatheGeometry(hipProfile, 64)), matMannequin);
+  hips.scale.set(1, 1, 0.56);
+  hips.castShadow = true;
+  hips.receiveShadow = true;
+  // Upper-thigh stubs with flat cuts, as on a retail hip form.
+  const thighGeo = track(new THREE.CylinderGeometry(0.17, 0.145, 0.3, 40));
+  const thighCapGeo = track(new THREE.CircleGeometry(0.145, 40));
+  [-1, 1].forEach((side) => {
+    const thigh = new THREE.Group();
+    const leg = new THREE.Mesh(thighGeo, matMannequin);
+    leg.castShadow = true;
+    const cap = new THREE.Mesh(thighCapGeo, matMannequin);
+    cap.rotation.x = Math.PI / 2;
+    cap.position.y = -0.15;
+    thigh.add(leg, cap);
+    thigh.position.set(side * 0.22, -1.24, 0);
+    thigh.rotation.z = side * 0.06;
+    mannequin.add(thigh);
+  });
+  mannequin.add(hips);
+  jacket.add(mannequin);
+
   /* ── Display stand ────────────────────────────────────────────────────── */
   const standGroup = new THREE.Group();
   const standBase = new THREE.Mesh(track(new THREE.CylinderGeometry(0.5, 0.56, 0.07, 40)), matObsidian);
