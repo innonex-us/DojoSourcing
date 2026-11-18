@@ -24,27 +24,27 @@ export const DESIGN_SERVICES: ReadonlyArray<{
   },
   {
     mode: "bom",
-    label: "BOM Sheet",
+    label: "Graphic",
     blurb:
-      "Every fabric, trim and closure specified with colour and consumption, so costing and sourcing start from one sheet.",
+      "Develop placement prints, all-over repeat patterns, and garment graphics, along with branding artwork for labels, trims, and embellishments.",
   },
   {
     mode: "sampling",
     label: "3D Sampling",
     blurb:
-      "Digital patterns are simulated in 3D for drape and fit — fewer physical sample rounds, faster approvals.",
+      "DOJO turns your CAD flats and garment specifications into realistic 3D samples that show silhouette, proportions, fabric drape, and construction details. View the garment from the front, back, and side, and compare colorways, fabric textures, print placements, and trims on the same design. We create presentation-ready renders for collection reviews, buyer meetings, and factory communication, helping you refine design details before physical sampling.",
   },
   {
     mode: "development",
     label: "Development",
     blurb:
-      "Points of measure, tolerances, lab dips and trim approvals locked in before the bulk order is cut.",
+      "DOJO takes your apparel design from concept to an approved pre-production sample. We source fabrics and trims to meet your performance, cost, and lead-time requirements, then work with factories to develop prototypes and fit samples. At each sample round, we review fit, measurements, garment construction, and workmanship, document corrections, and update the tech pack and bill of materials (BOM). The approved sample and final specifications give the factory a clear reference for bulk production.",
   },
   {
     mode: "presentation",
     label: "Presentation",
     blurb:
-      "Line-sheet ready front, back and side views in every colourway — switch the colour live below.",
+      "DOJO creates line sheets, colorway boards, and buyer-ready decks that make it easy to review your collection and compare styles. We combine garment visuals with style numbers, fabric details, available colorways, and key design features. From a single product to a full seasonal range, we tailor each presentation to your brand and the needs of buyer meetings, range reviews, or sales appointments.",
   },
 ];
 

@@ -36,16 +36,13 @@ export function Experience() {
           </span>
         </div>
 
-        <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-brand">
-          • Global Partner Brands
-        </p>
         <h2 className="mt-4 text-3xl font-semibold uppercase leading-tight tracking-wide text-chrome md:text-5xl">
-          Trusted By Apparel Brands Worldwide
+          Experienced With Apparel Brands Worldwide
         </h2>
         <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-foreground/80 md:text-base">
-          From emerging streetwear labels to international retail chains, Dojo
-          Sourcing connects design studios, vetted garment mills, and ocean
-          freight ports into one accountable pipeline.
+          Our team has worked with emerging streetwear labels, established
+          apparel brands, and international retailers across design, product
+          development, sourcing, and production.
         </p>
       </div>
 

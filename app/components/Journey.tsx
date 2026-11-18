@@ -56,7 +56,7 @@ const STAGES = [
     num: "04",
     tag: "QUALITY ASSURANCE",
     title: "Quality Assurance",
-    body: "Every lot is inspected against the approved tech pack before it leaves the line — measured, light-board checked seam by seam, and passed through needle detection.",
+    body: "DOJO is your second set of eyes on the factory floor in Bangladesh. We check garment measurements, workmanship, finishing, and packaging against your requirements, flag defects early, and follow up on factory corrections. We document findings with photos and measurement records and coordinate final pre-shipment inspections using your AQL criteria.",
   },
   {
     num: "05",
@@ -715,12 +715,6 @@ export function Journey({
     });
   });
 
-  function handleSelectColor(idx: number) {
-    setSelectedColor(idx);
-    const chosen = COLORWAYS[idx];
-    onColorwayChange?.(`${chosen.name} (${chosen.spec})`);
-  }
-
   return (
     <section
       id="journey"
@@ -825,10 +819,6 @@ export function Journey({
                       setStudioAutoplay(false);
                       setStudioMode(m);
                     }}
-                    hoveredBom={hoveredBom}
-                    onHoverBom={setHoveredBom}
-                    selectedColor={selectedColor}
-                    onSelectColor={handleSelectColor}
                   />
                 ) : (
                   <p className="mt-3 text-sm leading-relaxed text-foreground/85 sm:mt-5 sm:text-base">
