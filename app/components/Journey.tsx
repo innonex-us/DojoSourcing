@@ -801,9 +801,6 @@ export function Journey({
                   >
                     <Icon className="h-3.5 w-3.5" aria-hidden />
                   </span>
-                  <span className="hidden font-mono text-[10px] text-brand lg:inline">
-                    {stage.num}
-                  </span>
                   <span className="hidden xl:inline">{stage.tag}</span>
                 </button>
               );
