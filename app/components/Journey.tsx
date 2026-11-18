@@ -5,7 +5,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDown,
   ArrowUpRight,
-  CircleCheck,
   Factory,
   Globe,
   MoveHorizontal,
@@ -88,32 +87,6 @@ const STAGES = [
 ] as const;
 
 const STAGE_ICONS = [PencilRuler, Globe, Factory, ShieldCheck, PackageCheck, Truck, Ship] as const;
-
-/** Checklists shown under the copy of specific stages (keyed by stage tag). */
-const STAGE_CHECKLISTS: Partial<
-  Record<string, { items: ReadonlyArray<readonly [string, string]>; footer: string }>
-> = {
-  SOURCING: {
-    items: [
-      ["Fabric mills", "Vetted & audited partners"],
-      ["Trims & accessories", "Zips, cords, tabs, labels"],
-      ["Costing & MOQ", "Negotiated per style"],
-      ["Lab dips & fabric tests", "Shade + performance"],
-      ["Bulk booking", "In-house before cutting"],
-    ],
-    footer: "Materials booked · Ready for production",
-  },
-  "QUALITY ASSURANCE": {
-    items: [
-      ["Measurements vs. spec", "Within ±1 cm tolerance"],
-      ["Workmanship & seams", "Light-board inspection"],
-      ["Needle detection", "100% of pieces scanned"],
-      ["Shade vs. lab dip", "Approved standard"],
-      ["Trims, labels & zipper", "Function + pull tested"],
-    ],
-    footer: "Result · Passed · AQL 2.5 / General Level II",
-  },
-};
 
 const SOURCING_CALLOUTS: CalloutItem[] = [
   { key: "srcMill", anchor: "srcMill", label: "Fabric mill · woven softshell", kind: "leader" },
@@ -818,23 +791,6 @@ export function Journey({
                   </p>
                 )}
 
-                {/* Stage checklists (sourcing, quality assurance) */}
-                {STAGE_CHECKLISTS[stage.tag] ? (
-                  <ul className="mt-5 space-y-2 border-t border-border pt-4">
-                    {STAGE_CHECKLISTS[stage.tag]?.items.map(([check, detail]) => (
-                      <li key={check} className="flex items-center gap-3">
-                        <CircleCheck className="h-4 w-4 shrink-0 text-emerald-500" aria-hidden />
-                        <span className="text-sm font-semibold text-chrome">{check}</span>
-                        <span className="ml-auto font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
-                          {detail}
-                        </span>
-                      </li>
-                    ))}
-                    <li className="pt-1 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-500">
-                      {STAGE_CHECKLISTS[stage.tag]?.footer}
-                    </li>
-                  </ul>
-                ) : null}
 
                 {idx === STAGES.length - 1 ? (
                   <div className="pointer-events-auto mt-7 flex flex-wrap gap-3">
