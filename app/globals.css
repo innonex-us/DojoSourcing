@@ -116,3 +116,11 @@ a {
     transform: scaleX(1);
   }
 }
+
+.studio-progress-bar {
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation-name: studio-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}

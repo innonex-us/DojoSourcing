@@ -74,16 +74,12 @@ export function DesignStudioPanel({
                 <Icon className="h-3.5 w-3.5" aria-hidden />
               </span>
               <span className="whitespace-nowrap leading-tight">{s.label}</span>
-              {on ? (
+              {on && autoplay ? (
                 <span
-                  key={`${s.mode}-${autoplay}`}
+                  key={`${s.mode}-timer`}
                   aria-hidden
-                  className="absolute inset-x-0 bottom-0 h-[2.5px] origin-left bg-white/90"
-                  style={
-                    autoplay
-                      ? { animation: `studio-progress ${STUDIO_AUTOPLAY_MS}ms linear forwards` }
-                      : undefined
-                  }
+                  className="studio-progress-bar pointer-events-none absolute inset-x-0 bottom-0 h-[3px] bg-white"
+                  style={{ animationDuration: `${STUDIO_AUTOPLAY_MS}ms` }}
                 />
               ) : null}
             </button>
