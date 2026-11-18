@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { ArrowDown, Clock, Layers, Plane, Ship, Shirt } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
+import { DEFAULT_COLORWAY_LABEL } from "./designStudioData";
 
 gsap.registerPlugin(useGSAP);
 
@@ -26,7 +27,7 @@ export type EstimatePayload = {
 };
 
 export function Estimator({
-  selectedColorway = "Off-White (420 GSM Heavy Jersey)",
+  selectedColorway = DEFAULT_COLORWAY_LABEL,
   onLockEstimate,
 }: {
   selectedColorway?: string;

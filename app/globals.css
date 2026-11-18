@@ -106,3 +106,13 @@ a {
     scroll-behavior: auto;
   }
 }
+
+/* Stage 01 design-studio tab autoplay progress */
+@keyframes studio-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
