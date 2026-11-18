@@ -45,9 +45,13 @@ export function DesignStudioPanel({
   const service = DESIGN_SERVICES.find((s) => s.mode === mode) ?? DESIGN_SERVICES[0];
 
   return (
-    <div className="pointer-events-auto mt-5">
-      <div role="tablist" aria-label="Product design services" className="grid grid-cols-5 gap-1.5">
-        {DESIGN_SERVICES.map((s, i) => {
+    <div className="pointer-events-auto mt-3 sm:mt-5">
+      <div
+        role="tablist"
+        aria-label="Product design services"
+        className="-mx-1 flex snap-x gap-1.5 overflow-x-auto px-1 pb-1 sm:mx-0 sm:grid sm:grid-cols-5 sm:overflow-visible sm:px-0 sm:pb-0"
+      >
+        {DESIGN_SERVICES.map((s) => {
           const Icon = SERVICE_ICONS[s.mode];
           const on = s.mode === mode;
           return (
@@ -58,13 +62,12 @@ export function DesignStudioPanel({
               aria-selected={on}
               onClick={() => onSelectMode(s.mode)}
               data-cursor="magnet"
-              className={`focus-ring relative flex flex-col items-center gap-1 overflow-hidden rounded-lg border px-1 pb-2 pt-2 text-[9px] font-bold uppercase tracking-[0.12em] transition-colors ${
+              className={`focus-ring relative flex min-w-[78px] shrink-0 snap-start flex-col items-center gap-1 overflow-hidden rounded-lg border px-1 pb-2 pt-2 text-[9px] sm:min-w-0 font-bold uppercase tracking-[0.12em] transition-colors ${
                 on
                   ? "border-brand bg-brand/15 text-chrome"
                   : "border-border bg-surface-deep/75 text-muted hover:border-chrome/40 hover:text-chrome"
               }`}
             >
-              <span className="font-mono text-[8px] text-brand">{String(i + 1).padStart(2, "0")}</span>
               <Icon className="h-3.5 w-3.5" aria-hidden />
               <span className="leading-tight">{s.label}</span>
               {on ? (
@@ -84,8 +87,8 @@ export function DesignStudioPanel({
         })}
       </div>
 
-      <div role="tabpanel" className="mt-4 h-[212px]">
-        <p className="text-sm leading-relaxed text-foreground/85">{service.blurb}</p>
+      <div role="tabpanel" className="mt-3 max-h-[22svh] overflow-y-auto sm:mt-4 sm:h-[212px] sm:max-h-none sm:overflow-visible">
+        <p className="text-[13px] leading-relaxed text-foreground/85 sm:text-sm">{service.blurb}</p>
 
         {mode === "techpack" ? (
           <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-border pt-3">
@@ -104,7 +107,7 @@ export function DesignStudioPanel({
               <tr className="font-mono text-[9px] uppercase tracking-[0.14em] text-muted">
                 <th className="py-1 pr-2 font-bold">No.</th>
                 <th className="py-1 pr-2 font-bold">Component</th>
-                <th className="py-1 pr-2 font-bold">Material / Spec</th>
+                <th className="hidden py-1 pr-2 font-bold sm:table-cell">Material / Spec</th>
                 <th className="py-1 pr-2 font-bold">Color</th>
                 <th className="py-1 text-right font-bold">Qty</th>
               </tr>
@@ -123,7 +126,7 @@ export function DesignStudioPanel({
                 >
                   <td className="py-1 pr-2 font-mono text-brand">{row.no}</td>
                   <td className="py-1 pr-2 font-semibold">{row.component}</td>
-                  <td className="py-1 pr-2">{row.spec}</td>
+                  <td className="hidden py-1 pr-2 sm:table-cell">{row.spec}</td>
                   <td className="py-1 pr-2">
                     <span
                       className="inline-block h-2.5 w-6 rounded-sm border border-white/20 align-middle"

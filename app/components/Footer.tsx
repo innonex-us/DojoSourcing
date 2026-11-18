@@ -10,14 +10,14 @@ export function Footer() {
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white p-1.5 shadow-sm ring-1 ring-black/10">
               <Image
                 src="/dojo-crane-mark.png"
-                alt="Dojo Sourcing logo"
+                alt="Dojo Design & Sourcing logo"
                 width={24}
                 height={24}
                 className="h-6 w-6 shrink-0 object-contain"
               />
             </span>
             <p className="text-lg font-extrabold uppercase tracking-[0.18em] text-chrome">
-              Dojo <span className="text-brand">Sourcing</span>
+              Dojo Design <span className="text-brand">&amp; Sourcing</span>
             </p>
           </div>
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted">
@@ -78,7 +78,7 @@ export function Footer() {
       </div>
 
       <div className="mx-auto mt-14 border-t border-border pt-6 text-center text-[11px] uppercase tracking-[0.18em] text-muted">
-        ©2026 All rights reserved by Dojo Sourcing
+        ©2026 All rights reserved by Dojo Design & Sourcing
       </div>
     </footer>
   );

@@ -12,13 +12,13 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://dojosourcing.com"),
   title: {
     default:
-      "Dojo Sourcing — Apparel Design, Factory Manufacturing & Global Shipment",
-    template: "%s | Dojo Sourcing",
+      "Dojo Design & Sourcing — Apparel Design, Factory Manufacturing & Global Shipment",
+    template: "%s | Dojo Design & Sourcing",
   },
   description:
-    "Dojo Sourcing is a complete end-to-end clothing brand partner — from 3D garment design and tech packs to vetted factory production, AQL quality control, cargo trucking, and ocean freight.",
+    "Dojo Design & Sourcing is a complete end-to-end clothing brand partner — from 3D garment design and tech packs to vetted factory production, AQL quality control, cargo trucking, and ocean freight.",
   keywords: [
-    "Dojo Sourcing",
+    "Dojo Design & Sourcing",
     "apparel sourcing",
     "clothing brand manufacturing",
     "garment tech pack design",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     "AQL 2.5 apparel inspection",
     "global garment ocean freight",
   ],
-  authors: [{ name: "Dojo Sourcing" }],
+  authors: [{ name: "Dojo Design & Sourcing" }],
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
@@ -37,9 +37,9 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    siteName: "Dojo Sourcing",
+    siteName: "Dojo Design & Sourcing",
     title:
-      "Dojo Sourcing — End-to-End Apparel Design, Manufacturing & Global Shipment",
+      "Dojo Design & Sourcing — End-to-End Apparel Design, Manufacturing & Global Shipment",
     description:
       "Complete apparel production pipeline for clothing brands: 3D garment design, factory manufacturing, AQL packing, inland trucking, and ocean freight.",
     images: [
@@ -47,13 +47,13 @@ export const metadata: Metadata = {
         url: "/images/apparel-outerwear.jpg",
         width: 1200,
         height: 1600,
-        alt: "Dojo Sourcing Apparel Design & Manufacturing",
+        alt: "Dojo Design & Sourcing Apparel Design & Manufacturing",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Dojo Sourcing — Apparel Design, Manufacturing & Shipment",
+    title: "Dojo Design & Sourcing — Apparel Design, Manufacturing & Shipment",
     description:
       "Complete end-to-end apparel solution for clothing brands: Design, Factory, Ready to Ship, Cargo Truck, Ocean Ship.",
     images: ["/images/apparel-outerwear.jpg"],
@@ -67,7 +67,7 @@ export const metadata: Metadata = {
 const organizationSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  name: "Dojo Sourcing",
+  name: "Dojo Design & Sourcing",
   url: "https://dojosourcing.com",
   logo: "https://dojosourcing.com/dojo-sourcing-logo.png",
   email: "sourcing@dojosourcing.com",

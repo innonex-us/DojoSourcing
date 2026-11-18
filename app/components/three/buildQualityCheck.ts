@@ -316,15 +316,9 @@ export function buildQualityCheck(
       ];
       rows.forEach((row, i) => {
         const y = 210 + i * 62;
-        ctx.fillStyle = "#16a34a";
-        ctx.fillRect(34, y - 26, 32, 32);
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 5;
-        ctx.beginPath();
-        ctx.moveTo(41, y - 10);
-        ctx.lineTo(48, y - 2);
-        ctx.lineTo(60, y - 20);
-        ctx.stroke();
+        ctx.fillStyle = "#64748b";
+        ctx.font = "bold 22px monospace";
+        ctx.fillText(String(i + 1).padStart(2, "0"), 34, y);
         ctx.fillStyle = "#0f172a";
         ctx.font = "24px sans-serif";
         ctx.fillText(row, 84, y);

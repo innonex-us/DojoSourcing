@@ -584,7 +584,13 @@ const MODE_PRESETS: Record<
  * design-service views: tech-pack sketch, BOM material stack, 3D-sampling pattern grid,
  * development measurements, and a presentation line sheet.
  */
-export function buildTShirt(mats: SharedStageMaterials): TShirtBuild {
+export function buildTShirt(
+  mats: SharedStageMaterials,
+  options: { detail?: number } = {},
+): TShirtBuild {
+  // Mesh density (1 = desktop; lower on phones/tablets).
+  const detail = Math.min(1, Math.max(0.3, options.detail ?? 1));
+  const res = (n: number) => Math.max(24, Math.round(n * detail));
   const { track, matTee, matTeeCollar, matChrome, matObsidian } = mats;
   const clipPlanes = matTee.clippingPlanes;
 
@@ -665,7 +671,7 @@ export function buildTShirt(mats: SharedStageMaterials): TShirtBuild {
   const outlineGroup = new THREE.Group();
 
   /* ── Body shell + chin guard, lining ───────────────────────────────────── */
-  const shellGeo = track(buildSurfaceGeometry(PROFILE, noOpening, bodyPoint, 300, 280, 0, 1, true));
+  const shellGeo = track(buildSurfaceGeometry(PROFILE, noOpening, bodyPoint, res(300), res(280), 0, 1, true));
   const shell = new THREE.Mesh(shellGeo, matShell);
   shell.castShadow = true;
   shell.receiveShadow = true;
@@ -677,7 +683,7 @@ export function buildTShirt(mats: SharedStageMaterials): TShirtBuild {
   jacket.add(shell, lining);
 
   /* ── Structured hood ───────────────────────────────────────────────────── */
-  const hoodGeo = track(buildSurfaceGeometry(HOOD_PROFILE, hoodOpen, hoodPoint, 120, 160, 0, 1, true));
+  const hoodGeo = track(buildSurfaceGeometry(HOOD_PROFILE, hoodOpen, hoodPoint, res(120), res(160), 0, 1, true));
   const hood = new THREE.Mesh(hoodGeo, matShell);
   hood.castShadow = true;
   hood.receiveShadow = true;

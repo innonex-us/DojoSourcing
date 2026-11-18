@@ -10,7 +10,6 @@ import {
   MoveHorizontal,
   PackageCheck,
   PencilRuler,
-  Ship,
   ShieldCheck,
   Truck,
 } from "lucide-react";
@@ -77,16 +76,9 @@ const STAGES = [
     subtitle: "Factory Dock To Export Port",
     body: "Sealed 40ft container trucks haul your palletized inventory along the highway from the factory loading dock straight to the export terminal.",
   },
-  {
-    num: "07",
-    tag: "OCEAN SHIP",
-    title: "Global Ship Journey",
-    subtitle: "Container Vessel To Brand Warehouse",
-    body: "Loaded onto ocean cargo vessels and tracked across the sea until final delivery at your brand's fulfillment center.",
-  },
 ] as const;
 
-const STAGE_ICONS = [PencilRuler, Globe, Factory, ShieldCheck, PackageCheck, Truck, Ship] as const;
+const STAGE_ICONS = [PencilRuler, Globe, Factory, ShieldCheck, PackageCheck, Truck] as const;
 
 const SOURCING_CALLOUTS: CalloutItem[] = [
   { key: "srcMill", anchor: "srcMill", label: "Fabric mill · woven softshell", kind: "leader" },
@@ -107,6 +99,15 @@ const QA_CALLOUTS: CalloutItem[] = [
 
 const GROUND_Y = -1.35;
 
+/** Half-width (world units) the narrow-screen camera keeps in view — the widest stage. */
+const STAGE_HALF_WIDTH = 3.4;
+/** Half of the visible height (world units) needed so stages stay above the copy block. */
+const STAGE_FIT_HALF_HEIGHT = 4.4;
+
+const WATERMARK_DARK = 0xffffff;
+const WATERMARK_LIGHT = 0x1e2a4a;
+const WATERMARK_OPACITY = 0.07;
+
 export function Journey({
   theme = "dark",
   accent = "red",
@@ -123,6 +124,7 @@ export function Journey({
     scene: THREE.Scene;
     renderer: THREE.WebGLRenderer;
     portalMat: THREE.MeshBasicMaterial;
+    watermarkMat: THREE.MeshBasicMaterial;
     rimLight: THREE.SpotLight;
   } | null>(null);
 
@@ -132,6 +134,7 @@ export function Journey({
   const [studioAutoplay, setStudioAutoplay] = useState(true);
   const [hoveredBom, setHoveredBom] = useState<number | null>(null);
   const [stagePinned, setStagePinned] = useState(false);
+  const [webglFailed, setWebglFailed] = useState(false);
   const studioModeRef = useRef<DesignMode>("techpack");
   const calloutsRef = useRef<CalloutHandle>(null);
   const qaCalloutsRef = useRef<CalloutHandle>(null);
@@ -179,7 +182,7 @@ export function Journey({
       const mm = gsap.matchMedia();
 
       mm.add(
-        "(min-width: 768px) and (prefers-reduced-motion: no-preference)",
+        "(prefers-reduced-motion: no-preference)",
         () => {
           const host = canvasHostRef.current;
           const texts = gsap.utils.toArray<HTMLElement>(".journey-copy");
@@ -196,12 +199,15 @@ export function Journey({
               powerPreference: "high-performance",
             });
           } catch {
+            setWebglFailed(true);
             return;
           }
 
           const width = host.clientWidth || window.innerWidth;
           const height = host.clientHeight || window.innerHeight;
-          renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+          // Phones and small tablets: lighter pixel ratio, shadows and garment mesh.
+          const compact = Math.min(window.innerWidth, window.innerHeight) < 700;
+          renderer.setPixelRatio(Math.min(window.devicePixelRatio, compact ? 1.5 : 2));
           renderer.setSize(width, height);
           renderer.localClippingEnabled = true;
           renderer.shadowMap.enabled = true;
@@ -234,7 +240,7 @@ export function Journey({
           const keyLight = new THREE.DirectionalLight(0xfffaf4, 1.85);
           keyLight.position.set(5, 9, 6);
           keyLight.castShadow = true;
-          keyLight.shadow.mapSize.set(2048, 2048);
+          keyLight.shadow.mapSize.set(compact ? 1024 : 2048, compact ? 1024 : 2048);
           keyLight.shadow.camera.near = 1;
           keyLight.shadow.camera.far = 26;
           keyLight.shadow.camera.left = -6;
@@ -283,10 +289,47 @@ export function Journey({
           portalRing.position.y = GROUND_Y + 0.012;
           stageAnchor.add(portalRing);
 
-          sceneEnvRef.current = { scene, renderer, portalMat, rimLight };
+          // Dojo Design & Sourcing crane mark as a faint watermark behind every 3D stage.
+          // The navy PNG is turned into a white mask, then tinted per theme.
+          const watermarkMat = new THREE.MeshBasicMaterial({
+            color: theme === "light" ? WATERMARK_LIGHT : WATERMARK_DARK,
+            transparent: true,
+            opacity: 0,
+            depthWrite: false,
+            fog: false,
+          });
+          const watermarkGeo = new THREE.PlaneGeometry(3.2, 3.2);
+          const watermark = new THREE.Mesh(watermarkGeo, watermarkMat);
+          watermark.position.set(2.35, 0.35, -5);
+          watermark.renderOrder = -1;
+          scene.add(watermark);
+          let watermarkTex: THREE.CanvasTexture | null = null;
+          const logoImg = new Image();
+          logoImg.onload = () => {
+            const c = document.createElement("canvas");
+            c.width = 256;
+            c.height = 256;
+            const ctx = c.getContext("2d");
+            if (!ctx) return;
+            ctx.imageSmoothingQuality = "high";
+            ctx.drawImage(logoImg, 0, 0, 256, 256);
+            ctx.globalCompositeOperation = "source-in";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, 256, 256);
+            watermarkTex = new THREE.CanvasTexture(c);
+            watermarkTex.colorSpace = THREE.SRGBColorSpace;
+            watermarkMat.map = watermarkTex;
+            watermarkMat.opacity = WATERMARK_OPACITY;
+            watermarkMat.needsUpdate = true;
+          };
+          logoImg.src = "/dojo-crane-mark.png";
+
+          sceneEnvRef.current = { scene, renderer, portalMat, rimLight, watermarkMat };
 
           // Build 5 Separated Realistic 3D Components
-          const assets = buildRealisticStages(stageAnchor, groundClip);
+          const assets = buildRealisticStages(stageAnchor, groundClip, {
+            detail: compact ? 0.55 : 1,
+          });
           assetsRef.current = assets;
           const {
             tshirtGroup,
@@ -301,10 +344,6 @@ export function Journey({
             laserBeam,
             truckGroup,
             wheels,
-            shipStageGroup,
-            shipHullGroup,
-            radarBar,
-            waveGeo,
           } = assets;
 
           // 360° Drag-Orbit + Pointer Parallax
@@ -346,8 +385,8 @@ export function Journey({
 
           // Continuous Realistic Micro-Animations using THREE.Timer (non-deprecated)
           let rafId = 0;
+          let running = false;
           const timer = new THREE.Timer();
-          const wavePos = waveGeo.attributes.position as THREE.BufferAttribute;
 
           const { designStudio } = assets;
           const renderLoop = () => {
@@ -380,22 +419,6 @@ export function Journey({
             readyGroup.rotation.y = Math.sin(t * 0.55) * 0.24;
             laserBeam.rotation.x = Math.sin(t * 4.5) * 0.22;
 
-            shipHullGroup.position.y = Math.sin(t * 1.6) * 0.06;
-            shipHullGroup.rotation.z = Math.sin(t * 1.1) * 0.022;
-            shipHullGroup.rotation.x = Math.cos(t * 1.3) * 0.012;
-            radarBar.rotation.y = t * 3.0;
-
-            for (let i = 0; i < wavePos.count; i++) {
-              const vx = wavePos.getX(i);
-              const vz = wavePos.getZ(i);
-              wavePos.setY(
-                i,
-                Math.sin(vx * 0.65 + t * 1.9) * 0.09 +
-                  Math.cos(vz * 0.95 + t * 1.4) * 0.06,
-              );
-            }
-            wavePos.needsUpdate = true;
-            waveGeo.computeVertexNormals();
 
             renderer?.render(scene, camera);
 
@@ -429,36 +452,80 @@ export function Journey({
               qaStage.anchors,
               qaFade,
             );
+            if (running) rafId = requestAnimationFrame(renderLoop);
+          };
+          const startLoop = () => {
+            if (running) return;
+            running = true;
+            timer.reset();
             rafId = requestAnimationFrame(renderLoop);
           };
-          rafId = requestAnimationFrame(renderLoop);
+          const stopLoop = () => {
+            running = false;
+            cancelAnimationFrame(rafId);
+          };
+          // Only render while the journey is on screen (saves battery/GPU during the hero etc.).
+          const visibilityObserver = new IntersectionObserver(
+            ([entry]) => (entry?.isIntersecting ? startLoop() : stopLoop()),
+            { rootMargin: "200px 0px" },
+          );
+          visibilityObserver.observe(host);
+
+          // Wide screens: stage on the right of the copy column. Narrow/portrait: stage centred in
+          // the upper part of the screen with the copy below, camera pulled back to fit its width.
+          const applyFraming = (w: number, h: number) => {
+            const aspect = w / h;
+            camera.aspect = aspect;
+            const fog = scene.fog instanceof THREE.FogExp2 ? scene.fog : null;
+            if (w >= 1280 && aspect >= 1.15) {
+              stageAnchor.position.x = 2.05;
+              camera.position.set(-0.9, 1.15, 9.8);
+              camera.lookAt(1.05, -0.15, 0);
+              watermark.position.set(2.35, 0.35, -5);
+              if (fog) fog.density = 0.036;
+            } else {
+              stageAnchor.position.x = 0;
+              const vHalf = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+              const hHalf = vHalf * aspect;
+              // Fit the widest stage horizontally and keep it inside the upper ~45% vertically.
+              // Landscape screens in this layout have little height above the copy: frame smaller/higher.
+              const fitHalfHeight = aspect > 1 ? STAGE_FIT_HALF_HEIGHT * 1.3 : STAGE_FIT_HALF_HEIGHT;
+              const dist = Math.max(9.8, STAGE_HALF_WIDTH / hHalf + 2.5, fitHalfHeight / vHalf);
+              const lookY = -(aspect > 1 ? 0.36 : 0.28) * vHalf * dist;
+              camera.position.set(0, lookY + 1.6, dist);
+              camera.lookAt(0, lookY, 0);
+              watermark.position.set(0, 0.5, -5);
+              if (fog) fog.density = (0.036 * 9.8) / dist;
+            }
+            camera.updateProjectionMatrix();
+          };
+          applyFraming(width, height);
 
           const onResize = () => {
             if (!host || !renderer) return;
             const w = host.clientWidth || window.innerWidth;
             const h = host.clientHeight || window.innerHeight;
-            camera.aspect = w / h;
-            camera.updateProjectionMatrix();
+            applyFraming(w, h);
             renderer.setSize(w, h);
           };
           window.addEventListener("resize", onResize);
 
-          // GSAP ScrollTrigger Master Timeline with Exact Named Stage Labels (7 stages).
+          // GSAP ScrollTrigger Master Timeline with Exact Named Stage Labels (6 stages).
           // Each stage holds for ~1.2 timeline units; transitions start 0.4 after a label.
           const STAGE_COUNT = STAGES.length;
-          const TIMELINE_LENGTH = 7.6;
+          const TIMELINE_LENGTH = 6.28;
           const tl = gsap.timeline({
             scrollTrigger: {
               id: "journey-pipeline",
               trigger: ".journey-stage",
               start: "top top",
-              end: "+=6800",
+              end: "+=5800",
               pin: true,
               scrub: 0.8,
               anticipatePin: 1,
               onToggle: (self) => setStagePinned(self.isActive),
               onUpdate: (self) => {
-                const p = self.progress * TIMELINE_LENGTH;
+                const p = self.progress * tl.duration();
                 const idx =
                   p < 0.85 ? 0 : Math.min(STAGE_COUNT - 1, Math.floor((p - 0.85) / 1.2) + 1);
                 setActiveStep(idx);
@@ -564,40 +631,15 @@ export function Journey({
             .to(texts[5], { autoAlpha: 1, y: 0, duration: 0.35 }, 5.68)
             .addLabel("stage5", 6.18);
 
+          // Wheels roll while the truck drives in, finishing at the final label.
           wheels.forEach((w) => {
-            tl.to(w.rotation, { z: -Math.PI * 10, duration: 1.5, ease: "none" }, 5.48);
+            tl.to(w.rotation, { z: -Math.PI * 8, duration: 0.7, ease: "power1.out" }, 5.48);
           });
-
-          // STAGE 6 -> 7 (6.45..7.50): Truck exits 100% BEFORE Ocean Ship rises
-          tl.to(
-            truckGroup.position,
-            { x: 18, y: 2.2, duration: 0.45, ease: "power2.in" },
-            6.45,
-          )
-            .set(truckGroup, { visible: false }, 6.9)
-            .to(texts[5], { autoAlpha: 0, y: -24, duration: 0.25 }, 6.45)
-            .to(
-              horizonGrid.position,
-              { y: -4.5, duration: 0.35, ease: "power2.in" },
-              6.85,
-            )
-            .to(
-              shipStageGroup.position,
-              { y: -0.1, duration: 0.55, ease: "power3.out" },
-              6.92,
-            )
-            .fromTo(
-              shipStageGroup.position,
-              { x: -0.4 },
-              { x: 1.0, duration: 0.55, ease: "power1.inOut" },
-              6.92,
-            )
-            .to(texts[6], { autoAlpha: 1, y: 0, duration: 0.32 }, 7.08)
-            .addLabel("stage6", 7.5)
-            .to({}, { duration: 0.1 }, 7.5);
+          tl.to({}, { duration: 0.1 }, 6.18);
 
           return () => {
-            cancelAnimationFrame(rafId);
+            stopLoop();
+            visibilityObserver.disconnect();
             host.removeEventListener("pointerdown", onPointerDown);
             window.removeEventListener("pointerup", onPointerUp);
             window.removeEventListener("pointermove", onPointerMove);
@@ -607,6 +649,9 @@ export function Journey({
             assets.dispose();
             floorGeo.dispose();
             floorMat.dispose();
+            watermarkGeo.dispose();
+            watermarkMat.dispose();
+            watermarkTex?.dispose();
             envRT.dispose();
             pmrem.dispose();
             renderer?.dispose();
@@ -633,6 +678,7 @@ export function Journey({
       env.renderer.setClearColor(targetColor, 1);
       env.portalMat.color.copy(accentColor);
       env.rimLight.color.copy(accentColor);
+      env.watermarkMat.color.setHex(theme === "light" ? WATERMARK_LIGHT : WATERMARK_DARK);
     },
     { scope: sectionRef, dependencies: [theme, accent] },
   );
@@ -689,29 +735,41 @@ export function Journey({
       aria-label="3D Clothing Production & Shipment Journey"
     >
       {/* Desktop Full-Bleed Pinned 3D WebGL + GSAP Stage */}
-      <div className="journey-stage relative hidden h-svh min-h-[700px] w-full flex-col justify-between overflow-hidden px-8 pt-24 pb-10 md:flex">
+      <div
+        className={`journey-stage relative h-svh min-h-[560px] w-full flex-col justify-between overflow-hidden px-4 pt-20 pb-4 sm:px-6 md:px-8 md:pt-24 md:pb-10 ${
+          webglFailed ? "hidden" : "hidden motion-safe:flex"
+        }`}
+      >
         {/* Interactive 360° Drag-Orbit 3D WebGL Canvas */}
         <div
           ref={canvasHostRef}
-          className="absolute inset-0 z-0 cursor-grab active:cursor-grabbing"
+          className="absolute inset-0 z-0 cursor-grab touch-pan-y active:cursor-grabbing"
         />
 
         {/* Stage 01 design-studio annotations projected from the 3D jacket */}
-        <DesignCallouts ref={calloutsRef} items={calloutItems} />
-        {/* Stage 03 quality-assurance annotations */}
-        <DesignCallouts ref={qaCalloutsRef} items={QA_CALLOUTS} />
-        {/* Stage 02 sourcing annotations */}
-        <DesignCallouts ref={sourcingCalloutsRef} items={SOURCING_CALLOUTS} />
+        {/* (Leader-line labels need the wide layout; hidden on narrow screens.) */}
+        <div className="hidden xl:contents">
+          <DesignCallouts ref={calloutsRef} items={calloutItems} />
+          {/* Stage 04 quality-assurance annotations */}
+          <DesignCallouts ref={qaCalloutsRef} items={QA_CALLOUTS} />
+          {/* Stage 02 sourcing annotations */}
+          <DesignCallouts ref={sourcingCalloutsRef} items={SOURCING_CALLOUTS} />
+        </div>
 
         {/* Left Atmospheric Gradient */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-[44%] bg-gradient-to-r from-background via-background/85 to-transparent"
+          className="pointer-events-none absolute inset-y-0 left-0 z-[1] hidden w-[44%] bg-gradient-to-r from-background via-background/85 to-transparent xl:block"
+        />
+        {/* Bottom gradient behind the copy on narrow screens */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[58%] bg-gradient-to-t from-background via-background/90 to-transparent xl:hidden"
         />
 
         {/* Top Clickable 5-Step Pipeline HUD */}
         <div className="pointer-events-none relative z-10 mx-auto w-full max-w-[1400px]">
-          <div className="pointer-events-auto flex items-center justify-between gap-2">
+          <div className="pointer-events-auto flex items-center justify-between gap-1 sm:gap-2">
             {STAGES.map((stage, idx) => {
               const isActive = idx === activeStep;
               const isDone = idx < activeStep;
@@ -721,6 +779,8 @@ export function Journey({
                   key={stage.num}
                   type="button"
                   onClick={() => jumpToStage(idx)}
+                  aria-label={`${stage.num} ${stage.title}`}
+                  title={stage.title}
                   data-cursor="magnet"
                   className={`focus-ring flex items-center gap-2 whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.12em] transition-colors ${
                     isActive
@@ -749,27 +809,27 @@ export function Journey({
               );
             })}
           </div>
-          <div className="mt-4 h-[2px] w-full bg-border">
+          <div className="mt-3 h-[2px] w-full bg-border sm:mt-4">
             <div className="journey-rail-fill h-full w-full origin-left scale-x-0 bg-brand" />
           </div>
         </div>
 
         {/* Floating Editorial Narrative + Live Colorway Picker (Left) */}
-        <div className="pointer-events-none relative z-10 mx-auto flex w-full max-w-[1400px] flex-1 items-center">
-          <div className="relative h-[500px] w-full max-w-[460px]">
+        <div className="pointer-events-none relative z-10 mx-auto flex w-full max-w-[1400px] flex-1 items-end xl:items-center">
+          <div className="relative h-[52svh] max-h-[500px] w-full max-w-[560px] xl:h-[500px] xl:max-w-[460px]">
             {STAGES.map((stage, idx) => (
               <div
                 key={stage.num}
-                className="journey-copy absolute inset-0 flex flex-col justify-center"
+                className="journey-copy absolute inset-0 flex flex-col justify-end xl:justify-center"
                 style={{ opacity: idx === 0 ? 1 : 0 }}
               >
-                <span className="font-mono text-xs font-bold uppercase tracking-[0.3em] text-brand">
-                  {`STAGE ${stage.num} // ${stage.tag}`}
+                <span className="font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-brand sm:text-xs">
+                  {`STAGE ${stage.num}`}
                 </span>
-                <h2 className="mt-4 text-4xl font-extrabold uppercase leading-[1.03] tracking-wide text-chrome lg:text-5xl">
+                <h2 className="mt-2 text-[1.7rem] font-extrabold uppercase leading-[1.03] tracking-wide text-chrome sm:mt-4 sm:text-4xl lg:text-5xl">
                   {stage.title}
                 </h2>
-                <p className="mt-3 text-xs font-bold uppercase tracking-[0.22em] text-brand/90">
+                <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.18em] text-brand/90 sm:mt-3 sm:text-xs sm:tracking-[0.22em]">
                   {stage.subtitle}
                 </p>
                 {idx === 0 ? (
@@ -786,18 +846,18 @@ export function Journey({
                     onSelectColor={handleSelectColor}
                   />
                 ) : (
-                  <p className="mt-5 text-base leading-relaxed text-foreground/85">
+                  <p className="mt-3 text-sm leading-relaxed text-foreground/85 sm:mt-5 sm:text-base">
                     {stage.body}
                   </p>
                 )}
 
 
                 {idx === STAGES.length - 1 ? (
-                  <div className="pointer-events-auto mt-7 flex flex-wrap gap-3">
+                  <div className="pointer-events-auto mt-4 flex flex-wrap gap-2.5 sm:mt-7 sm:gap-3">
                     <a
                       href="#estimator"
                       data-cursor="magnet"
-                      className="focus-ring inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-[0_12px_28px_rgba(220,38,38,0.35)] transition-transform hover:scale-[1.03]"
+                      className="focus-ring inline-flex items-center gap-2 rounded-full bg-brand px-5 py-2.5 text-[11px] sm:px-6 sm:py-3 font-bold uppercase tracking-[0.2em] text-white shadow-[0_12px_28px_rgba(220,38,38,0.35)] transition-transform hover:scale-[1.03]"
                     >
                       <span>Estimate Your Run</span>
                       <ArrowDown className="h-3.5 w-3.5" aria-hidden />
@@ -805,7 +865,7 @@ export function Journey({
                     <Link
                       href="/showcase"
                       data-cursor="magnet"
-                      className="focus-ring inline-flex items-center gap-2 rounded-full border border-border bg-surface-deep/80 px-6 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-chrome transition-colors hover:border-brand hover:text-brand"
+                      className="focus-ring inline-flex items-center gap-2 rounded-full border border-border bg-surface-deep/80 px-5 py-2.5 text-[11px] sm:px-6 sm:py-3 font-bold uppercase tracking-[0.2em] text-chrome transition-colors hover:border-brand hover:text-brand"
                     >
                       <span>Product Showcase</span>
                       <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
@@ -818,14 +878,15 @@ export function Journey({
         </div>
 
         {/* Bottom Telemetry Bar */}
-        <div className="pointer-events-none relative z-10 mx-auto flex w-full max-w-[1400px] items-center justify-between font-mono text-[11px] uppercase tracking-[0.22em] text-muted">
+        <div className="pointer-events-none relative z-10 mx-auto mt-3 flex w-full max-w-[1400px] items-center justify-between font-mono text-[10px] uppercase tracking-[0.18em] text-muted sm:text-[11px] sm:tracking-[0.22em]">
           <span className="inline-flex items-center gap-2">
             <MoveHorizontal className="h-3.5 w-3.5 text-brand" aria-hidden />
-            <span>Drag 3D Stage To Orbit · Scroll Or Click 01–07</span>
+            <span className="hidden sm:inline">Drag 3D Stage To Orbit · Scroll Or Click 01–06</span>
+            <span className="sm:hidden">Scroll · Drag to orbit</span>
           </span>
           <Link
             href="/showcase"
-            className="pointer-events-auto inline-flex items-center gap-1.5 transition-colors hover:text-brand"
+            className="pointer-events-auto hidden items-center gap-1.5 transition-colors hover:text-brand sm:inline-flex"
           >
             <span>Product Showcase</span>
             <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
@@ -834,7 +895,7 @@ export function Journey({
       </div>
 
       {/* Mobile / Reduced-Motion Fallback Vertical Timeline */}
-      <div className="px-5 py-20 md:hidden">
+      <div className={webglFailed ? "px-5 py-20" : "px-5 py-20 motion-safe:hidden"}>
         <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-brand">
           • End-To-End Pipeline
         </p>

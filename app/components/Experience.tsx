@@ -26,13 +26,13 @@ export function Experience() {
         <div className="mx-auto mb-5 inline-flex items-center gap-2.5 rounded-full border border-border bg-white px-3.5 py-1.5 shadow-sm">
           <Image
             src="/dojo-crane-mark.png"
-            alt="Dojo Sourcing mark"
+            alt="Dojo Design & Sourcing mark"
             width={22}
             height={22}
             className="h-5 w-5 object-contain"
           />
           <span className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-[#0f2347]">
-            Dojo Sourcing Network
+            Dojo Design & Sourcing Network
           </span>
         </div>
 
