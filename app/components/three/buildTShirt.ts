@@ -32,6 +32,13 @@ const INK_COLOR = 0x1b2333;
 const MEASURE_COLOR = 0xef4444;
 const SAMPLING_COLOR = 0x60a5fa;
 const GRID_COLOR = 0x94a3b8;
+// Human figure (stage 01): tweak these to change skin tone, hair, eyes and underwear.
+const SKIN_TONE = 0xc89272;
+const SKIN_SHEEN = 0xd98a70;
+const HAIR_COLOR = 0x2b1d14;
+const IRIS_COLOR = 0x4a3222;
+const UNDERWEAR_COLOR = 0x23272e;
+const UNDERWEAR_BAND = 0x3a3f48;
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Garment geometry (local units). Hooded woven softshell: smooth shell with raglan
@@ -559,34 +566,59 @@ function taperedLimb(
   return geo;
 }
 
+/** Head scale (world units, jacket space) applied to the unit-space head surface. */
+const HEAD_SCALE = new THREE.Vector3(0.205, 0.31, 0.225);
+
 /**
- * Sculpted mannequin head: an ellipsoid displaced analytically into a calm, idealised face —
- * brow ridge, eye sockets, nose, cheekbones, lips, tapered jaw and chin, occipital curve.
- * Local frame: +x right, +y up, +z forward; unit radius before `scale`.
+ * Sculpted head surface: an ellipsoid displaced analytically into an idealised face — brow
+ * ridge, eye sockets, nose, cheekbones, lips, tapered jaw and chin, occipital curve.
+ * Takes a unit direction (+x right, +y up, +z forward) and returns the unit-space point.
  */
+function headSurface(dx: number, dy: number, dz: number, out = new THREE.Vector3()): THREE.Vector3 {
+  const front = smoothstep(0.15, 0.85, dz);
+  const ax = Math.abs(dx);
+  const jaw = 1 - 0.3 * smoothstep(-0.05, -0.95, dy);
+  let r = 1;
+  r += 0.035 * gauss((dy - 0.2) / 0.07) * front * smoothstep(0.75, 0.2, ax); // brow ridge
+  r -= 0.03 * gauss((ax - 0.3) / 0.13) * gauss((dy - 0.08) / 0.09) * front; // eye sockets
+  r += 0.11 * gauss(dx / 0.075) * gauss((dy + 0.12) / 0.11) * front; // nose tip
+  r += 0.045 * gauss(dx / 0.06) * smoothstep(0.12, -0.06, dy) * smoothstep(-0.25, -0.02, dy) * front; // bridge
+  r += 0.025 * gauss((ax - 0.48) / 0.14) * gauss((dy + 0.06) / 0.12) * front; // cheekbones
+  r += 0.02 * gauss(dx / 0.2) * gauss((dy + 0.37) / 0.045) * front; // upper lip
+  r -= 0.012 * gauss(dx / 0.18) * gauss((dy + 0.43) / 0.02) * front; // mouth line
+  r += 0.022 * gauss(dx / 0.17) * gauss((dy + 0.5) / 0.05) * front; // lower lip
+  r += 0.05 * gauss(dx / 0.25) * gauss((dy + 0.78) / 0.12) * front; // chin
+  r += 0.03 * gauss((dy - 0.15) / 0.35) * smoothstep(-0.2, -0.8, dz); // occiput
+  return out.set(dx * r * jaw, dy * r, dz * r * (0.94 + 0.06 * jaw));
+}
+
+/** Head mesh in unit space, with skin-tone variation (lips, cheeks, eye area) as vertex colours. */
 function sculptedHeadGeometry(): THREE.BufferGeometry {
   const geo = new THREE.SphereGeometry(1, 112, 84);
   const pos = geo.getAttribute("position") as THREE.BufferAttribute;
+  const colors = new Float32Array(pos.count * 3);
   const d = new THREE.Vector3();
+  const p = new THREE.Vector3();
   for (let i = 0; i < pos.count; i++) {
     d.fromBufferAttribute(pos, i).normalize();
-    const { x, y, z } = d;
-    const front = smoothstep(0.15, 0.85, z);
-    // Jaw taper toward a narrower chin, and a slightly flatter face plane.
-    const jaw = 1 - 0.3 * smoothstep(-0.05, -0.95, y);
-    let r = 1;
-    r += 0.035 * gauss((y - 0.2) / 0.07) * front * smoothstep(0.75, 0.2, Math.abs(x)); // brow ridge
-    r -= 0.03 * gauss((Math.abs(x) - 0.3) / 0.13) * gauss((y - 0.08) / 0.09) * front; // eye sockets
-    r += 0.11 * gauss(x / 0.075) * gauss((y + 0.12) / 0.11) * front; // nose tip
-    r += 0.045 * gauss(x / 0.06) * smoothstep(0.12, -0.06, y) * smoothstep(-0.25, -0.02, y) * front; // nose bridge
-    r += 0.025 * gauss((Math.abs(x) - 0.48) / 0.14) * gauss((y + 0.06) / 0.12) * front; // cheekbones
-    r += 0.02 * gauss(x / 0.2) * gauss((y + 0.37) / 0.045) * front; // upper lip
-    r -= 0.012 * gauss(x / 0.18) * gauss((y + 0.43) / 0.02) * front; // mouth line
-    r += 0.022 * gauss(x / 0.17) * gauss((y + 0.5) / 0.05) * front; // lower lip
-    r += 0.05 * gauss(x / 0.25) * gauss((y + 0.78) / 0.12) * front; // chin
-    r += 0.03 * gauss((y - 0.15) / 0.35) * smoothstep(-0.2, -0.8, z); // occiput
-    pos.setXYZ(i, x * r * jaw, y * r, z * r * (0.94 + 0.06 * jaw));
+    headSurface(d.x, d.y, d.z, p);
+    pos.setXYZ(i, p.x, p.y, p.z);
+    const front = smoothstep(0.2, 0.85, d.z);
+    const ax = Math.abs(d.x);
+    const lips = gauss(d.x / 0.17) * (gauss((d.y + 0.37) / 0.04) + gauss((d.y + 0.5) / 0.045)) * front;
+    const blush = gauss((ax - 0.45) / 0.16) * gauss((d.y + 0.15) / 0.14) * front;
+    const eyeArea = gauss((ax - 0.3) / 0.12) * gauss((d.y - 0.06) / 0.07) * front;
+    const nostril = gauss((ax - 0.045) / 0.02) * gauss((d.y + 0.215) / 0.02) * front;
+    colors.set(
+      [
+        1 - 0.1 * lips - 0.08 * eyeArea - 0.5 * nostril,
+        1 - 0.3 * lips - 0.07 * blush - 0.11 * eyeArea - 0.55 * nostril,
+        1 - 0.28 * lips - 0.08 * blush - 0.1 * eyeArea - 0.55 * nostril,
+      ],
+      i * 3,
+    );
   }
+  geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
   geo.computeVertexNormals();
   return geo;
 }
@@ -933,49 +965,119 @@ export function buildTShirt(
   });
   jacket.add(outlineGroup);
 
-  /* ── Display mannequin wearing the jacket ─────────────────────────────── */
+  /* ── Realistic human figure wearing the jacket (skin, face, hair, underwear) ── */
   const mannequin = new THREE.Group();
-  const matMannequin = mats.makePhys({
-    color: 0xe9e6e0,
-    roughness: 0.4,
+  const skinParams = {
+    color: SKIN_TONE,
+    roughness: 0.52,
     metalness: 0,
-    clearcoat: 0.3,
-    clearcoatRoughness: 0.35,
-    sheen: 0.2,
-    sheenColor: new THREE.Color(0xffffff),
-  });
+    sheen: 0.35,
+    sheenRoughness: 0.6,
+    sheenColor: new THREE.Color(SKIN_SHEEN),
+    clearcoat: 0.06,
+    clearcoatRoughness: 0.6,
+    specularIntensity: 0.45,
+  };
+  const matSkin = mats.makePhys(skinParams);
+  const matFace = mats.makePhys({ ...skinParams, vertexColors: true });
+  const matHair = mats.makePhys({ color: HAIR_COLOR, roughness: 0.78, sheen: 0.45, sheenRoughness: 0.5, sheenColor: new THREE.Color(0x6b4a33) });
+  const matBrow = mats.makePhys({ color: HAIR_COLOR, roughness: 0.9 });
+  const matSclera = mats.makePhys({ color: 0xf3efe8, roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.05 });
+  const matIris = mats.makePhys({ color: IRIS_COLOR, roughness: 0.35, clearcoat: 1, clearcoatRoughness: 0.05 });
+  const matPupil = mats.makePhys({ color: 0x050505, roughness: 0.2, clearcoat: 1 });
+  const matNail = mats.makePhys({ color: 0xe6c1b1, roughness: 0.3, clearcoat: 0.6 });
+  const matUnderwear = mats.makePhys({ color: UNDERWEAR_COLOR, roughness: 0.86, sheen: 0.55, sheenRoughness: 0.55, sheenColor: new THREE.Color(0x5b6472) });
+  const matWaistband = mats.makePhys({ color: UNDERWEAR_BAND, roughness: 0.7, sheen: 0.3 });
   const limb = (
     pts: THREE.Vector3[],
     radii: number[],
     o?: Parameters<typeof taperedLimb>[2],
+    mat: THREE.Material = matSkin,
   ) => {
-    const m = new THREE.Mesh(track(taperedLimb(pts, radii, o)), matMannequin);
+    const m = new THREE.Mesh(track(taperedLimb(pts, radii, o)), mat);
     m.castShadow = true;
     return m;
   };
+  const blob = (mat: THREE.Material, sx: number, sy: number, sz: number, x: number, y: number, z: number) => {
+    const m = new THREE.Mesh(blobGeo, mat);
+    m.scale.set(sx, sy, sz);
+    m.position.set(x, y, z);
+    m.castShadow = true;
+    return m;
+  };
+  const blobGeo = track(new THREE.SphereGeometry(1, 32, 24));
 
-  // Head (0.62 tall), ears and a slender neck — the face shows through the hood opening.
-  const head = new THREE.Mesh(track(sculptedHeadGeometry()), matMannequin);
-  head.scale.set(0.205, 0.31, 0.225);
-  head.position.set(0, 1.31, 0.045);
-  head.rotation.x = 0.06;
+  // Head group: sculpted face + eyes + brows + short hair + ears; neck below.
+  const headGroup = new THREE.Group();
+  headGroup.position.set(0, 1.31, 0.045);
+  headGroup.rotation.x = 0.06;
+  const head = new THREE.Mesh(track(sculptedHeadGeometry()), matFace);
+  head.scale.copy(HEAD_SCALE);
   head.castShadow = true;
+  headGroup.add(head);
+
+  // Eyes: wet sclera, iris + pupil, upper and lower lids, set into the sockets.
+  const eyeR = 0.031;
+  const eyeGeo = track(new THREE.SphereGeometry(eyeR, 32, 24));
+  const irisGeo = track(new THREE.CircleGeometry(eyeR * 0.52, 32));
+  const pupilGeo = track(new THREE.CircleGeometry(eyeR * 0.2, 24));
+  const upperLidGeo = track(new THREE.SphereGeometry(eyeR * 1.08, 32, 16, 0, TAU, 0, Math.PI * 0.3));
+  const lowerLidGeo = track(new THREE.SphereGeometry(eyeR * 1.06, 32, 12, 0, TAU, Math.PI * 0.8, Math.PI * 0.2));
+  const sp = new THREE.Vector3();
+  [-1, 1].forEach((side) => {
+    const dir = new THREE.Vector3(side * 0.3, 0.075, 0.95).normalize();
+    headSurface(dir.x, dir.y, dir.z, sp).multiply(HEAD_SCALE);
+    const eye = new THREE.Group();
+    eye.position.set(sp.x, sp.y, sp.z - eyeR * 0.55);
+    const ball = new THREE.Mesh(eyeGeo, matSclera);
+    const iris = new THREE.Mesh(irisGeo, matIris);
+    iris.position.z = eyeR * 0.985;
+    const pupil = new THREE.Mesh(pupilGeo, matPupil);
+    pupil.position.z = eyeR * 0.99;
+    const upper = new THREE.Mesh(upperLidGeo, matSkin);
+    upper.rotation.x = -0.12;
+    const lower = new THREE.Mesh(lowerLidGeo, matSkin);
+    lower.rotation.x = -0.2;
+    eye.add(ball, iris, pupil, upper, lower);
+    headGroup.add(eye);
+  });
+
+  // Eyebrows (in the head's unit space, following the brow ridge).
+  [-1, 1].forEach((side) => {
+    const pts: THREE.Vector3[] = [];
+    for (let k = 0; k <= 8; k++) {
+      const ax = THREE.MathUtils.lerp(0.13, 0.45, k / 8);
+      const dy = 0.2 + 0.03 * Math.sin((k / 8) * Math.PI) - 0.025 * (k / 8);
+      const dir = new THREE.Vector3(side * ax, dy, Math.sqrt(Math.max(0, 1 - ax * ax - dy * dy)));
+      pts.push(headSurface(dir.x, dir.y, dir.z, new THREE.Vector3()).multiplyScalar(1.012));
+    }
+    const brow = new THREE.Mesh(track(taperedLimb(pts, [0.016, 0.019, 0.015, 0.008], { radial: 8, tubular: 20, flatten: 0.4 })), matBrow);
+    head.add(brow);
+  });
+
+  // Short hair cap (hairline above the forehead, lower at the nape).
+  const hair = new THREE.Mesh(track(new THREE.SphereGeometry(1.06, 64, 32, 0, TAU, 0, Math.PI * 0.5)), matHair);
+  hair.rotation.x = -0.3;
+  hair.position.set(0, 0.03, -0.05);
+  head.add(hair);
+
   const earGeo = track(new THREE.SphereGeometry(1, 24, 18));
   [-1, 1].forEach((side) => {
-    const ear = new THREE.Mesh(earGeo, matMannequin);
+    const ear = new THREE.Mesh(earGeo, matSkin);
     ear.scale.set(0.018, 0.06, 0.035);
-    ear.position.set(side * 0.2, 1.3, 0.02);
+    ear.position.set(side * 0.2, -0.01, -0.025);
     ear.rotation.z = side * -0.12;
-    mannequin.add(ear);
+    headGroup.add(ear);
   });
   const neck = limb(
     [new THREE.Vector3(0, 0.86, -0.01), new THREE.Vector3(0, 1.0, 0.0), new THREE.Vector3(0, 1.12, 0.02)],
     [0.11, 0.085, 0.08],
     { radial: 28, tubular: 16 },
   );
-  mannequin.add(head, neck);
+  mannequin.add(headGroup, neck);
 
-  // Relaxed hands (~¾ head long) with a palm, four curled fingers and a thumb.
+  // Relaxed hands (~¾ head long): palm, four curled fingers with nails, and a thumb.
+  const nailGeo = track(new THREE.SphereGeometry(1, 16, 10));
   ([[-1, sleevePaths.left], [1, sleevePaths.right]] as const).forEach(([side, path]) => {
     const end = path.getPointAt(1);
     const down = path.getTangentAt(1).normalize();
@@ -991,12 +1093,7 @@ export function buildTShirt(
 
     const v = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
     hand.add(limb([v(0, 0.06, 0), v(0, -0.02, 0), v(0.004, -0.07, 0)], [0.062, 0.058, 0.062], { radial: 24, tubular: 10, flatten: 0.72 }));
-    const palm = new THREE.Mesh(track(new THREE.SphereGeometry(1, 32, 24)), matMannequin);
-    palm.scale.set(0.034, 0.12, 0.078);
-    palm.position.set(0.008, -0.15, 0);
-    palm.castShadow = true;
-    hand.add(palm);
-    // Fingers: index → little, across the hand width, each curling gently toward the palm.
+    hand.add(blob(matSkin, 0.045, 0.12, 0.082, 0.01, -0.15, 0));
     const fingerSpecs: Array<[number, number, number]> = [
       [0.055, 0.205, 0.0175],
       [0.018, 0.225, 0.018],
@@ -1005,20 +1102,21 @@ export function buildTShirt(
     ];
     fingerSpecs.forEach(([fz, len, r]) => {
       const baseY = -0.25;
+      const tip = v(0.055, baseY - len * 0.98, fz * 1.06);
       hand.add(
         limb(
-          [
-            v(0.004, baseY + 0.02, fz),
-            v(0.01, baseY - len * 0.4, fz * 1.04),
-            v(0.032, baseY - len * 0.78, fz * 1.06),
-            v(0.055, baseY - len * 0.98, fz * 1.06),
-          ],
+          [v(0.004, baseY + 0.02, fz), v(0.01, baseY - len * 0.4, fz * 1.04), v(0.032, baseY - len * 0.78, fz * 1.06), tip],
           [r, r * 0.95, r * 0.86, r * 0.78],
           { radial: 14, tubular: 18, flatten: 0.85, capEnd: true },
         ),
       );
+      // Nail on the back of the fingertip.
+      const nail = new THREE.Mesh(nailGeo, matNail);
+      nail.scale.set(r * 0.25, r * 1.1, r * 0.72);
+      nail.position.set(tip.x - r * 0.62, tip.y + r * 0.9, tip.z);
+      nail.rotation.z = -0.35;
+      hand.add(nail);
     });
-    // Thumb: from the wrist side of the palm, forward and down toward the body.
     hand.add(
       limb(
         [v(0.012, -0.1, 0.06), v(0.03, -0.16, 0.095), v(0.055, -0.22, 0.1), v(0.07, -0.26, 0.09)],
@@ -1029,7 +1127,7 @@ export function buildTShirt(
     mannequin.add(hand);
   });
 
-  // Pelvis / hip form below the hem.
+  // Boxer briefs: pelvis form, waistband and leg openings at mid-thigh.
   const hipProfile = [
     new THREE.Vector2(0.0001, -1.2),
     new THREE.Vector2(0.12, -1.19),
@@ -1039,16 +1137,19 @@ export function buildTShirt(
     new THREE.Vector2(0.54, -0.9),
     new THREE.Vector2(0.52, -0.75),
   ];
-  const hips = new THREE.Mesh(track(new THREE.LatheGeometry(hipProfile, 64)), matMannequin);
-  hips.scale.set(1, 1, 0.56);
-  hips.castShadow = true;
-  hips.receiveShadow = true;
-  mannequin.add(hips);
+  const briefs = new THREE.Mesh(track(new THREE.LatheGeometry(hipProfile, 64)), matUnderwear);
+  briefs.scale.set(1, 1, 0.56);
+  briefs.castShadow = true;
+  briefs.receiveShadow = true;
+  const waistband = new THREE.Mesh(track(new THREE.CylinderGeometry(0.535, 0.545, 0.07, 64, 1, true)), matWaistband);
+  waistband.scale.set(1, 1, 0.57);
+  waistband.position.y = -0.86;
+  mannequin.add(briefs, waistband);
 
   if (figure === "full") {
-    // Legs to the floor: thigh → knee → calf → ankle, with moulded feet (8-head figure).
     [-1, 1].forEach((side) => {
       const sx = (x: number) => side * x;
+      // Leg: thigh → knee → calf → ankle.
       mannequin.add(
         limb(
           [
@@ -1063,33 +1164,63 @@ export function buildTShirt(
           { radial: 36, tubular: 72, flatten: 0.9 },
         ),
       );
-      const foot = limb(
-        [
-          new THREE.Vector3(sx(0.145), -3.24, -0.08),
-          new THREE.Vector3(sx(0.15), -3.28, 0.06),
-          new THREE.Vector3(sx(0.16), -3.3, 0.2),
-          new THREE.Vector3(sx(0.165), -3.31, 0.3),
-        ],
-        [0.075, 0.08, 0.075, 0.05],
-        { radial: 24, tubular: 24, flatten: 0.6, capStart: true, capEnd: true },
+      // Knee cap, calf muscle and ankle bones.
+      mannequin.add(blob(matSkin, 0.075, 0.09, 0.035, sx(0.172), -2.07, 0.14));
+      mannequin.add(blob(matSkin, 0.115, 0.22, 0.1, sx(0.165), -2.42, -0.07));
+      mannequin.add(blob(matSkin, 0.03, 0.035, 0.03, sx(0.205), -3.13, -0.01));
+      // Boxer-brief leg opening with a hem band.
+      mannequin.add(
+        limb(
+          [new THREE.Vector3(sx(0.25), -0.92, 0), new THREE.Vector3(sx(0.235), -1.2, 0.008), new THREE.Vector3(sx(0.225), -1.42, 0.015)],
+          [0.29, 0.268, 0.25],
+          { radial: 36, tubular: 20, flatten: 0.9 },
+          matUnderwear,
+        ),
       );
-      mannequin.add(foot);
+      const hem = new THREE.Mesh(track(new THREE.TorusGeometry(0.248, 0.011, 8, 48)), matWaistband);
+      hem.rotation.x = Math.PI / 2;
+      hem.scale.set(1, 0.9, 1);
+      hem.position.set(sx(0.225), -1.42, 0.015);
+      mannequin.add(hem);
+      // Foot with heel, arch and five toes.
+      mannequin.add(
+        limb(
+          [
+            new THREE.Vector3(sx(0.145), -3.24, -0.08),
+            new THREE.Vector3(sx(0.15), -3.28, 0.06),
+            new THREE.Vector3(sx(0.16), -3.3, 0.2),
+            new THREE.Vector3(sx(0.165), -3.31, 0.27),
+          ],
+          [0.075, 0.08, 0.075, 0.055],
+          { radial: 24, tubular: 24, flatten: 0.6, capStart: true, capEnd: true },
+        ),
+      );
+      const toes: Array<[number, number, number]> = [
+        [0.115, 0.03, 0.05],
+        [0.15, 0.021, 0.042],
+        [0.178, 0.019, 0.036],
+        [0.203, 0.017, 0.03],
+        [0.225, 0.015, 0.024],
+      ];
+      toes.forEach(([tx, tr, tl]) => {
+        mannequin.add(
+          limb(
+            [new THREE.Vector3(sx(tx), -3.305, 0.27), new THREE.Vector3(sx(tx), -3.31, 0.27 + tl)],
+            [tr, tr * 0.9],
+            { radial: 12, tubular: 8, flatten: 0.75, capEnd: true },
+          ),
+        );
+      });
     });
   } else {
-    // Upper-thigh stubs with flat cuts, as on a retail hip form.
+    // Hip-form variant: upper-thigh stubs (in underwear) on the stand pole.
     const thighGeo = track(new THREE.CylinderGeometry(0.17, 0.145, 0.3, 40));
-    const thighCapGeo = track(new THREE.CircleGeometry(0.145, 40));
     [-1, 1].forEach((side) => {
-      const thigh = new THREE.Group();
-      const leg = new THREE.Mesh(thighGeo, matMannequin);
+      const leg = new THREE.Mesh(thighGeo, matUnderwear);
       leg.castShadow = true;
-      const cap = new THREE.Mesh(thighCapGeo, matMannequin);
-      cap.rotation.x = Math.PI / 2;
-      cap.position.y = -0.15;
-      thigh.add(leg, cap);
-      thigh.position.set(side * 0.22, -1.24, 0);
-      thigh.rotation.z = side * 0.06;
-      mannequin.add(thigh);
+      leg.position.set(side * 0.22, -1.24, 0);
+      leg.rotation.z = side * 0.06;
+      mannequin.add(leg);
     });
   }
   jacket.add(mannequin);
