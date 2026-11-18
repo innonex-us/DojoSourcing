@@ -37,15 +37,16 @@ export function Header({
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white p-1.5 shadow-sm ring-1 ring-black/10">
             <Image
               src="/dojo-crane-mark.png"
-              alt="Dojo Sourcing logo"
+              alt="Dojo Design & Sourcing logo"
               width={24}
               height={24}
               className="h-6 w-6 shrink-0 object-contain"
               priority
             />
           </span>
-          <span className="text-sm font-extrabold uppercase tracking-[0.16em] text-chrome sm:text-base md:text-lg">
-            Dojo <span className="text-brand">Sourcing</span>
+          <span className="flex flex-col text-[11px] font-extrabold uppercase leading-tight tracking-[0.14em] text-chrome sm:flex-row sm:gap-[0.4em] sm:text-sm md:text-base lg:text-lg">
+            <span>Dojo Design</span>
+            <span className="text-brand">&amp; Sourcing</span>
           </span>
         </Link>
 

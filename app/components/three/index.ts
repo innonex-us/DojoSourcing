@@ -6,7 +6,6 @@ import { buildSourcing, type SourcingBuild } from "./buildSourcing";
 import { buildQualityCheck, type QualityCheckBuild } from "./buildQualityCheck";
 import { buildCartons } from "./buildCartons";
 import { buildCargoTruck } from "./buildCargoTruck";
-import { buildOceanShip } from "./buildOceanShip";
 
 export type RealisticStageAssets = {
   mats: SharedStageMaterials;
@@ -24,10 +23,6 @@ export type RealisticStageAssets = {
   laserBeam: THREE.Mesh;
   truckGroup: THREE.Group;
   wheels: THREE.Group[];
-  shipStageGroup: THREE.Group;
-  shipHullGroup: THREE.Group;
-  radarBar: THREE.Mesh;
-  waveGeo: THREE.PlaneGeometry;
   dispose: () => void;
 };
 
@@ -50,10 +45,6 @@ export function buildRealisticStages(
   const { qaGroup, anchors: qaAnchors, update: qaUpdate } = buildQualityCheck(mats, groundClip);
   const { readyGroup, laserBeam } = buildCartons(mats);
   const { truckGroup, wheels } = buildCargoTruck(mats);
-  const { shipStageGroup, shipHullGroup, radarBar, waveGeo } = buildOceanShip(
-    mats,
-    groundClip,
-  );
 
   stageAnchor.add(
     tshirtGroup,
@@ -62,7 +53,6 @@ export function buildRealisticStages(
     qaGroup,
     readyGroup,
     truckGroup,
-    shipStageGroup,
   );
 
   return {
@@ -81,10 +71,6 @@ export function buildRealisticStages(
     laserBeam,
     truckGroup,
     wheels,
-    shipStageGroup,
-    shipHullGroup,
-    radarBar,
-    waveGeo,
     dispose: mats.disposeAll,
   };
 }
@@ -99,5 +85,4 @@ export {
   buildQualityCheck,
   buildCartons,
   buildCargoTruck,
-  buildOceanShip,
 };

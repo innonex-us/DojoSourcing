@@ -10,7 +10,6 @@ import {
   MoveHorizontal,
   PackageCheck,
   PencilRuler,
-  Ship,
   ShieldCheck,
   Truck,
 } from "lucide-react";
@@ -77,16 +76,9 @@ const STAGES = [
     subtitle: "Factory Dock To Export Port",
     body: "Sealed 40ft container trucks haul your palletized inventory along the highway from the factory loading dock straight to the export terminal.",
   },
-  {
-    num: "07",
-    tag: "OCEAN SHIP",
-    title: "Global Ship Journey",
-    subtitle: "Container Vessel To Brand Warehouse",
-    body: "Loaded onto ocean cargo vessels and tracked across the sea until final delivery at your brand's fulfillment center.",
-  },
 ] as const;
 
-const STAGE_ICONS = [PencilRuler, Globe, Factory, ShieldCheck, PackageCheck, Truck, Ship] as const;
+const STAGE_ICONS = [PencilRuler, Globe, Factory, ShieldCheck, PackageCheck, Truck] as const;
 
 const SOURCING_CALLOUTS: CalloutItem[] = [
   { key: "srcMill", anchor: "srcMill", label: "Fabric mill · woven softshell", kind: "leader" },
@@ -107,6 +99,10 @@ const QA_CALLOUTS: CalloutItem[] = [
 
 const GROUND_Y = -1.35;
 
+const WATERMARK_DARK = 0xffffff;
+const WATERMARK_LIGHT = 0x1e2a4a;
+const WATERMARK_OPACITY = 0.07;
+
 export function Journey({
   theme = "dark",
   accent = "red",
@@ -123,6 +119,7 @@ export function Journey({
     scene: THREE.Scene;
     renderer: THREE.WebGLRenderer;
     portalMat: THREE.MeshBasicMaterial;
+    watermarkMat: THREE.MeshBasicMaterial;
     rimLight: THREE.SpotLight;
   } | null>(null);
 
@@ -283,7 +280,42 @@ export function Journey({
           portalRing.position.y = GROUND_Y + 0.012;
           stageAnchor.add(portalRing);
 
-          sceneEnvRef.current = { scene, renderer, portalMat, rimLight };
+          // Dojo Design & Sourcing crane mark as a faint watermark behind every 3D stage.
+          // The navy PNG is turned into a white mask, then tinted per theme.
+          const watermarkMat = new THREE.MeshBasicMaterial({
+            color: theme === "light" ? WATERMARK_LIGHT : WATERMARK_DARK,
+            transparent: true,
+            opacity: 0,
+            depthWrite: false,
+            fog: false,
+          });
+          const watermarkGeo = new THREE.PlaneGeometry(3.2, 3.2);
+          const watermark = new THREE.Mesh(watermarkGeo, watermarkMat);
+          watermark.position.set(2.35, 0.35, -5);
+          watermark.renderOrder = -1;
+          scene.add(watermark);
+          let watermarkTex: THREE.CanvasTexture | null = null;
+          const logoImg = new Image();
+          logoImg.onload = () => {
+            const c = document.createElement("canvas");
+            c.width = 256;
+            c.height = 256;
+            const ctx = c.getContext("2d");
+            if (!ctx) return;
+            ctx.imageSmoothingQuality = "high";
+            ctx.drawImage(logoImg, 0, 0, 256, 256);
+            ctx.globalCompositeOperation = "source-in";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, 256, 256);
+            watermarkTex = new THREE.CanvasTexture(c);
+            watermarkTex.colorSpace = THREE.SRGBColorSpace;
+            watermarkMat.map = watermarkTex;
+            watermarkMat.opacity = WATERMARK_OPACITY;
+            watermarkMat.needsUpdate = true;
+          };
+          logoImg.src = "/dojo-crane-mark.png";
+
+          sceneEnvRef.current = { scene, renderer, portalMat, rimLight, watermarkMat };
 
           // Build 5 Separated Realistic 3D Components
           const assets = buildRealisticStages(stageAnchor, groundClip);
@@ -301,10 +333,6 @@ export function Journey({
             laserBeam,
             truckGroup,
             wheels,
-            shipStageGroup,
-            shipHullGroup,
-            radarBar,
-            waveGeo,
           } = assets;
 
           // 360° Drag-Orbit + Pointer Parallax
@@ -347,7 +375,6 @@ export function Journey({
           // Continuous Realistic Micro-Animations using THREE.Timer (non-deprecated)
           let rafId = 0;
           const timer = new THREE.Timer();
-          const wavePos = waveGeo.attributes.position as THREE.BufferAttribute;
 
           const { designStudio } = assets;
           const renderLoop = () => {
@@ -380,22 +407,6 @@ export function Journey({
             readyGroup.rotation.y = Math.sin(t * 0.55) * 0.24;
             laserBeam.rotation.x = Math.sin(t * 4.5) * 0.22;
 
-            shipHullGroup.position.y = Math.sin(t * 1.6) * 0.06;
-            shipHullGroup.rotation.z = Math.sin(t * 1.1) * 0.022;
-            shipHullGroup.rotation.x = Math.cos(t * 1.3) * 0.012;
-            radarBar.rotation.y = t * 3.0;
-
-            for (let i = 0; i < wavePos.count; i++) {
-              const vx = wavePos.getX(i);
-              const vz = wavePos.getZ(i);
-              wavePos.setY(
-                i,
-                Math.sin(vx * 0.65 + t * 1.9) * 0.09 +
-                  Math.cos(vz * 0.95 + t * 1.4) * 0.06,
-              );
-            }
-            wavePos.needsUpdate = true;
-            waveGeo.computeVertexNormals();
 
             renderer?.render(scene, camera);
 
@@ -443,22 +454,22 @@ export function Journey({
           };
           window.addEventListener("resize", onResize);
 
-          // GSAP ScrollTrigger Master Timeline with Exact Named Stage Labels (7 stages).
+          // GSAP ScrollTrigger Master Timeline with Exact Named Stage Labels (6 stages).
           // Each stage holds for ~1.2 timeline units; transitions start 0.4 after a label.
           const STAGE_COUNT = STAGES.length;
-          const TIMELINE_LENGTH = 7.6;
+          const TIMELINE_LENGTH = 6.28;
           const tl = gsap.timeline({
             scrollTrigger: {
               id: "journey-pipeline",
               trigger: ".journey-stage",
               start: "top top",
-              end: "+=6800",
+              end: "+=5800",
               pin: true,
               scrub: 0.8,
               anticipatePin: 1,
               onToggle: (self) => setStagePinned(self.isActive),
               onUpdate: (self) => {
-                const p = self.progress * TIMELINE_LENGTH;
+                const p = self.progress * tl.duration();
                 const idx =
                   p < 0.85 ? 0 : Math.min(STAGE_COUNT - 1, Math.floor((p - 0.85) / 1.2) + 1);
                 setActiveStep(idx);
@@ -564,37 +575,11 @@ export function Journey({
             .to(texts[5], { autoAlpha: 1, y: 0, duration: 0.35 }, 5.68)
             .addLabel("stage5", 6.18);
 
+          // Wheels roll while the truck drives in, finishing at the final label.
           wheels.forEach((w) => {
-            tl.to(w.rotation, { z: -Math.PI * 10, duration: 1.5, ease: "none" }, 5.48);
+            tl.to(w.rotation, { z: -Math.PI * 8, duration: 0.7, ease: "power1.out" }, 5.48);
           });
-
-          // STAGE 6 -> 7 (6.45..7.50): Truck exits 100% BEFORE Ocean Ship rises
-          tl.to(
-            truckGroup.position,
-            { x: 18, y: 2.2, duration: 0.45, ease: "power2.in" },
-            6.45,
-          )
-            .set(truckGroup, { visible: false }, 6.9)
-            .to(texts[5], { autoAlpha: 0, y: -24, duration: 0.25 }, 6.45)
-            .to(
-              horizonGrid.position,
-              { y: -4.5, duration: 0.35, ease: "power2.in" },
-              6.85,
-            )
-            .to(
-              shipStageGroup.position,
-              { y: -0.1, duration: 0.55, ease: "power3.out" },
-              6.92,
-            )
-            .fromTo(
-              shipStageGroup.position,
-              { x: -0.4 },
-              { x: 1.0, duration: 0.55, ease: "power1.inOut" },
-              6.92,
-            )
-            .to(texts[6], { autoAlpha: 1, y: 0, duration: 0.32 }, 7.08)
-            .addLabel("stage6", 7.5)
-            .to({}, { duration: 0.1 }, 7.5);
+          tl.to({}, { duration: 0.1 }, 6.18);
 
           return () => {
             cancelAnimationFrame(rafId);
@@ -607,6 +592,9 @@ export function Journey({
             assets.dispose();
             floorGeo.dispose();
             floorMat.dispose();
+            watermarkGeo.dispose();
+            watermarkMat.dispose();
+            watermarkTex?.dispose();
             envRT.dispose();
             pmrem.dispose();
             renderer?.dispose();
@@ -633,6 +621,7 @@ export function Journey({
       env.renderer.setClearColor(targetColor, 1);
       env.portalMat.color.copy(accentColor);
       env.rimLight.color.copy(accentColor);
+      env.watermarkMat.color.setHex(theme === "light" ? WATERMARK_LIGHT : WATERMARK_DARK);
     },
     { scope: sectionRef, dependencies: [theme, accent] },
   );
@@ -764,7 +753,7 @@ export function Journey({
                 style={{ opacity: idx === 0 ? 1 : 0 }}
               >
                 <span className="font-mono text-xs font-bold uppercase tracking-[0.3em] text-brand">
-                  {`STAGE ${stage.num} // ${stage.tag}`}
+                  {`STAGE ${stage.num}`}
                 </span>
                 <h2 className="mt-4 text-4xl font-extrabold uppercase leading-[1.03] tracking-wide text-chrome lg:text-5xl">
                   {stage.title}
@@ -821,7 +810,7 @@ export function Journey({
         <div className="pointer-events-none relative z-10 mx-auto flex w-full max-w-[1400px] items-center justify-between font-mono text-[11px] uppercase tracking-[0.22em] text-muted">
           <span className="inline-flex items-center gap-2">
             <MoveHorizontal className="h-3.5 w-3.5 text-brand" aria-hidden />
-            <span>Drag 3D Stage To Orbit · Scroll Or Click 01–07</span>
+            <span>Drag 3D Stage To Orbit · Scroll Or Click 01–06</span>
           </span>
           <Link
             href="/showcase"

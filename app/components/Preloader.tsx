@@ -10,7 +10,7 @@ import { ScrambleTextPlugin } from "gsap/ScrambleTextPlugin";
 gsap.registerPlugin(useGSAP, DrawSVGPlugin, ScrambleTextPlugin);
 
 /**
- * GSAP-choreographed Dojo Sourcing loading screen with DrawSVG orbital rings and percentage counter.
+ * GSAP-choreographed Dojo Design & Sourcing loading screen with DrawSVG orbital rings and percentage counter.
  */
 export function Preloader() {
   const curtainRef = useRef<HTMLDivElement>(null);
@@ -55,7 +55,7 @@ export function Preloader() {
               {
                 duration: 0.7,
                 scrambleText: {
-                  text: "DOJO SOURCING",
+                  text: "DOJO DESIGN & SOURCING",
                   chars: "XO/\\01",
                   speed: 0.55,
                 },
@@ -104,7 +104,7 @@ export function Preloader() {
     <div
       ref={curtainRef}
       aria-live="polite"
-      aria-label="Loading Dojo Sourcing"
+      aria-label="Loading Dojo Design & Sourcing"
       className="fixed inset-0 z-[70] flex flex-col items-center justify-center bg-[#091122] px-6 text-white"
     >
       <div className="grid-bg pointer-events-none absolute inset-0 opacity-45" />
@@ -148,7 +148,7 @@ export function Preloader() {
           <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white p-2.5 shadow-lg">
             <Image
               src="/dojo-crane-mark.png"
-              alt="Dojo Sourcing emblem"
+              alt="Dojo Design & Sourcing emblem"
               width={40}
               height={40}
               className="h-10 w-10 object-contain"
@@ -157,11 +157,11 @@ export function Preloader() {
           </span>
         </div>
 
-        <p className="preloader-title mt-7 text-xl font-extrabold uppercase tracking-[0.28em] text-white sm:text-2xl">
-          DOJO SOURCING
+        <p className="preloader-title mt-7 text-center text-base font-extrabold uppercase tracking-[0.18em] text-white sm:text-2xl sm:tracking-[0.28em]">
+          DOJO DESIGN &amp; SOURCING
         </p>
         <p className="mt-2 font-mono text-[10px] font-bold uppercase tracking-[0.26em] text-[#8fa3c7]">
-          DESIGN · SOURCING · FACTORY · QA · PACKING · TRUCK · SHIP
+          DESIGN · SOURCING · FACTORY · QA · PACKING · TRUCK
         </p>
 
         {/* Progress Bar & Counter */}

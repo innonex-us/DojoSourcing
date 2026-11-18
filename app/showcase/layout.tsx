@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Product Showcase & Apparel Capabilities",
   description:
-    "Explore Dojo Sourcing garment builds, 3D tech packs, cut-and-sew production lines, AQL carton packaging, inland trucking, and global ocean freight capabilities.",
+    "Explore Dojo Design & Sourcing garment builds, 3D tech packs, cut-and-sew production lines, AQL carton packaging, inland trucking, and global ocean freight capabilities.",
   openGraph: {
-    title: "Product Showcase & Apparel Capabilities | Dojo Sourcing",
+    title: "Product Showcase & Apparel Capabilities | Dojo Design & Sourcing",
     description:
       "Browse finished apparel builds, MOQ specs, and end-to-end sourcing capabilities.",
   },

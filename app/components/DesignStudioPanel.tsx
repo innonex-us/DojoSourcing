@@ -47,7 +47,7 @@ export function DesignStudioPanel({
   return (
     <div className="pointer-events-auto mt-5">
       <div role="tablist" aria-label="Product design services" className="grid grid-cols-5 gap-1.5">
-        {DESIGN_SERVICES.map((s, i) => {
+        {DESIGN_SERVICES.map((s) => {
           const Icon = SERVICE_ICONS[s.mode];
           const on = s.mode === mode;
           return (
@@ -64,7 +64,6 @@ export function DesignStudioPanel({
                   : "border-border bg-surface-deep/75 text-muted hover:border-chrome/40 hover:text-chrome"
               }`}
             >
-              <span className="font-mono text-[8px] text-brand">{String(i + 1).padStart(2, "0")}</span>
               <Icon className="h-3.5 w-3.5" aria-hidden />
               <span className="leading-tight">{s.label}</span>
               {on ? (
