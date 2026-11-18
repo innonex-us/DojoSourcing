@@ -18,14 +18,14 @@ const smoothstep = (e0: number, e1: number, x: number) => {
   return t * t * (3 - 2 * t);
 };
 
-/** Flat-lay silhouette of the quilted jacket (sleeves spread), centred on the origin. */
+/** Flat-lay silhouette of the hooded shell jacket (sleeves spread), centred on the origin. */
 function createFlatLayShape(): THREE.Shape {
   const right: Array<[number, number]> = [
     [0.2, 0.6],
     [0.5, 0.52],
-    [0.78, 0.2],
-    [1.04, -0.22],
-    [0.9, -0.36],
+    [0.8, 0.16],
+    [1.02, -0.3],
+    [0.88, -0.38],
     [0.66, -0.06],
     [0.5, 0.1],
     [0.5, -0.5],
@@ -57,7 +57,7 @@ function canvasTexture(
 
 /**
  * Stage 03: Builds a garment quality-assurance station — tilted inspection light board with a
- * flat-laid quilted jacket (scan line, magnifier, spec tape, QC-passed stamp), an AQL 2.5
+ * flat-laid hooded shell jacket (scan line, magnifier, spec tape, QC-passed stamp), an AQL 2.5
  * inspection report, and a needle-detector conveyor with folded garments passing through.
  */
 export function buildQualityCheck(
@@ -120,14 +120,24 @@ export function buildQualityCheck(
   );
   const flat = new THREE.Mesh(flatGeo, matTee);
   flat.castShadow = true;
-  const collar = new THREE.Mesh(
-    track(new THREE.CylinderGeometry(0.22, 0.22, 0.06, 32, 1, false, -Math.PI / 2, Math.PI)),
-    matTeeCollar,
+  const hoodShape = new THREE.Shape();
+  hoodShape.absellipse(0, 0.74, 0.25, 0.2, 0, Math.PI * 2, false, 0);
+  const hood = new THREE.Mesh(
+    track(
+      new THREE.ExtrudeGeometry(hoodShape, {
+        depth: 0.03,
+        bevelEnabled: true,
+        bevelThickness: 0.016,
+        bevelSize: 0.016,
+        bevelSegments: 3,
+      }),
+    ),
+    matTee,
   );
-  collar.rotation.x = Math.PI / 2;
-  collar.scale.set(1, 1, 0.75);
-  collar.position.set(0, 0.6, 0.03);
-  garment.add(flat, collar);
+  hood.position.z = -0.012;
+  const chinGuard = new THREE.Mesh(track(new THREE.BoxGeometry(0.42, 0.1, 0.05)), matTeeCollar);
+  chinGuard.position.set(0, 0.6, 0.035);
+  garment.add(flat, hood, chinGuard);
 
   // Stitch lines: chest yoke, V panel, body + sleeve channels, elastic bands, zipper, welts.
   const topZ = 0.05;
@@ -139,34 +149,23 @@ export function buildQualityCheck(
     m.rotation.z = Math.atan2(y2 - y1, x2 - x1);
     garment.add(m);
   };
-  seg(-0.48, 0.3, 0.48, 0.3);
-  seg(-0.46, 0.3, 0, -0.3);
-  seg(0.46, 0.3, 0, -0.3);
-  [-0.12, -0.32].forEach((y) => {
-    seg(-0.49, y, -Math.max(0.02, (y + 0.3) * 0.77), y);
-    seg(Math.max(0.02, (y + 0.3) * 0.77), y, 0.49, y);
-  });
-  [0.1, -0.06].forEach((y) => {
-    const inset = (y + 0.3) * 0.77;
-    seg(-0.46, y, -inset - 0.05, y + 0.0);
-    seg(inset + 0.05, y, 0.46, y);
-  });
-  seg(-0.48, 0.45, 0.48, 0.45);
-  seg(-0.48, -0.47, 0.48, -0.47, 0.01);
+  // Raglan seams, side-panel topstitch, hood centre seam, straight hem stitch.
   [1, -1].forEach((side) => {
-    // Sleeve channels perpendicular to the sleeve axis.
-    [0.25, 0.45, 0.65].forEach((t) => {
-      const ax = side * (0.55 + t * 0.4);
-      const ay = 0.35 - t * 0.56;
-      seg(ax - side * 0.12, ay - 0.12, ax + side * 0.12, ay + 0.12);
-    });
-    seg(side * 0.86, -0.28, side * 0.96, -0.18, 0.01);
-    seg(side * 0.36, -0.42, side * 0.4, -0.18, 0.012);
+    seg(side * 0.2, 0.58, side * 0.5, 0.1, 0.007);
+    seg(side * 0.5, 0.1, side * 0.5, -0.5, 0.005);
   });
-  const matZip = makePhys({ color: 0x111316, roughness: 0.7 });
-  seg(0, 0.6, 0, -0.58, 0.022, matZip);
+  seg(0, 0.56, 0, 0.92, 0.006);
+  seg(-0.43, -0.53, 0.43, -0.53, 0.006);
+  const matZip = makePhys({ color: 0x111316, roughness: 0.6 });
+  // Full-length coil zipper, slanted zip pockets, cuff tabs, drawcords.
+  seg(0, 0.64, 0, -0.58, 0.024, matZip);
+  [1, -1].forEach((side) => {
+    seg(side * 0.27, -0.08, side * 0.33, -0.44, 0.02, matZip);
+    seg(side * 0.86, -0.27, side * 0.98, -0.2, 0.05, matZip);
+    seg(side * 0.05, 0.6, side * 0.07, 0.42, 0.008, matZip);
+  });
   const pull = new THREE.Mesh(track(new THREE.BoxGeometry(0.03, 0.08, 0.012)), matChrome);
-  pull.position.set(0, 0.36, topZ + 0.008);
+  pull.position.set(0, 0.52, topZ + 0.008);
   garment.add(pull);
 
   // Spec measuring tape across the chest.
@@ -236,7 +235,8 @@ export function buildQualityCheck(
   stamp.rotation.z = 0.22;
   garment.add(stamp);
 
-  garment.position.z = 0.05;
+  garment.position.set(0, -0.1, 0.05);
+  garment.scale.setScalar(0.88);
   board.add(garment);
 
   // Sweeping inspection scan line.
@@ -302,7 +302,7 @@ export function buildQualityCheck(
       ctx.fillText("INSPECTION REPORT", 34, 70);
       ctx.font = "22px sans-serif";
       ctx.fillStyle = "#475569";
-      ctx.fillText("Style DJ-QJ-01 · Final random inspection", 34, 108);
+      ctx.fillText("Style DJ-HJ-01 · Final random inspection", 34, 108);
       ctx.fillText("AQL 2.5 · General level II", 34, 138);
       ctx.fillStyle = "#cbd5e1";
       ctx.fillRect(34, 158, 444, 2);

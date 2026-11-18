@@ -22,13 +22,11 @@ export type TShirtBuild = {
 };
 
 /* ────────────────────────────────────────────────────────────────────────────
- * Palette. Shell + binding colours follow the Journey colorway (matTee / matTeeCollar).
+ * Palette. Shell + binding colours follow the Journey colorway (matTee / matTeeCollar);
+ * lining and hood interior are a darkened copy of the shell colour.
  * ──────────────────────────────────────────────────────────────────────────── */
-const SHELL_SHEEN = 0x5b6472;
-const LINING_COLOR = 0x9aa1aa;
-const PLACKET_COLOR = 0xa9b0b9;
-const TAPE_COLOR = 0x121417;
-const STITCH_COLOR = 0x3f4650;
+const SHELL_SHEEN = 0x2a3240;
+const TRIM_BLACK = 0x0d0f12;
 const PAPER_COLOR = 0xf6f4ef;
 const INK_COLOR = 0x1b2333;
 const MEASURE_COLOR = 0xef4444;
@@ -36,25 +34,19 @@ const SAMPLING_COLOR = 0x60a5fa;
 const GRID_COLOR = 0x94a3b8;
 
 /* ────────────────────────────────────────────────────────────────────────────
- * Garment geometry (local units; the group is lifted +0.12 like the original tee).
- * Structured quilted jacket: chest yoke + V front panel, low loft channels.
+ * Garment geometry (local units). Hooded woven softshell: smooth shell with raglan
+ * seams, chin-guard collar, attached structured hood, straight topstitched hem.
  * ──────────────────────────────────────────────────────────────────────────── */
 const HEM_Y = -0.92;
-const HEM_BAND_TOP = -0.835;
-const NECK_Y = 0.925;
-const COLLAR_TOP_Y = 1.25;
-const SLIDER_Y = 0.6;
-const OPEN_MAX = 0.36;
+const HEM_STITCH_Y = -0.87;
+const NECK_Y = 0.93;
+const COLLAR_TOP_Y = 1.18;
+const UNDERARM_Y = 0.32;
+const SHELL_THICKNESS = 0.022;
 
-const YOKE_Y = 0.4; // horizontal chest yoke seam
-const V_APEX_Y = -0.4; // bottom of the front V panel (at centre front)
-const V_REACH = 0.78; // |sin(phi)| where the V meets the yoke (near the armhole)
-const V_PERP = 0.55; // vertical → perpendicular distance factor for the V seam
-
-const BODY_LOFT = 0.015;
-const COLLAR_LOFT = 0.012;
-const SLEEVE_LOFT = 0.014;
-const SHELL_THICKNESS = 0.026;
+/** Whole garment rig scale/offset so the hood stays clear of the stage HUD. */
+const RIG_SCALE = 0.9;
+const RIG_Y = -0.08;
 
 const TAU = Math.PI * 2;
 
@@ -63,32 +55,50 @@ const smoothstep = (e0: number, e1: number, x: number) => {
   const t = clamp01((x - e0) / (e1 - e0));
   return t * t * (3 - 2 * t);
 };
-const fract = (x: number) => x - Math.floor(x);
-/** Quilting channel bulge: 0 on the stitch line, 1 mid-channel (low exponent = flat top). */
-const baffle = (q: number, sharpness: number) =>
-  Math.pow(Math.sin(Math.PI * fract(q)), sharpness);
 
-/* Silhouette: (half-width, height, half-depth) from hem to collar top. */
+/* Body silhouette: (half-width, height, half-depth) from hem up to chin-guard top. */
 const PROFILE = new THREE.CatmullRomCurve3(
   [
-    new THREE.Vector3(0.655, -0.92, 0.305),
-    new THREE.Vector3(0.66, -0.86, 0.31),
-    new THREE.Vector3(0.695, -0.8, 0.33),
-    new THREE.Vector3(0.73, -0.66, 0.35),
-    new THREE.Vector3(0.735, -0.3, 0.34),
-    new THREE.Vector3(0.74, 0.1, 0.345),
-    new THREE.Vector3(0.73, 0.42, 0.34),
-    new THREE.Vector3(0.715, 0.6, 0.34),
-    new THREE.Vector3(0.62, 0.76, 0.305),
-    new THREE.Vector3(0.44, 0.86, 0.265),
-    new THREE.Vector3(0.285, 0.915, 0.232),
-    new THREE.Vector3(0.262, 0.99, 0.222),
-    new THREE.Vector3(0.27, 1.12, 0.232),
-    new THREE.Vector3(0.288, 1.25, 0.248),
+    new THREE.Vector3(0.68, -0.92, 0.341),
+    new THREE.Vector3(0.685, -0.8, 0.3465),
+    new THREE.Vector3(0.69, -0.5, 0.352),
+    new THREE.Vector3(0.7, -0.1, 0.3575),
+    new THREE.Vector3(0.705, 0.25, 0.363),
+    new THREE.Vector3(0.69, 0.5, 0.352),
+    new THREE.Vector3(0.62, 0.68, 0.3245),
+    new THREE.Vector3(0.47, 0.82, 0.2882),
+    new THREE.Vector3(0.31, 0.9, 0.235),
+    new THREE.Vector3(0.272, 0.97, 0.226),
+    new THREE.Vector3(0.264, 1.08, 0.228),
+    new THREE.Vector3(0.268, 1.18, 0.234),
   ],
   false,
   "centripetal",
 );
+
+/* Hood silhouette: (half-width, height, half-depth); leans back over the head. */
+const HOOD_PROFILE = new THREE.CatmullRomCurve3(
+  [
+    new THREE.Vector3(0.324, 0.92, 0.2625),
+    new THREE.Vector3(0.351, 1.02, 0.3045),
+    new THREE.Vector3(0.3618, 1.16, 0.3465),
+    new THREE.Vector3(0.3564, 1.32, 0.3727),
+    new THREE.Vector3(0.3294, 1.46, 0.3622),
+    new THREE.Vector3(0.2592, 1.57, 0.3045),
+    new THREE.Vector3(0.1404, 1.645, 0.189),
+    new THREE.Vector3(0.0216, 1.672, 0.0315),
+  ],
+  false,
+  "centripetal",
+);
+const HOOD_BRIM_Y = 1.585;
+const hoodCenterZ = (y: number) =>
+  -0.075 * smoothstep(0.92, 1.3, y) + 0.03 * smoothstep(1.45, 1.67, y);
+/** Half-angle of the face opening: wide around the chin guard, closing into the brim. */
+const hoodOpen = (y: number) => {
+  const e = (Math.max(y, 1.28) - 1.28) / (HOOD_BRIM_Y - 1.28);
+  return 1.02 * Math.sqrt(Math.max(0, 1 - e * e));
+};
 
 const Y_LUT_SIZE = 512;
 const Y_LUT = new Float64Array(Y_LUT_SIZE + 1);
@@ -113,27 +123,33 @@ function uAtY(y: number): number {
   return (lo + (span > 1e-9 ? (y - yLo) / span : 0)) / Y_LUT_SIZE;
 }
 
-const openAt = (y: number) => OPEN_MAX * smoothstep(SLIDER_Y, COLLAR_TOP_Y, y);
-
-/** Column t∈[0,1] → angle (0 = centre front), panels pushed apart to ±open above the slider. */
+/** Column t∈[0,1] → angle (0 = centre front), with an optional front opening of ±open. */
 function columnPhi(t: number, open: number): number {
   const side = t <= 0.5 ? 1 : -1;
   const raw = t <= 0.5 ? t * TAU : t * TAU - TAU;
   return side * open + raw * (1 - open / Math.PI);
 }
 
-/**
- * Point on the shell for profile sample c=(halfW, y, halfD) at angle phi.
- * Optionally writes quilting data (channel coord, structural-seam distance, dash coord) to `quilt`.
- */
-function shellPointFromProfile(
+/** Front raglan seam angle at height y (back seam mirrors it with a slightly wider sweep). */
+const raglanFront = (y: number) =>
+  THREE.MathUtils.lerp(1.45, 0.62, clamp01((y - UNDERARM_Y) / (NECK_Y - UNDERARM_Y)));
+const raglanBack = (y: number) =>
+  Math.PI - THREE.MathUtils.lerp(1.45, 0.78, clamp01((y - UNDERARM_Y) / (NECK_Y - UNDERARM_Y)));
+
+type SurfacePointFn = (
   c: THREE.Vector3,
   phi: number,
   inset: number,
-  loftScale: number,
+  detail: number,
   out: THREE.Vector3,
   quilt?: THREE.Vector4,
-): THREE.Vector3 {
+) => THREE.Vector3;
+
+/**
+ * Body + chin-guard point. `quilt` carries data for the seam shader:
+ * x = channel coord (0.5 = no channel lines), y = distance to structural seams, z = dash coord.
+ */
+const bodyPoint: SurfacePointFn = (c, phi, inset, detail, out, quilt) => {
   const w = c.x;
   const y = c.y;
   const d = c.z;
@@ -145,72 +161,66 @@ function shellPointFromProfile(
   nx /= nl;
   nz /= nl;
 
-  const open = openAt(y);
-  const edgeArc = (Math.abs(phi) - open) * w;
-  const edgeMask = smoothstep(0.03, 0.09, edgeArc);
-  const lapel =
-    0.03 * smoothstep(0.85, COLLAR_TOP_Y, y) * (1 - smoothstep(0, 0.22, edgeArc));
-  const along = Math.abs(phi) * w;
-
-  let loft = 0;
-  let gathers = 0;
-  let q = 0;
-  let structural = 1;
-  let dashCoord = along;
-
-  if (y < HEM_BAND_TOP) {
-    // ¼" elasticated hem band: shirring gathers, no quilting.
-    gathers = 0.008 * (0.5 + 0.5 * Math.sin(phi * 52));
-    q = along / 0.035;
-    structural = Math.abs(y - HEM_BAND_TOP);
-    dashCoord = -1;
-  } else if (y < NECK_Y) {
-    const lat = co > 0 ? Math.abs(s) : 1;
-    const latN = Math.min(1, lat / V_REACH);
-    const vY = V_APEX_Y + (YOKE_Y - V_APEX_Y) * latN;
-    const dYoke = Math.abs(y - YOKE_Y);
-    const dV = latN < 1 ? Math.abs(y - vY) * V_PERP : 1;
-    structural = Math.min(dYoke, dV, Math.abs(y - HEM_BAND_TOP));
-
-    if (y >= YOKE_Y) q = (y - YOKE_Y) / 0.19;
-    else if (y >= vY) q = (y - vY) / 0.21;
-    else q = (y - HEM_BAND_TOP) / 0.235;
-
-    loft =
-      BODY_LOFT *
-      (1 + 0.1 * Math.sin(phi * 3 + y * 5)) *
-      baffle(q, 0.3) *
-      smoothstep(0, 0.035, structural) *
-      (1 - smoothstep(0.87, NECK_Y, y)) *
-      edgeMask;
-    // Soft blouson pleats just above the elastic hem.
-    gathers = (1 - smoothstep(-0.83, -0.65, y)) * 0.006 * Math.sin(phi * 21 + 0.6);
+  const aphi = Math.abs(phi);
+  let structural = Math.abs(y - HEM_STITCH_Y);
+  if (y >= UNDERARM_Y && y <= NECK_Y) {
+    structural = Math.min(
+      structural,
+      Math.abs(aphi - raglanFront(y)) * w,
+      Math.abs(aphi - raglanBack(y)) * w,
+    );
+  } else if (y < UNDERARM_Y) {
+    structural = Math.min(structural, Math.abs(aphi - Math.PI / 2) * w);
   } else {
-    q = (y - NECK_Y) / 0.16;
-    structural = Math.abs(y - NECK_Y);
-    loft =
-      COLLAR_LOFT *
-      baffle(q, 0.45) *
-      smoothstep(NECK_Y, NECK_Y + 0.025, y) *
-      (1 - smoothstep(COLLAR_TOP_Y - 0.03, COLLAR_TOP_Y, y)) *
-      edgeMask;
+    structural = Math.min(structural, Math.abs(y - (COLLAR_TOP_Y - 0.03)));
   }
 
-  if (quilt) quilt.set(q, structural, dashCoord, 0);
-  const r = (loft + gathers) * loftScale + lapel - inset;
+  // Soft woven drape: gentle low-frequency wrinkles, a little stronger at the underarms.
+  const underarm = Math.exp(-(((aphi - Math.PI / 2) / 0.5) ** 2)) * smoothstep(-0.2, 0.3, y) * (1 - smoothstep(0.3, 0.5, y));
+  const wrinkle =
+    0.0035 * Math.sin(phi * 5 + y * 7) * Math.sin(y * 3.1 + 0.4) +
+    0.006 * underarm * Math.sin(y * 34 + aphi * 6);
+  const centreFront = smoothstep(0.02, 0.08, aphi * w); // keep the zipper line flat
+
+  if (quilt) quilt.set(0.5, structural, aphi * w, 0);
+  const r = wrinkle * detail * centreFront - inset;
   return out.set(w * s + nx * r, y, d * co + nz * r);
-}
+};
+
+const hoodPoint: SurfacePointFn = (c, phi, inset, detail, out, quilt) => {
+  const w = Math.max(c.x, 0.004);
+  const y = c.y;
+  const d = Math.max(c.z, 0.004);
+  const s = Math.sin(phi);
+  const co = Math.cos(phi);
+  let nx = s / w;
+  let nz = co / d;
+  const nl = Math.hypot(nx, nz) || 1;
+  nx /= nl;
+  nz /= nl;
+
+  const aphi = Math.abs(phi);
+  const edgeArc = (aphi - hoodOpen(y)) * w;
+  // Centre-back seam + topstitch running parallel to the face opening.
+  const structural = Math.min(Math.abs(aphi - Math.PI) * w, Math.abs(edgeArc - 0.028));
+  const lip = 0.008 * (1 - smoothstep(0, 0.05, edgeArc));
+  const wrinkle = 0.004 * Math.sin(phi * 4 + y * 10) * smoothstep(0.95, 1.1, y);
+
+  if (quilt) quilt.set(0.5, structural, aphi * w, 0);
+  const r = (wrinkle + lip) * detail - inset;
+  return out.set(w * s + nx * r, y, hoodCenterZ(y) + d * co + nz * r);
+};
 
 const _profileTmp = new THREE.Vector3();
 function shellPoint(
   u: number,
   phi: number,
   inset: number,
-  loftScale: number,
+  detail: number,
   out: THREE.Vector3,
 ): THREE.Vector3 {
   PROFILE.getPointAt(clamp01(u), _profileTmp);
-  return shellPointFromProfile(_profileTmp, phi, inset, loftScale, out);
+  return bodyPoint(_profileTmp, phi, inset, detail, out);
 }
 
 function gridIndices(rows: number, cols: number): number[] {
@@ -226,11 +236,15 @@ function gridIndices(rows: number, cols: number): number[] {
   return indices;
 }
 
-function buildShellGeometry(
+/** Parametric surface (rows along a profile, columns around it) with optional seam data. */
+function buildSurfaceGeometry(
+  profile: THREE.Curve<THREE.Vector3>,
+  openAt: (y: number) => number,
+  point: SurfacePointFn,
   rows: number,
   cols: number,
   inset: number,
-  loftScale: number,
+  detail: number,
   withQuilt: boolean,
 ): THREE.BufferGeometry {
   const count = (rows + 1) * (cols + 1);
@@ -244,11 +258,11 @@ function buildShellGeometry(
   let k = 0;
   for (let i = 0; i <= rows; i++) {
     const u = i / rows;
-    PROFILE.getPointAt(u, c);
+    profile.getPointAt(u, c);
     const open = openAt(c.y);
     for (let j = 0; j <= cols; j++) {
       const t = j / cols;
-      shellPointFromProfile(c, columnPhi(t, open), inset, loftScale, p, qv);
+      point(c, columnPhi(t, open), inset, detail, p, qv);
       positions.set([p.x, p.y, p.z], k * 3);
       uvs.set([t, u], k * 2);
       quilts?.set([qv.x, qv.y, qv.z, qv.w], k * 4);
@@ -265,21 +279,26 @@ function buildShellGeometry(
   return geo;
 }
 
-/** Quad-grid wireframe of the shell (the "digital pattern" look of the 3D sampling view). */
-function buildShellGridLines(rows: number, cols: number): THREE.BufferGeometry {
-  const pts: number[] = [];
+/** Quad-grid wireframe of a surface (the "digital pattern" look of the sampling view). */
+function buildSurfaceGridLines(
+  profile: THREE.Curve<THREE.Vector3>,
+  openAt: (y: number) => number,
+  point: SurfacePointFn,
+  rows: number,
+  cols: number,
+): THREE.BufferGeometry {
   const grid: THREE.Vector3[][] = [];
   const c = new THREE.Vector3();
   for (let i = 0; i <= rows; i++) {
-    PROFILE.getPointAt(i / rows, c);
+    profile.getPointAt(i / rows, c);
+    const open = openAt(c.y);
     const row: THREE.Vector3[] = [];
     for (let j = 0; j <= cols; j++) {
-      row.push(
-        shellPointFromProfile(c, columnPhi(j / cols, openAt(c.y)), 0, 1, new THREE.Vector3()),
-      );
+      row.push(point(c, columnPhi(j / cols, open), 0, 0, new THREE.Vector3()));
     }
     grid.push(row);
   }
+  const pts: number[] = [];
   for (let i = 0; i <= rows; i++) {
     for (let j = 0; j <= cols; j++) {
       const p = grid[i]?.[j];
@@ -318,21 +337,16 @@ type SurfaceFrame = {
   n: THREE.Vector3;
 };
 
-function surfaceFrame(
-  y: number,
-  phi: number,
-  lift: number,
-  inset = 0,
-  loftScale = 1,
-): SurfaceFrame {
+/** Local frame on the body surface, for placing trims flush on the shell. */
+function surfaceFrame(y: number, phi: number, lift: number, inset = 0): SurfaceFrame {
   const u = uAtY(y);
   const du = 0.002;
   const dPhi = 0.004;
-  const pa = shellPoint(Math.max(0, u - du), phi, inset, loftScale, new THREE.Vector3());
-  const pb = shellPoint(Math.min(1, u + du), phi, inset, loftScale, new THREE.Vector3());
-  const pl = shellPoint(u, phi - dPhi, inset, loftScale, new THREE.Vector3());
-  const pr = shellPoint(u, phi + dPhi, inset, loftScale, new THREE.Vector3());
-  const p = shellPoint(u, phi, inset, loftScale, new THREE.Vector3());
+  const pa = shellPoint(Math.max(0, u - du), phi, inset, 1, new THREE.Vector3());
+  const pb = shellPoint(Math.min(1, u + du), phi, inset, 1, new THREE.Vector3());
+  const pl = shellPoint(u, phi - dPhi, inset, 1, new THREE.Vector3());
+  const pr = shellPoint(u, phi + dPhi, inset, 1, new THREE.Vector3());
+  const p = shellPoint(u, phi, inset, 1, new THREE.Vector3());
   const b = pb.sub(pa).normalize();
   const t = pr.sub(pl).normalize();
   const n = new THREE.Vector3().crossVectors(t, b).normalize();
@@ -347,13 +361,11 @@ function framesAlong(
   steps: number,
   phiOf: (y: number) => number,
   lift: number,
-  inset = 0,
-  loftScale = 1,
 ): SurfaceFrame[] {
   const frames: SurfaceFrame[] = [];
   for (let i = 0; i <= steps; i++) {
     const y = THREE.MathUtils.lerp(y0, y1, i / steps);
-    frames.push(surfaceFrame(y, phiOf(y), lift, inset, loftScale));
+    frames.push(surfaceFrame(y, phiOf(y), lift));
   }
   return frames;
 }
@@ -384,36 +396,31 @@ function ribbonGeometry(
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
- * Sleeves: parametric tube along a curve, with quilting data for the stitch shader.
+ * Raglan sleeves: parametric tube along a curve with drape wrinkles and seam data.
  * ──────────────────────────────────────────────────────────────────────────── */
 const SLEEVE_TS = 150;
 const SLEEVE_RS = 48;
+const CUFF_STITCH_U = 0.955;
 
 function sleevePath(side: -1 | 1): THREE.CatmullRomCurve3 {
   return new THREE.CatmullRomCurve3(
     [
-      new THREE.Vector3(side * 0.52, 0.5, 0),
-      new THREE.Vector3(side * 0.8, 0.42, 0),
-      new THREE.Vector3(side * 0.96, 0.1, 0.02),
-      new THREE.Vector3(side * 1.02, -0.32, 0.05),
-      new THREE.Vector3(side * 0.98, -0.74, 0.08),
+      new THREE.Vector3(side * 0.48, 0.56, 0),
+      new THREE.Vector3(side * 0.74, 0.44, 0),
+      new THREE.Vector3(side * 0.87, 0.1, 0.02),
+      new THREE.Vector3(side * 0.91, -0.32, 0.05),
+      new THREE.Vector3(side * 0.88, -0.78, 0.08),
     ],
     false,
     "centripetal",
   );
 }
 
-const sleeveBaseRadius = (u: number) => {
-  const body = 0.182 + 0.016 * Math.sin(Math.PI * Math.min(1, u / 0.85));
-  return THREE.MathUtils.lerp(body, 0.118, smoothstep(0.85, 0.93, u));
-};
+const sleeveBaseRadius = (u: number) => 0.18 - 0.042 * smoothstep(0.05, 0.95, u);
 
-function buildSleeveGeometry(
-  path: THREE.CatmullRomCurve3,
-  ts: number,
-  rs: number,
-  detailed: boolean,
-): THREE.BufferGeometry {
+function buildSleeveGeometry(path: THREE.CatmullRomCurve3): THREE.BufferGeometry {
+  const ts = SLEEVE_TS;
+  const rs = SLEEVE_RS;
   const frames = path.computeFrenetFrames(ts, false);
   const len = path.getLength();
   const count = (ts + 1) * (rs + 1);
@@ -427,32 +434,19 @@ function buildSleeveGeometry(
     path.getPointAt(u, P);
     const N = frames.normals[i] ?? new THREE.Vector3(0, 1, 0);
     const B = frames.binormals[i] ?? new THREE.Vector3(0, 0, 1);
-    const cuffSeam = 0.9;
+    const elbow = Math.exp(-(((u - 0.56) / 0.11) ** 2));
+    const stack = smoothstep(0.8, 0.88, u) * (1 - smoothstep(0.93, 0.96, u));
     for (let j = 0; j <= rs; j++) {
       const v = (j / rs) * TAU;
       n.copy(N).multiplyScalar(-Math.cos(v)).addScaledVector(B, Math.sin(v));
-      let r = sleeveBaseRadius(u);
-      let q: number;
-      let dash = v * r;
-      const structural = Math.abs(u - cuffSeam) * len;
-      if (u > cuffSeam) {
-        q = (v * r) / 0.03;
-        dash = -1;
-        if (detailed) r += 0.006 * (0.5 + 0.5 * Math.sin(v * 30)) * smoothstep(0.9, 0.93, u);
-      } else {
-        q = (u * len) / 0.2 + 0.06 * Math.sin(v);
-        if (detailed) {
-          r +=
-            SLEEVE_LOFT *
-            baffle(q, 0.38) *
-            smoothstep(0.03, 0.09, u) *
-            (1 - smoothstep(0.82, 0.88, u));
-          r += smoothstep(0.78, 0.88, u) * 0.008 * Math.sin(v * 16);
-        }
-      }
+      const r =
+        sleeveBaseRadius(u) +
+        0.007 * elbow * Math.sin(v * 2 + u * 30) +
+        0.005 * stack * Math.sin(v * 3 + u * 70) +
+        0.002 * Math.sin(v * 5 + u * 12);
       const k = i * (rs + 1) + j;
       positions.set([P.x + n.x * r, P.y + n.y * r, P.z + n.z * r], k * 3);
-      quilts.set([q, structural, dash, 0], k * 4);
+      quilts.set([0.5, Math.abs(u - CUFF_STITCH_U) * len, v * r, 0], k * 4);
     }
   }
 
@@ -488,11 +482,7 @@ function buildSleeveGridLines(path: THREE.CatmullRomCurve3): THREE.BufferGeometr
     for (let j = 0; j <= rs; j++) {
       const v = (j / rs) * TAU;
       const r = sleeveBaseRadius(u);
-      row.push(
-        P.clone()
-          .addScaledVector(N, -Math.cos(v) * r)
-          .addScaledVector(B, Math.sin(v) * r),
-      );
+      row.push(P.clone().addScaledVector(N, -Math.cos(v) * r).addScaledVector(B, Math.sin(v) * r));
     }
     ring.push(row);
   }
@@ -512,8 +502,8 @@ function buildSleeveGridLines(path: THREE.CatmullRomCurve3): THREE.BufferGeometr
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
- * Shader hook: stitch lines + "tech-pack sketch" crossfade (paper + ink) on the
- * existing physical materials, driven by one shared uniform.
+ * Shader hook: seam/topstitch lines + "tech-pack sketch" crossfade (paper + ink)
+ * on the existing physical materials, driven by one shared uniform.
  * ──────────────────────────────────────────────────────────────────────────── */
 type SketchUniform = { value: number };
 
@@ -541,10 +531,7 @@ function installDesignShader(
     shader.uniforms.uInk = { value: ink };
     if (lines) {
       shader.vertexShader = shader.vertexShader
-        .replace(
-          "#include <common>",
-          "#include <common>\nattribute vec4 aQuilt;\nvarying vec4 vQuilt;",
-        )
+        .replace("#include <common>", "#include <common>\nattribute vec4 aQuilt;\nvarying vec4 vQuilt;")
         .replace("#include <begin_vertex>", "#include <begin_vertex>\nvQuilt = aQuilt;");
     }
     shader.fragmentShader = shader.fragmentShader
@@ -562,7 +549,7 @@ ${lines ? "varying vec4 vQuilt;" : ""}`,
 float designStitch = 0.0;
 float designInk = 0.0;
 ${lines ? STITCH_GLSL : ""}
-diffuseColor.rgb *= 1.0 - 0.32 * designStitch * (1.0 - uSketch);
+diffuseColor.rgb *= 1.0 - 0.38 * designStitch * (1.0 - uSketch);
 diffuseColor.rgb = mix(diffuseColor.rgb, uPaper, uSketch);
 diffuseColor.rgb = mix(diffuseColor.rgb, uInk, uSketch * designInk);`,
       )
@@ -572,20 +559,6 @@ diffuseColor.rgb = mix(diffuseColor.rgb, uInk, uSketch * designInk);`,
       );
   };
   mat.customProgramCacheKey = () => (lines ? "dj-design-lines" : "dj-design-plain");
-}
-
-/** Box with planar quilting data so the stitch shader draws channels on a fabric swatch. */
-function quiltedSwatchGeometry(w: number, h: number, d: number): THREE.BufferGeometry {
-  const geo = new THREE.BoxGeometry(w, h, d, 1, 1, 1);
-  const pos = geo.getAttribute("position") as THREE.BufferAttribute;
-  const quilts = new Float32Array(pos.count * 4);
-  for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i);
-    const z = pos.getZ(i);
-    quilts.set([(x + z * 0.6) / 0.09 + 0.5, 1, z + 1, 0], i * 4);
-  }
-  geo.setAttribute("aQuilt", new THREE.BufferAttribute(quilts, 4));
-  return geo;
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -605,18 +578,20 @@ const MODE_PRESETS: Record<
 };
 
 /**
- * Stage 01 — Product Design studio. Builds a structured quilted jacket from the
- * Dojo tech pack (V-yoke quilting, stand collar with zigzag-quilted placket, #5
- * centre-front zipper, welt pockets with concealed snaps, ¼" elasticated cuffs & hem)
- * and the props for five design-service views: tech-pack sketch, BOM material stack,
- * 3D-sampling pattern grid, development measurements, and a presentation line sheet.
+ * Stage 01 — Product Design studio. Builds a hooded woven softshell jacket (structured
+ * hood with drawcords, raglan sleeves, full-length coil zipper to a chin guard, zippered
+ * hand pockets, hook-and-loop cuff tabs, straight topstitched hem) and the props for five
+ * design-service views: tech-pack sketch, BOM material stack, 3D-sampling pattern grid,
+ * development measurements, and a presentation line sheet.
  */
 export function buildTShirt(mats: SharedStageMaterials): TShirtBuild {
-  const { track, matTee, matTeeCollar, matBrand, matChrome, matObsidian } = mats;
+  const { track, matTee, matTeeCollar, matChrome, matObsidian } = mats;
   const clipPlanes = matTee.clippingPlanes;
 
   const tshirtGroup = new THREE.Group();
   const jacketRig = new THREE.Group(); // animated offset per studio mode
+  jacketRig.scale.setScalar(RIG_SCALE);
+  jacketRig.position.y = RIG_Y;
   const jacket = new THREE.Group(); // the garment itself (cloned for the line sheet)
   jacketRig.add(jacket);
 
@@ -624,54 +599,39 @@ export function buildTShirt(mats: SharedStageMaterials): TShirtBuild {
 
   /* ── Materials ─────────────────────────────────────────────────────────── */
   const matShell = mats.makePhys({
-    roughness: 0.58,
+    roughness: 0.82,
     metalness: 0,
-    sheen: 0.35,
-    sheenRoughness: 0.5,
+    sheen: 0.15,
+    sheenRoughness: 0.7,
     sheenColor: new THREE.Color(SHELL_SHEEN),
-    clearcoat: 0.08,
-    clearcoatRoughness: 0.6,
   });
   const matBinding = mats.makePhys({
-    roughness: 0.66,
-    sheen: 0.3,
-    sheenRoughness: 0.55,
+    roughness: 0.85,
+    sheen: 0.12,
+    sheenRoughness: 0.7,
     sheenColor: new THREE.Color(SHELL_SHEEN),
   });
   // Share colour objects with the tee materials so the colorway picker drives the jacket.
   matShell.color = matTee.color;
   matBinding.color = matTeeCollar.color;
 
-  const matLining = mats.makePhys({
-    color: LINING_COLOR,
-    roughness: 0.55,
-    sheen: 0.4,
-    sheenRoughness: 0.4,
-    sheenColor: new THREE.Color(0xd5dae0),
-    side: THREE.BackSide,
-  });
-  const matPlacket = mats.makePhys({
-    color: PLACKET_COLOR,
-    roughness: 0.6,
-    sheen: 0.35,
-    side: THREE.DoubleSide,
-  });
-  const matTape = mats.makePhys({
-    color: TAPE_COLOR,
-    roughness: 0.78,
-    side: THREE.DoubleSide,
-  });
-  const matInterior = mats.makePhys({
-    color: 0x15171b,
-    roughness: 0.95,
-    side: THREE.DoubleSide,
-  });
-  const matStitch = mats.makePhys({ color: STITCH_COLOR, roughness: 0.8 });
+  // Interior (body lining + hood inside): darkened shell colour, refreshed every frame.
+  const interiorColor = new THREE.Color();
+  const syncInterior = () => interiorColor.copy(matTee.color).multiplyScalar(0.42);
+  syncInterior();
+  const matInterior = mats.makePhys({ roughness: 0.9, side: THREE.BackSide });
+  matInterior.color = interiorColor;
+  const matOpening = mats.makePhys({ roughness: 0.95, side: THREE.DoubleSide });
+  matOpening.color = interiorColor;
+
+  const matTrim = mats.makePhys({ color: TRIM_BLACK, roughness: 0.6, side: THREE.DoubleSide });
+  const matCoil = mats.makePhys({ color: 0x15171b, roughness: 0.45, metalness: 0.1 });
+  const matSliderMetal = mats.makePhys({ color: 0x2b2e33, roughness: 0.35, metalness: 0.8 });
+  const matVelcro = mats.makePhys({ color: TRIM_BLACK, roughness: 0.95 });
 
   installDesignShader(matShell, sketch, true);
   installDesignShader(matBinding, sketch, false);
-  installDesignShader(matLining, sketch, false);
-  installDesignShader(matPlacket, sketch, false);
+  installDesignShader(matInterior, sketch, false);
 
   const matOutline = track(
     new THREE.MeshBasicMaterial({
@@ -701,199 +661,177 @@ export function buildTShirt(mats: SharedStageMaterials): TShirtBuild {
     return obj;
   };
 
-  /* ── Shell (body + stand collar), lining, outline ─────────────────────── */
-  const shellGeo = track(buildShellGeometry(300, 280, 0, 1, true));
+  const noOpening = () => 0;
+  const outlineGroup = new THREE.Group();
+
+  /* ── Body shell + chin guard, lining ───────────────────────────────────── */
+  const shellGeo = track(buildSurfaceGeometry(PROFILE, noOpening, bodyPoint, 300, 280, 0, 1, true));
   const shell = new THREE.Mesh(shellGeo, matShell);
   shell.castShadow = true;
   shell.receiveShadow = true;
-
   const lining = new THREE.Mesh(
-    track(buildShellGeometry(110, 100, SHELL_THICKNESS, 0.3, false)),
-    matLining,
+    track(buildSurfaceGeometry(PROFILE, noOpening, bodyPoint, 90, 90, SHELL_THICKNESS, 0, false)),
+    matInterior,
   );
-  lining.receiveShadow = true;
+  outlineGroup.add(new THREE.Mesh(track(inflatedHull(shellGeo, 0.008)), matOutline));
+  jacket.add(shell, lining);
 
-  const outlineGroup = new THREE.Group();
-  outlineGroup.add(new THREE.Mesh(track(inflatedHull(shellGeo, 0.009)), matOutline));
-  jacket.add(shell, lining, outlineGroup);
+  /* ── Structured hood ───────────────────────────────────────────────────── */
+  const hoodGeo = track(buildSurfaceGeometry(HOOD_PROFILE, hoodOpen, hoodPoint, 120, 160, 0, 1, true));
+  const hood = new THREE.Mesh(hoodGeo, matShell);
+  hood.castShadow = true;
+  hood.receiveShadow = true;
+  const hoodLining = new THREE.Mesh(
+    track(buildSurfaceGeometry(HOOD_PROFILE, hoodOpen, hoodPoint, 60, 80, SHELL_THICKNESS, 0, false)),
+    matInterior,
+  );
+  outlineGroup.add(new THREE.Mesh(track(inflatedHull(hoodGeo, 0.008)), matOutline));
 
-  /* ── Bindings: hem, collar rim, open front edges ──────────────────────── */
-  const bindInset = SHELL_THICKNESS / 2;
-  const tmp = new THREE.Vector3();
-
-  const hemPts: THREE.Vector3[] = [];
-  for (let j = 0; j < 160; j++) {
-    hemPts.push(shellPoint(0, columnPhi(j / 160, 0), bindInset, 1, tmp).clone());
-  }
-  const hemBinding = new THREE.Mesh(tubeThrough(hemPts, 0.018, true, 12), matBinding);
-  hemBinding.castShadow = true;
-
-  const topOpen = openAt(COLLAR_TOP_Y);
-  const rimPts: THREE.Vector3[] = [];
-  for (let j = 0; j <= 90; j++) {
-    rimPts.push(shellPoint(1, columnPhi(j / 90, topOpen), bindInset, 1, tmp).clone());
-  }
-  const collarRim = new THREE.Mesh(tubeThrough(rimPts, 0.015), matBinding);
-
-  const edgeBindings = [1, -1].map((side) => {
-    const pts: THREE.Vector3[] = [];
-    for (let i = 0; i <= 40; i++) {
-      const y = THREE.MathUtils.lerp(SLIDER_Y, COLLAR_TOP_Y, i / 40);
-      pts.push(shellPoint(uAtY(y), side * openAt(y), bindInset, 1, tmp).clone());
-    }
-    return new THREE.Mesh(tubeThrough(pts, 0.014), matBinding);
-  });
-  jacket.add(hemBinding, collarRim, ...edgeBindings);
-
-  /* ── #5 centre-front zipper ───────────────────────────────────────────── */
-  const zipperGroup = new THREE.Group();
-  const toothGeo = track(new THREE.BoxGeometry(0.022, 0.007, 0.01));
-  const halfToothGeo = track(new THREE.BoxGeometry(0.016, 0.007, 0.01));
-
-  const buildTeeth = (geo: THREE.BufferGeometry, placements: Array<[SurfaceFrame, number]>) => {
-    const teeth = new THREE.InstancedMesh(geo, matChrome, placements.length);
-    const m = new THREE.Matrix4();
-    const pos = new THREE.Vector3();
-    placements.forEach(([f, offset], i) => {
-      pos.copy(f.p).addScaledVector(f.t, offset);
-      m.makeBasis(f.t, f.b, f.n).setPosition(pos);
-      teeth.setMatrixAt(i, m);
-    });
-    teeth.instanceMatrix.needsUpdate = true;
-    teeth.castShadow = true;
-    return teeth;
+  // Rolled binding around the face opening (bottom-left → brim → bottom-right).
+  const hoodRimPts: THREE.Vector3[] = [];
+  const hoodC = new THREE.Vector3();
+  const rimSamples = 40;
+  const sampleHoodEdge = (i: number, side: number) => {
+    const y = THREE.MathUtils.lerp(0.94, HOOD_BRIM_Y + 0.004, i / rimSamples);
+    HOOD_PROFILE.getPointAt(uAtHoodY(y), hoodC);
+    return hoodPoint(hoodC, side * hoodOpen(hoodC.y), SHELL_THICKNESS / 2, 1, new THREE.Vector3());
   };
+  for (let i = 0; i <= rimSamples; i++) hoodRimPts.push(sampleHoodEdge(i, -1));
+  for (let i = rimSamples; i >= 0; i--) hoodRimPts.push(sampleHoodEdge(i, 1));
+  const hoodRim = new THREE.Mesh(tubeThrough(hoodRimPts, 0.014), matBinding);
+  jacket.add(hood, hoodLining, hoodRim);
 
-  const lowerTape = new THREE.Mesh(
-    track(ribbonGeometry(framesAlong(HEM_Y + 0.01, SLIDER_Y, 150, () => 0, 0.004), 0.066)),
-    matTape,
+  /* ── Hem + chin-guard bindings ─────────────────────────────────────────── */
+  const tmp = new THREE.Vector3();
+  const ringPoints = (u: number, n: number) => {
+    const pts: THREE.Vector3[] = [];
+    for (let j = 0; j < n; j++) pts.push(shellPoint(u, columnPhi(j / n, 0), SHELL_THICKNESS / 2, 1, tmp).clone());
+    return pts;
+  };
+  const hemBinding = new THREE.Mesh(tubeThrough(ringPoints(0, 160), 0.012, true, 10), matBinding);
+  const collarRim = new THREE.Mesh(tubeThrough(ringPoints(1, 90), 0.012, true, 10), matBinding);
+  jacket.add(hemBinding, collarRim);
+
+  /* ── Full-length coil zipper to the chin guard ─────────────────────────── */
+  const zipperGroup = new THREE.Group();
+  const zipTop = COLLAR_TOP_Y - 0.008;
+  zipperGroup.add(
+    new THREE.Mesh(
+      track(ribbonGeometry(framesAlong(HEM_Y + 0.005, zipTop, 170, () => 0, 0.003), 0.05)),
+      matTrim,
+    ),
   );
-  const lowerTeeth: Array<[SurfaceFrame, number]> = [];
-  let toothIdx = 0;
-  for (let y = HEM_Y + 0.035; y < SLIDER_Y; y += 0.0115, toothIdx++) {
-    lowerTeeth.push([surfaceFrame(y, 0, 0.009), toothIdx % 2 === 0 ? 0.004 : -0.004]);
-  }
-  zipperGroup.add(lowerTape, buildTeeth(toothGeo, lowerTeeth));
-
-  const upperTeeth: Array<[SurfaceFrame, number]> = [];
-  [1, -1].forEach((side) => {
-    const edgePhi = (y: number) => side * openAt(y);
-    zipperGroup.add(
-      new THREE.Mesh(
-        track(
-          ribbonGeometry(
-            framesAlong(SLIDER_Y, COLLAR_TOP_Y - 0.012, 60, edgePhi, 0.005),
-            0.036,
-            -side * 0.007,
-          ),
-        ),
-        matTape,
-      ),
-    );
-    const start = SLIDER_Y + 0.03 + (side > 0 ? 0 : 0.0115);
-    for (let y = start; y < COLLAR_TOP_Y - 0.02; y += 0.023) {
-      upperTeeth.push([surfaceFrame(y, edgePhi(y), 0.01), -side * 0.02]);
-    }
+  const coilGeo = track(new THREE.BoxGeometry(0.016, 0.0045, 0.008));
+  const coilFrames: SurfaceFrame[] = [];
+  for (let y = HEM_Y + 0.02; y < zipTop - 0.01; y += 0.0075) coilFrames.push(surfaceFrame(y, 0, 0.006));
+  const coil = new THREE.InstancedMesh(coilGeo, matCoil, coilFrames.length);
+  const m4 = new THREE.Matrix4();
+  const cpos = new THREE.Vector3();
+  coilFrames.forEach((f, i) => {
+    cpos.copy(f.p).addScaledVector(f.t, i % 2 === 0 ? 0.003 : -0.003);
+    m4.makeBasis(f.t, f.b, f.n).setPosition(cpos);
+    coil.setMatrixAt(i, m4);
   });
-  zipperGroup.add(buildTeeth(halfToothGeo, upperTeeth));
+  coil.instanceMatrix.needsUpdate = true;
+  zipperGroup.add(coil);
 
-  // Slider + metal pull tab (as in the reference photo) with a branded cord.
-  const sliderFrame = surfaceFrame(SLIDER_Y, 0, 0.015);
-  const slider = placeOnFrame(new THREE.Group(), sliderFrame);
-  const sliderBody = new THREE.Mesh(track(new THREE.BoxGeometry(0.048, 0.07, 0.02)), matChrome);
-  const sliderCap = new THREE.Mesh(track(new THREE.BoxGeometry(0.058, 0.016, 0.024)), matChrome);
-  sliderCap.position.y = 0.03;
-  const pullPivot = new THREE.Group();
-  pullPivot.position.set(0, -0.02, 0.014);
-  pullPivot.rotation.x = -0.2;
-  const pullTab = new THREE.Mesh(track(new THREE.BoxGeometry(0.04, 0.13, 0.009)), matChrome);
-  pullTab.position.y = -0.068;
-  pullTab.castShadow = true;
-  const pullWindow = new THREE.Mesh(track(new THREE.BoxGeometry(0.015, 0.03, 0.011)), matTape);
-  pullWindow.position.y = -0.105;
-  const pullCord = new THREE.Mesh(track(new THREE.TorusGeometry(0.018, 0.004, 8, 24)), matBrand);
-  pullCord.position.y = -0.145;
-  pullPivot.add(pullTab, pullWindow, pullCord);
-  slider.add(sliderBody, sliderCap, pullPivot);
-  zipperGroup.add(slider);
+  const makePuller = (scale: number) => {
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(track(new THREE.BoxGeometry(0.036, 0.05, 0.016)), matSliderMetal);
+    const pivot = new THREE.Group();
+    pivot.position.set(0, -0.012, 0.012);
+    pivot.rotation.x = -0.18;
+    const tab = new THREE.Mesh(track(new THREE.BoxGeometry(0.03, 0.1, 0.008)), matTrim);
+    tab.position.y = -0.055;
+    tab.castShadow = true;
+    pivot.add(tab);
+    g.add(body, pivot);
+    g.scale.setScalar(scale);
+    return g;
+  };
+  zipperGroup.add(placeOnFrame(makePuller(1), surfaceFrame(COLLAR_TOP_Y - 0.07, 0, 0.012)));
   jacket.add(zipperGroup);
 
-  /* ── Zigzag-quilted inner placket ─────────────────────────────────────── */
-  const placketFrames = framesAlong(SLIDER_Y - 0.02, COLLAR_TOP_Y - 0.01, 60, () => 0, 0, 0.034, 0);
-  const placket = new THREE.Mesh(track(ribbonGeometry(placketFrames, 0.11)), matPlacket);
-  const zigzag = new THREE.CurvePath<THREE.Vector3>();
-  let prev: THREE.Vector3 | null = null;
-  let zi = 0;
-  for (let y = SLIDER_Y + 0.01; y < COLLAR_TOP_Y - 0.02; y += 0.032, zi++) {
-    const f = surfaceFrame(y, 0, 0.003, 0.034, 0);
-    const pt = f.p.clone().addScaledVector(f.t, zi % 2 === 0 ? 0.034 : -0.034);
-    if (prev) zigzag.add(new THREE.LineCurve3(prev, pt));
-    prev = pt;
-  }
-  const zigzagStitch = new THREE.Mesh(
-    track(new THREE.TubeGeometry(zigzag, zi * 8, 0.003, 5, false)),
-    matStitch,
-  );
-  jacket.add(placket, zigzagStitch);
+  /* ── Hood drawcords exiting either side of the chin guard ─────────────── */
+  const cordGroup = new THREE.Group();
+  const cordAnchors: Record<number, THREE.Vector3> = {};
+  [1, -1].forEach((side) => {
+    const f = surfaceFrame(COLLAR_TOP_Y - 0.05, side * 0.2, 0.004);
+    const p0 = f.p;
+    const pts = [
+      p0.clone(),
+      p0.clone().add(new THREE.Vector3(side * 0.01, -0.06, 0.03)),
+      p0.clone().add(new THREE.Vector3(side * 0.018, -0.15, 0.04)),
+      p0.clone().add(new THREE.Vector3(side * 0.02, -0.22, 0.035)),
+    ];
+    cordGroup.add(new THREE.Mesh(tubeThrough(pts, 0.0055, false, 8), matTrim));
+    const eyelet = placeOnFrame(
+      new THREE.Mesh(track(new THREE.TorusGeometry(0.011, 0.004, 8, 18)), matSliderMetal),
+      f,
+    );
+    const toggle = new THREE.Mesh(track(new THREE.CylinderGeometry(0.014, 0.014, 0.045, 14)), matTrim);
+    toggle.position.copy(pts[2] ?? p0);
+    const tip = new THREE.Mesh(track(new THREE.CylinderGeometry(0.008, 0.007, 0.03, 10)), matTrim);
+    tip.position.copy(pts[3] ?? p0).add(new THREE.Vector3(0, -0.012, 0));
+    cordGroup.add(eyelet, toggle, tip);
+    cordAnchors[side] = (pts[2] ?? p0).clone();
+  });
+  jacket.add(cordGroup);
 
-  /* ── Welt pockets with concealed snaps ────────────────────────────────── */
+  /* ── Slanted zippered hand pockets ─────────────────────────────────────── */
   const pocketGroup = new THREE.Group();
-  const pocketY0 = -0.6;
-  const pocketY1 = -0.22;
+  const pocketY0 = -0.52;
+  const pocketY1 = -0.08;
   const pocketPhi = (side: number) => (y: number) =>
-    side * THREE.MathUtils.lerp(0.9, 0.8, (y - pocketY0) / (pocketY1 - pocketY0));
+    side * THREE.MathUtils.lerp(0.58, 0.47, (y - pocketY0) / (pocketY1 - pocketY0));
+  const pocketMid: Record<number, THREE.Vector3> = {};
   [1, -1].forEach((side) => {
     const phiOf = pocketPhi(side);
-    const welt = new THREE.Mesh(
-      track(ribbonGeometry(framesAlong(pocketY0, pocketY1, 32, phiOf, 0.006), 0.042)),
-      matBinding,
+    pocketGroup.add(
+      new THREE.Mesh(track(ribbonGeometry(framesAlong(pocketY0, pocketY1, 40, phiOf, 0.003), 0.03)), matTrim),
+      new THREE.Mesh(track(ribbonGeometry(framesAlong(pocketY0 + 0.01, pocketY1 - 0.01, 40, phiOf, 0.0055), 0.008)), matCoil),
     );
-    const slit = new THREE.Mesh(
-      track(
-        ribbonGeometry(
-          framesAlong(pocketY0 + 0.01, pocketY1 - 0.01, 32, phiOf, 0.0095),
-          0.007,
-          -side * 0.016,
-        ),
-      ),
-      matTape,
-    );
-    pocketGroup.add(welt, slit);
-    [pocketY0, pocketY1].forEach((by) => {
-      const tack = new THREE.Mesh(track(new THREE.BoxGeometry(0.05, 0.006, 0.006)), matStitch);
-      pocketGroup.add(placeOnFrame(tack, surfaceFrame(by, phiOf(by), 0.01)));
-    });
-    const snap = placeOnFrame(new THREE.Group(), surfaceFrame(-0.52, side * 0.7, 0.007));
-    const snapCap = new THREE.Mesh(track(new THREE.CylinderGeometry(0.022, 0.022, 0.01, 24)), matChrome);
-    snapCap.rotation.x = Math.PI / 2;
-    const snapDome = new THREE.Mesh(track(new THREE.SphereGeometry(0.012, 16, 8)), matChrome);
-    snapDome.position.z = 0.005;
-    snapDome.scale.z = 0.5;
-    snap.add(snapCap, snapDome);
-    pocketGroup.add(snap);
+    pocketGroup.add(placeOnFrame(makePuller(0.7), surfaceFrame(pocketY1 - 0.03, phiOf(pocketY1 - 0.03), 0.01)));
+    pocketMid[side] = surfaceFrame(-0.3, phiOf(-0.3), 0.01).p;
   });
   jacket.add(pocketGroup);
 
-  /* ── Quilted sleeves with ¼" elasticated cuffs ─────────────────────────── */
+  /* ── Raglan sleeves with hook-and-loop cuff tabs ───────────────────────── */
   const sleevePaths = { left: sleevePath(-1), right: sleevePath(1) };
-  [sleevePaths.left, sleevePaths.right].forEach((path) => {
-    const geo = track(buildSleeveGeometry(path, SLEEVE_TS, SLEEVE_RS, true));
+  const cuffTabPos: Record<number, THREE.Vector3> = {};
+  ([[-1, sleevePaths.left], [1, sleevePaths.right]] as const).forEach(([side, path]) => {
+    const geo = track(buildSleeveGeometry(path));
     const arm = new THREE.Mesh(geo, matShell);
     arm.castShadow = true;
     arm.receiveShadow = true;
-    outlineGroup.add(new THREE.Mesh(track(inflatedHull(geo, 0.008)), matOutline));
+    outlineGroup.add(new THREE.Mesh(track(inflatedHull(geo, 0.007)), matOutline));
 
     const end = path.getPointAt(1);
     const dir = path.getTangentAt(1).normalize();
     const facing = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir);
-    const cuffBinding = new THREE.Mesh(track(new THREE.TorusGeometry(0.12, 0.015, 12, 56)), matBinding);
+    const endR = sleeveBaseRadius(1);
+    const cuffBinding = new THREE.Mesh(track(new THREE.TorusGeometry(endR, 0.01, 10, 56)), matBinding);
     cuffBinding.quaternion.copy(facing);
     cuffBinding.position.copy(end);
-    const opening = new THREE.Mesh(track(new THREE.CircleGeometry(0.114, 40)), matInterior);
+    const opening = new THREE.Mesh(track(new THREE.CircleGeometry(endR - 0.006, 40)), matOpening);
     opening.quaternion.copy(facing);
-    opening.position.copy(end).addScaledVector(dir, -0.005);
-    jacket.add(arm, cuffBinding, opening);
+    opening.position.copy(end).addScaledVector(dir, -0.004);
+
+    // Cuff tab on the outer, front-facing side of the cuff.
+    const u = 0.93;
+    const P = path.getPointAt(u);
+    const T = path.getTangentAt(u).normalize();
+    const out = new THREE.Vector3(side, 0, 0.55).normalize();
+    out.addScaledVector(T, -out.dot(T)).normalize();
+    const tab = new THREE.Mesh(track(new THREE.BoxGeometry(0.075, 0.12, 0.012)), matVelcro);
+    const xAxis = new THREE.Vector3().crossVectors(T, out).normalize();
+    tab.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(xAxis, T, out));
+    tab.position.copy(P).addScaledVector(out, sleeveBaseRadius(u) + 0.006);
+    tab.castShadow = true;
+    cuffTabPos[side] = tab.position.clone().addScaledVector(out, 0.01);
+    jacket.add(arm, cuffBinding, opening, tab);
   });
+  jacket.add(outlineGroup);
 
   /* ── Display stand ────────────────────────────────────────────────────── */
   const standGroup = new THREE.Group();
@@ -914,31 +852,28 @@ export function buildTShirt(mats: SharedStageMaterials): TShirtBuild {
     return a;
   };
 
-  // Presentation clones must be taken before anchors are added to the jacket.
+  // Presentation clones must be taken after every garment part and before anchors are added.
   const backView = jacket.clone(true);
   const sideView = jacket.clone(true);
 
-  /* BOM: exploded material stack (shell / fill / lining) */
+  /* BOM: material stack (woven shell over mesh lining) */
   const stack = new THREE.Group();
-  const shellSwatch = new THREE.Mesh(track(quiltedSwatchGeometry(0.44, 0.022, 0.44)), matShell);
-  shellSwatch.position.y = 0.13;
+  const shellSwatch = new THREE.Mesh(track(new THREE.BoxGeometry(0.44, 0.02, 0.44)), matShell);
+  const swatchQuilt = new Float32Array((shellSwatch.geometry.getAttribute("position") as THREE.BufferAttribute).count * 4);
+  for (let i = 0; i < swatchQuilt.length; i += 4) swatchQuilt.set([0.5, 1, 1, 0], i);
+  shellSwatch.geometry.setAttribute("aQuilt", new THREE.BufferAttribute(swatchQuilt, 4));
+  shellSwatch.position.y = 0.09;
   shellSwatch.castShadow = true;
-  const matFill = mats.makePhys({ color: 0xf4f2ee, roughness: 1, sheen: 0.8, sheenColor: new THREE.Color(0xffffff) });
-  const fill = new THREE.Group();
-  const puffGeo = track(new THREE.IcosahedronGeometry(0.075, 1));
-  for (let i = 0; i < 16; i++) {
-    const puff = new THREE.Mesh(puffGeo, matFill);
-    puff.position.set(((i % 4) - 1.5) * 0.1 + Math.sin(i * 2.1) * 0.015, 0, (Math.floor(i / 4) - 1.5) * 0.1 + Math.cos(i * 1.7) * 0.015);
-    puff.scale.set(0.95 + 0.15 * Math.sin(i), 0.42, 0.95 + 0.15 * Math.cos(i * 1.3));
-    fill.add(puff);
-  }
-  const matLiningSwatch = mats.makePhys({ color: LINING_COLOR, roughness: 0.5, sheen: 0.4, side: THREE.DoubleSide });
-  const liningSwatch = new THREE.Mesh(track(new THREE.BoxGeometry(0.44, 0.01, 0.44)), matLiningSwatch);
-  liningSwatch.position.y = -0.13;
-  stack.add(shellSwatch, fill, liningSwatch);
-  stack.position.set(1.62, 0.3, 0.1);
+  const matMesh = mats.makePhys({ roughness: 0.9, side: THREE.DoubleSide });
+  matMesh.color = interiorColor;
+  const liningSwatch = new THREE.Mesh(track(new THREE.BoxGeometry(0.44, 0.008, 0.44)), matMesh);
+  liningSwatch.position.y = -0.09;
+  const zipSample = new THREE.Mesh(track(new THREE.BoxGeometry(0.05, 0.012, 0.5)), matTrim);
+  zipSample.position.set(0, 0.107, 0);
+  stack.add(shellSwatch, liningSwatch, zipSample);
+  stack.position.set(1.55, 0.3, 0.1);
   stack.rotation.set(0.55, -0.5, 0.1);
-  addAnchor("bomFill", stack, new THREE.Vector3(0.24, 0, 0));
+  addAnchor("bomLining", liningSwatch, new THREE.Vector3(0.22, 0, 0.1));
 
   /* 3D sampling: pattern-grid ghost (back view) + simulation scan ring */
   const samplingGroup = new THREE.Group();
@@ -946,13 +881,14 @@ export function buildTShirt(mats: SharedStageMaterials): TShirtBuild {
     new THREE.LineBasicMaterial({ color: GRID_COLOR, transparent: true, opacity: 0.75, clippingPlanes: clipPlanes }),
   );
   const ghost = new THREE.Group();
-  ghost.add(new THREE.LineSegments(track(buildShellGridLines(26, 40)), matGrid));
+  ghost.add(new THREE.LineSegments(track(buildSurfaceGridLines(PROFILE, noOpening, bodyPoint, 26, 40)), matGrid));
+  ghost.add(new THREE.LineSegments(track(buildSurfaceGridLines(HOOD_PROFILE, hoodOpen, hoodPoint, 12, 32)), matGrid));
   ghost.add(new THREE.LineSegments(track(buildSleeveGridLines(sleevePaths.left)), matGrid));
   ghost.add(new THREE.LineSegments(track(buildSleeveGridLines(sleevePaths.right)), matGrid));
-  ghost.scale.setScalar(0.52);
-  ghost.position.set(1.75, 0.25, -0.8);
+  ghost.scale.setScalar(0.48);
+  ghost.position.set(1.72, 0.22, -0.8);
   ghost.rotation.y = Math.PI + 0.35;
-  addAnchor("ghost", ghost, new THREE.Vector3(-0.8, 0.5, 0));
+  addAnchor("ghost", ghost, new THREE.Vector3(-0.75, 0.55, 0));
 
   const ringPts: THREE.Vector3[] = [];
   for (let i = 0; i < 96; i++) {
@@ -986,8 +922,7 @@ export function buildTShirt(mats: SharedStageMaterials): TShirtBuild {
       tick.position.copy(p);
       measureGroup.add(tick);
     });
-    const curve = new THREE.CatmullRomCurve3(pts);
-    addAnchor(labelKey, measureGroup, curve.getPointAt(labelAt));
+    addAnchor(labelKey, measureGroup, new THREE.CatmullRomCurve3(pts).getPointAt(labelAt));
   };
   const chestY = 0.14;
   const chestFrontZ = shellPoint(uAtY(chestY), 0, 0, 1, new THREE.Vector3()).z + 0.1;
@@ -999,13 +934,13 @@ export function buildTShirt(mats: SharedStageMaterials): TShirtBuild {
   );
   const lengthX = -0.36;
   dimension(
-    [new THREE.Vector3(lengthX, 0.86, 0.34), new THREE.Vector3(lengthX, -0.4, 0.42), new THREE.Vector3(lengthX, HEM_Y, 0.38)],
+    [new THREE.Vector3(lengthX, 0.86, 0.32), new THREE.Vector3(lengthX, -0.4, 0.42), new THREE.Vector3(lengthX, HEM_Y, 0.38)],
     "pomLength",
     0.62,
   );
   const sleevePts: THREE.Vector3[] = [];
   for (let i = 0; i <= 16; i++) {
-    const u = THREE.MathUtils.lerp(0.14, 1, i / 16);
+    const u = THREE.MathUtils.lerp(0.1, 1, i / 16);
     const p = sleevePaths.right.getPointAt(u);
     sleevePts.push(p.add(new THREE.Vector3(1, 0.15, 0.25).normalize().multiplyScalar(sleeveBaseRadius(u) + 0.07)));
   }
@@ -1021,7 +956,7 @@ export function buildTShirt(mats: SharedStageMaterials): TShirtBuild {
     const card = new THREE.Group();
     const plate = new THREE.Mesh(
       track(new THREE.BoxGeometry(0.24, 0.34, 0.025)),
-      mats.makePhys({ color: new THREE.Color(cw.hex).getHex(), roughness: 0.6, sheen: 0.4 }),
+      mats.makePhys({ color: new THREE.Color(cw.hex).getHex(), roughness: 0.8, sheen: 0.2 }),
     );
     plate.castShadow = true;
     const footer = new THREE.Mesh(track(new THREE.BoxGeometry(0.24, 0.07, 0.028)), matChrome);
@@ -1051,41 +986,40 @@ export function buildTShirt(mats: SharedStageMaterials): TShirtBuild {
   const boardFoot = new THREE.Mesh(track(new THREE.BoxGeometry(1.75, 0.04, 0.4)), matObsidian);
   boardFoot.position.set(0, -0.73, 0.12);
   board.add(boardPanel, boardFoot);
-  backView.scale.setScalar(0.34);
+  backView.scale.setScalar(0.3);
   backView.rotation.y = Math.PI;
-  backView.position.set(-0.42, 0.12, 0.2);
-  sideView.scale.setScalar(0.34);
+  backView.position.set(-0.42, 0.06, 0.2);
+  sideView.scale.setScalar(0.3);
   sideView.rotation.y = Math.PI / 2;
-  sideView.position.set(0.45, 0.12, 0.2);
+  sideView.position.set(0.45, 0.06, 0.2);
   board.add(backView, sideView);
   COLORWAYS.forEach((cw, i) => {
     const chip = new THREE.Mesh(
       track(new THREE.BoxGeometry(0.26, 0.09, 0.02)),
-      mats.makePhys({ color: new THREE.Color(cw.hex).getHex(), roughness: 0.7 }),
+      mats.makePhys({ color: new THREE.Color(cw.hex).getHex(), roughness: 0.8 }),
     );
-    chip.position.set(-0.48 + i * 0.32, -0.5, 0.03);
+    chip.position.set(-0.48 + i * 0.32, -0.52, 0.03);
     board.add(chip);
   });
-  addAnchor("viewBack", board, new THREE.Vector3(-0.42, -0.33, 0.1));
-  addAnchor("viewSide", board, new THREE.Vector3(0.45, -0.33, 0.1));
+  addAnchor("viewBack", board, new THREE.Vector3(-0.42, -0.36, 0.1));
+  addAnchor("viewSide", board, new THREE.Vector3(0.45, -0.36, 0.1));
   board.position.set(1.62, -0.2, -0.75);
   board.rotation.y = -0.42;
 
   /* Garment anchors (tech pack + BOM pins), parented to the jacket so they follow it */
-  const sleeveMid = sleevePaths.right.getPointAt(0.45);
-  const cuffEnd = sleevePaths.right.getPointAt(0.96);
-  addAnchor("collar", jacket, surfaceFrame(1.12, -0.95, 0).p);
-  addAnchor("placket", jacket, surfaceFrame(0.98, 0, 0, 0.034, 0).p);
-  addAnchor("zipper", jacket, surfaceFrame(SLIDER_Y - 0.12, 0, 0.012).p);
-  addAnchor("pocket", jacket, surfaceFrame(-0.4, 0.86, 0.01).p);
-  addAnchor("sleeve", jacket, sleeveMid.clone().add(new THREE.Vector3(0.12, 0, 0.17)));
-  addAnchor("cuff", jacket, cuffEnd.clone().add(new THREE.Vector3(0.06, -0.02, 0.1)));
+  HOOD_PROFILE.getPointAt(uAtHoodY(1.42), hoodC);
+  addAnchor("hood", jacket, hoodPoint(hoodC, 1.25, -0.01, 1, new THREE.Vector3()));
+  addAnchor("drawcord", jacket, cordAnchors[1] ?? new THREE.Vector3());
+  addAnchor("zipper", jacket, surfaceFrame(0.3, 0, 0.012).p);
+  addAnchor("pocket", jacket, pocketMid[1] ?? new THREE.Vector3());
+  addAnchor("sleeve", jacket, sleevePaths.right.getPointAt(0.45).add(new THREE.Vector3(0.1, 0, 0.14)));
+  addAnchor("cuff", jacket, cuffTabPos[1] ?? new THREE.Vector3());
   addAnchor("hem", jacket, surfaceFrame(-0.88, 0.35, 0.012).p);
-  addAnchor("bomShell", jacket, surfaceFrame(0.02, -0.42, 0.01).p);
-  addAnchor("bomLining", jacket, shellPoint(uAtY(1.08), Math.PI, SHELL_THICKNESS, 0, new THREE.Vector3()));
-  addAnchor("bomZipper", jacket, surfaceFrame(-0.1, 0, 0.012).p);
-  addAnchor("bomSnap", jacket, surfaceFrame(-0.52, 0.7, 0.012).p);
-  addAnchor("bomElastic", jacket, surfaceFrame(-0.89, -0.5, 0.012).p);
+  addAnchor("bomShell", jacket, surfaceFrame(0.1, -0.35, 0.01).p);
+  addAnchor("bomZipper", jacket, surfaceFrame(-0.2, 0, 0.012).p);
+  addAnchor("bomPocketZip", jacket, pocketMid[-1] ?? new THREE.Vector3());
+  addAnchor("bomDrawcord", jacket, cordAnchors[-1] ?? new THREE.Vector3());
+  addAnchor("bomCuffTab", jacket, cuffTabPos[-1] ?? new THREE.Vector3());
   addAnchor("viewFront", jacket, new THREE.Vector3(0, HEM_Y - 0.12, 0.4));
 
   tshirtGroup.add(jacketRig, standGroup, stack, samplingGroup, devProps, board);
@@ -1126,13 +1060,14 @@ export function buildTShirt(mats: SharedStageMaterials): TShirtBuild {
     },
     getSway: () => sway,
     update: (elapsed, delta) => {
+      syncInterior();
       const preset = MODE_PRESETS[mode];
       const k = 1 - Math.exp(-Math.min(delta, 0.1) * 5);
       sketch.value += (preset.sketch - sketch.value) * k;
       matOutline.opacity = sketch.value;
       outlineGroup.visible = sketch.value > 0.01;
       sway += (preset.sway - sway) * k;
-      offsetTarget.set(...preset.offset);
+      offsetTarget.set(preset.offset[0], preset.offset[1] + RIG_Y, preset.offset[2]);
       jacketRig.position.lerp(offsetTarget, k);
       (Object.keys(propObjects) as PropKey[]).forEach((key) => {
         const target = preset.props.includes(key) ? 1 : 0;
@@ -1140,10 +1075,10 @@ export function buildTShirt(mats: SharedStageMaterials): TShirtBuild {
       });
       applyProps();
 
-      // Idle animation for visible props.
       stack.position.y = 0.3 + Math.sin(elapsed * 1.2) * 0.03;
-      shellSwatch.position.y = 0.13 + propWeight.stack * 0.04;
-      liningSwatch.position.y = -0.13 - propWeight.stack * 0.04;
+      shellSwatch.position.y = 0.09 + propWeight.stack * 0.04;
+      zipSample.position.y = 0.107 + propWeight.stack * 0.06;
+      liningSwatch.position.y = -0.09 - propWeight.stack * 0.04;
       ghost.rotation.y = Math.PI + 0.35 + Math.sin(elapsed * 0.5) * 0.25;
       const sweep = (elapsed * 0.35) % 1;
       const yScan = THREE.MathUtils.lerp(HEM_Y + 0.05, COLLAR_TOP_Y - 0.05, sweep);
@@ -1157,4 +1092,22 @@ export function buildTShirt(mats: SharedStageMaterials): TShirtBuild {
   };
 
   return { tshirtGroup, swatches, designStudio };
+}
+
+/* Hood profile height → arc parameter (hood profile is monotonic in y). */
+const HOOD_LUT_SIZE = 256;
+const HOOD_LUT = new Float64Array(HOOD_LUT_SIZE + 1);
+for (let i = 0; i <= HOOD_LUT_SIZE; i++) {
+  HOOD_LUT[i] = HOOD_PROFILE.getPointAt(i / HOOD_LUT_SIZE).y;
+}
+function uAtHoodY(y: number): number {
+  for (let i = 1; i <= HOOD_LUT_SIZE; i++) {
+    const hi = HOOD_LUT[i] ?? 0;
+    if (hi >= y) {
+      const lo = HOOD_LUT[i - 1] ?? 0;
+      const f = hi - lo > 1e-9 ? (y - lo) / (hi - lo) : 0;
+      return clamp01((i - 1 + f) / HOOD_LUT_SIZE);
+    }
+  }
+  return 1;
 }
