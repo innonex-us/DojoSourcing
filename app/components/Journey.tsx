@@ -82,11 +82,11 @@ const STAGES = [
 const STAGE_ICONS = [PencilRuler, Globe, Factory, ShieldCheck, PackageCheck, Truck, Ship] as const;
 
 const SOURCING_CALLOUTS: CalloutItem[] = [
-  { key: "srcMill", anchor: "srcMill", label: "Fabric mill · woven softshell", kind: "leader" },
-  { key: "srcTrims", anchor: "srcTrims", label: "Trim supplier · zips & cords", kind: "leader" },
-  { key: "srcHub", anchor: "srcHub", label: "Production hub", kind: "leader" },
-  { key: "srcFabric", anchor: "srcFabric", label: "Bulk fabric rolls · per colourway", kind: "leader" },
-  { key: "srcTrimCard", anchor: "srcTrimCard", label: "Approved trim card", kind: "leader" },
+  { key: "srcMill", anchor: "srcMill", label: "Fabric Sourcing", kind: "leader" },
+  { key: "srcTrims", anchor: "srcTrims", label: "Trims Sourcing", kind: "leader" },
+  { key: "srcHub", anchor: "srcHub", label: "Factory Sourcing", kind: "leader" },
+  // { key: "srcFabric", anchor: "srcFabric", label: "Bulk Fabric Sourcing", kind: "leader" },
+  // { key: "srcTrimCard", anchor: "srcTrimCard", label: "Approved Trims Card", kind: "leader" },
 ];
 
 const QA_CALLOUTS: CalloutItem[] = [
