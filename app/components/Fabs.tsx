@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Moon, Palette, SlidersHorizontal, Sun, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowUp, Moon, Palette, SlidersHorizontal, Sun, X } from "lucide-react";
 import type { AccentMode, ThemeMode } from "./useTheme";
 
 type FabsProps = {
@@ -13,15 +13,52 @@ type FabsProps = {
 
 export function Fabs({ theme, accent, onSetTheme, onSetAccent }: FabsProps) {
   const [open, setOpen] = useState(false);
+  const [showTop, setShowTop] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const onScroll = () => setShowTop(window.scrollY > 480);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as Node | null;
+      if (!target) return;
+      if (panelRef.current?.contains(target)) return;
+      if (triggerRef.current?.contains(target)) return;
+      setOpen(false);
+    };
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   return (
-    <>
-      {/* Theme Control Panel */}
+    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
       {open ? (
         <div
+          ref={panelRef}
           role="dialog"
           aria-label="Theme control"
-          className="fixed bottom-20 right-6 z-50 w-72 border border-border bg-surface p-5 shadow-2xl backdrop-blur-md"
+          className="w-72 border border-border bg-surface p-5 shadow-2xl backdrop-blur-md"
         >
           <div className="flex items-center justify-between border-b border-border pb-3">
             <span className="inline-flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-brand">
@@ -106,17 +143,28 @@ export function Fabs({ theme, accent, onSetTheme, onSetAccent }: FabsProps) {
         </div>
       ) : null}
 
-      {/* Theme Control Trigger (Chat Box Removed) */}
+      {showTop ? (
+        <button
+          type="button"
+          onClick={scrollToTop}
+          aria-label="Back to top"
+          className="focus-ring flex h-12 w-12 items-center justify-center rounded-full border border-border bg-surface text-chrome shadow-lg transition-colors hover:border-brand hover:text-brand"
+        >
+          <ArrowUp className="h-4 w-4" aria-hidden />
+        </button>
+      ) : null}
+
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label="Open theme control"
         aria-expanded={open}
-        className="focus-ring fixed bottom-6 right-6 z-50 flex h-12 items-center gap-2 rounded-full border border-border bg-surface px-4 text-[11px] font-bold uppercase tracking-[0.16em] text-chrome shadow-lg transition-colors hover:border-brand hover:text-brand"
+        className="focus-ring flex h-12 items-center gap-2 rounded-full border border-border bg-surface px-4 text-[11px] font-bold uppercase tracking-[0.16em] text-chrome shadow-lg transition-colors hover:border-brand hover:text-brand"
       >
         <SlidersHorizontal className="h-4 w-4 text-brand" aria-hidden />
         <span className="hidden sm:inline">Theme</span>
       </button>
-    </>
+    </div>
   );
 }

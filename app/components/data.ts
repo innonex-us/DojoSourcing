@@ -350,7 +350,7 @@ export const partnerTiles = [
 ] as const;
 
 export const expertiseMedia = [
-  "/images/apparel-atelier.jpg",
+  "/images/design-innovation-studio.png",
   "/images/apparel-factory.jpg",
   "/images/apparel-cartons.jpg",
   "/images/apparel-truck.jpg",

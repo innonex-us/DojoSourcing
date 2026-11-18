@@ -9,7 +9,6 @@ import {
   Factory,
   Globe,
   MoveHorizontal,
-  PackageCheck,
   PencilRuler,
   Ship,
   ShieldCheck,
@@ -60,27 +59,28 @@ const STAGES = [
     title: "Quality Assurance",
     body: "DOJO is your second set of eyes on the factory floor in Bangladesh. We check garment measurements, workmanship, finishing, and packaging against your requirements, flag defects early, and follow up on factory corrections. We document findings with photos and measurement records and coordinate final pre-shipment inspections using your AQL criteria.",
   },
+  // Soft-removed: Packed & QC Cleared cartons stage (readyGroup / buildCartons).
+  // {
+  //   num: "05",
+  //   tag: "READY TO SHIP",
+  //   title: "Packed & QC Cleared",
+  //   body: "QC-passed garments are folded, polybagged, strapped onto Euro pallets, barcode-scanned, and stretch-wrapped for export.",
+  // },
   {
     num: "05",
     tag: "READY TO SHIP",
-    title: "Packed & QC Cleared",
-    body: "QC-passed garments are folded, polybagged, strapped onto Euro pallets, barcode-scanned, and stretch-wrapped for export.",
-  },
-  {
-    num: "06",
-    tag: "CARGO TRUCK",
-    title: "Cargo Truck Dispatch",
+    title: "Ready To Ship",
     body: "Sealed 40ft container trucks haul your palletized inventory along the highway from the factory loading dock straight to the export terminal.",
   },
   {
-    num: "07",
+    num: "06",
     tag: "About Dojo",
     title: "About Dojo",
     body: "DOJO Design & Sourcing is a Bangladesh-based apparel partner for brands and retailers. We bring design, product development, sourcing, production follow-up, and quality assurance together under one team. From the first sketch to pre-shipment inspection, we work directly with factories and suppliers to keep your specifications, approvals, and timelines on track.",
   },
 ] as const;
 
-const STAGE_ICONS = [PencilRuler, Globe, Factory, ShieldCheck, PackageCheck, Truck, Ship] as const;
+const STAGE_ICONS = [PencilRuler, Globe, Factory, ShieldCheck, Truck, Ship] as const;
 
 const SOURCING_CALLOUTS: CalloutItem[] = [
   { key: "srcMill", anchor: "srcMill", label: "Fabric Sourcing", kind: "leader" },
@@ -352,8 +352,9 @@ export function Journey({
             waveGeo,
           } = assets;
 
-          // Design & Innovation: 3D jacket temporarily disabled in favor of a studio still.
-          tshirtGroup.visible = false;
+          // Design & Innovation: keep the jacket group alive for callout anchors, but the
+          // studio still covers it. Hide the jacket as soon as we leave stage 01.
+          tshirtGroup.visible = true;
 
           // 360° Drag-Orbit + Pointer Parallax
           let isDragging = false;
@@ -403,10 +404,10 @@ export function Journey({
             timer.update();
             const t = timer.getElapsed();
 
-            // Design & Innovation 3D studio update — commented out while the still image is shown.
-            // designStudio.setMode(studioModeRef.current);
-            // designStudio.update(t, timer.getDelta());
-            // tshirtGroup.rotation.y = Math.sin(t * 0.65) * designStudio.getSway();
+            // Drive studio modes/anchors under the still so Tech Pack (etc.) pointers stay live.
+            designStudio.setMode(studioModeRef.current);
+            designStudio.update(t, timer.getDelta());
+            tshirtGroup.rotation.y = Math.sin(t * 0.65) * designStudio.getSway();
             hvacFans.forEach((fan) => {
               fan.rotation.y = t * 6.5;
             });
@@ -427,8 +428,9 @@ export function Journey({
 
             qaStage.update(t);
             sourcingStage.update(t);
-            readyGroup.rotation.y = Math.sin(t * 0.55) * 0.24;
-            laserBeam.rotation.x = Math.sin(t * 4.5) * 0.22;
+            // Soft-removed Ready To Ship cartons stage micro-motion.
+            // readyGroup.rotation.y = Math.sin(t * 0.55) * 0.24;
+            // laserBeam.rotation.x = Math.sin(t * 4.5) * 0.22;
 
             shipHullGroup.position.y = Math.sin(t * 1.6) * 0.06;
             shipHullGroup.rotation.z = Math.sin(t * 1.1) * 0.022;
@@ -449,13 +451,16 @@ export function Journey({
 
             renderer?.render(scene, camera);
 
-            // Design & Innovation callouts disabled while the studio still image is shown.
+            // Pointers track the hidden jacket anchors and fade with the studio still.
+            const designFade = tshirtGroup.visible
+              ? Number(gsap.getProperty(".journey-design-image", "opacity")) || 0
+              : 0;
             calloutsRef.current?.update(
               camera,
               host.clientWidth,
               host.clientHeight,
               designStudio.anchors,
-              0,
+              designFade,
             );
             const sourcingFade = sourcingGroup.visible
               ? 1 - Math.min(1, Math.abs(sourcingGroup.position.y) / 0.6)
@@ -535,16 +540,19 @@ export function Journey({
           };
           window.addEventListener("resize", onResize);
 
-          // GSAP ScrollTrigger Master Timeline with Exact Named Stage Labels (7 stages).
+          // Soft-removed cartons stage — keep readyGroup off-stage.
+          readyGroup.visible = false;
+
+          // GSAP ScrollTrigger Master Timeline with Exact Named Stage Labels (6 stages).
           // Each stage holds for ~1.2 timeline units; transitions start 0.4 after a label.
           const STAGE_COUNT = STAGES.length;
-          const TIMELINE_LENGTH = 7.6;
+          const TIMELINE_LENGTH = 6.5;
           const tl = gsap.timeline({
             scrollTrigger: {
               id: "journey-pipeline",
               trigger: ".journey-stage",
               start: "top top",
-              end: "+=6800",
+              end: "+=5800",
               pin: true,
               scrub: 0.8,
               anticipatePin: 1,
@@ -566,11 +574,8 @@ export function Journey({
           );
 
           // STAGE 1 -> 2: Design → Sourcing (0.55..1.25)
-          // 3D jacket exit kept for easy restore; image fade is what users see for now.
-          // tl.to(tshirtGroup.position, { y: 8.5, x: 2.2, z: -2.2, duration: 0.55, ease: "power2.in" }, 0.55)
-          //   .to(tshirtGroup.rotation, { z: 0.4, x: -0.3, duration: 0.55 }, 0.55)
-          //   .set(tshirtGroup, { visible: false }, 1.1)
           tl.to(".journey-design-image", { autoAlpha: 0, duration: 0.4, ease: "power2.in" }, 0.55)
+            .set(tshirtGroup, { visible: false }, 0.55)
             .to(texts[0], { autoAlpha: 0, y: -24, duration: 0.28 }, 0.55)
             .to(
               sourcingGroup.position,
@@ -614,7 +619,8 @@ export function Journey({
             .to(texts[3], { autoAlpha: 1, y: 0, duration: 0.35 }, 3.28)
             .addLabel("stage3", 3.75);
 
-          // STAGE 4 -> 5: Quality Assurance → Ready To Ship (4.15..4.85)
+          // STAGE 4 -> 5: Quality Assurance → Ready To Ship / truck (4.15..4.85)
+          // Soft-removed cartons (readyGroup) beat — QA goes straight to the truck.
           tl.to(
             qaGroup.position,
             { y: 8.5, x: -2.2, duration: 0.55, ease: "power2.in" },
@@ -624,68 +630,51 @@ export function Journey({
             .set(qaGroup, { visible: false }, 4.7)
             .to(texts[3], { autoAlpha: 0, y: -24, duration: 0.28 }, 4.15)
             .to(
-              readyGroup.position,
-              { y: 0, duration: 0.65, ease: "power3.out" },
-              4.25,
-            )
-            .to(texts[4], { autoAlpha: 1, y: 0, duration: 0.35 }, 4.48)
-            .addLabel("stage4", 4.95);
-
-          // STAGE 5 -> 6: Ready To Ship → Cargo Truck (5.35..6.05)
-          tl.to(
-            readyGroup.position,
-            { y: 8.5, x: 2.2, duration: 0.55, ease: "power2.in" },
-            5.35,
-          )
-            .to(readyGroup.rotation, { z: -0.25, duration: 0.55 }, 5.35)
-            .set(readyGroup, { visible: false }, 5.9)
-            .to(texts[4], { autoAlpha: 0, y: -24, duration: 0.28 }, 5.35)
-            .to(
               truckGroup.position,
               { y: -0.02, duration: 0.55, ease: "power3.out" },
-              5.45,
+              4.25,
             )
             .fromTo(
               truckGroup.position,
               { x: -1.8 },
               { x: 0.6, duration: 0.65, ease: "power1.inOut" },
-              5.48,
+              4.28,
             )
-            .to(texts[5], { autoAlpha: 1, y: 0, duration: 0.35 }, 5.68)
-            .addLabel("stage5", 6.18);
+            .to(texts[4], { autoAlpha: 1, y: 0, duration: 0.35 }, 4.48)
+            .addLabel("stage4", 4.95);
 
           // Wheels roll while the truck drives in.
           wheels.forEach((w) => {
-            tl.to(w.rotation, { z: -Math.PI * 10, duration: 1.5, ease: "none" }, 5.48);
+            tl.to(w.rotation, { z: -Math.PI * 10, duration: 1.5, ease: "none" }, 4.28);
           });
 
-          // STAGE 6 -> 7: Cargo Truck → Ocean Ship (6.45..7.50)
+          // STAGE 5 -> 6: Ready To Ship → About Dojo / ship (5.35..6.40)
           tl.to(
             truckGroup.position,
             { x: 18, y: 2.2, duration: 0.45, ease: "power2.in" },
-            6.45,
+            5.35,
           )
-            .set(truckGroup, { visible: false }, 6.9)
-            .to(texts[5], { autoAlpha: 0, y: -24, duration: 0.25 }, 6.45)
+            .set(truckGroup, { visible: false }, 5.8)
+            .to(texts[4], { autoAlpha: 0, y: -24, duration: 0.25 }, 5.35)
             .to(
               horizonGrid.position,
               { y: -4.5, duration: 0.35, ease: "power2.in" },
-              6.85,
+              5.75,
             )
             .to(
               shipStageGroup.position,
               { y: -0.1, duration: 0.55, ease: "power3.out" },
-              6.92,
+              5.82,
             )
             .fromTo(
               shipStageGroup.position,
               { x: -0.4 },
               { x: 1.0, duration: 0.55, ease: "power1.inOut" },
-              6.92,
+              5.82,
             )
-            .to(texts[6], { autoAlpha: 1, y: 0, duration: 0.32 }, 7.08)
-            .addLabel("stage6", 7.5)
-            .to({}, { duration: 0.1 }, 7.5);
+            .to(texts[5], { autoAlpha: 1, y: 0, duration: 0.32 }, 5.98)
+            .addLabel("stage5", 6.4)
+            .to({}, { duration: 0.1 }, 6.4);
 
           return () => {
             stopLoop();
@@ -790,22 +779,21 @@ export function Journey({
           className="absolute inset-0 z-0 cursor-grab touch-pan-y active:cursor-grabbing"
         />
 
-        {/* Design & Innovation still — temporarily replaces the Stage 01 3D jacket */}
-        <div className="journey-design-image pointer-events-none absolute inset-0 z-[1]">
+        {/* Design & Innovation still — Stage 01 studio photo covering the 3D canvas */}
+        <div className="journey-design-image pointer-events-none absolute inset-0 z-[1] bg-background">
           <NextImage
-            src="/images/design-innovation-studio.jpg"
+            src="/images/design-innovation-studio.png"
             alt="Design and Innovation studio with tech packs, fabric boards, and 3D garment sampling"
             fill
             priority
+            quality={90}
             sizes="100vw"
-            className="object-cover object-[68%_center]"
+            className="object-cover object-[58%_38%]"
           />
         </div>
 
-        {/* Stage 01 design-studio annotations projected from the 3D jacket */}
-        {/* (Leader-line labels need the wide layout; hidden on narrow screens.) */}
+        {/* Stage 01 design-studio annotations (over the studio still on xl+) */}
         <div className="hidden xl:contents">
-          {/* Temporarily unused while Stage 01 uses the still image */}
           <DesignCallouts ref={calloutsRef} items={calloutItems} />
           {/* Stage 04 quality-assurance annotations */}
           <DesignCallouts ref={qaCalloutsRef} items={QA_CALLOUTS} />
@@ -925,7 +913,7 @@ export function Journey({
         <div className="pointer-events-none relative z-10 mx-auto mt-3 flex w-full max-w-[1400px] items-center justify-between font-mono text-[10px] uppercase tracking-[0.18em] text-muted sm:text-[11px] sm:tracking-[0.22em]">
           <span className="inline-flex items-center gap-2">
             <MoveHorizontal className="h-3.5 w-3.5 text-brand" aria-hidden />
-            <span className="hidden sm:inline">Drag 3D Stage To Orbit · Scroll Or Click 01–07</span>
+            <span className="hidden sm:inline">Drag 3D Stage To Orbit · Scroll Or Click 01–06</span>
             <span className="sm:hidden">Scroll · Drag to orbit</span>
           </span>
           <Link
@@ -962,13 +950,24 @@ export function Journey({
                 {stage.body}
               </p>
               {stage.num === "01" ? (
-                <ul className="mt-3 space-y-1.5 text-sm text-foreground/80">
-                  {DESIGN_SERVICES.map((svc) => (
-                    <li key={svc.mode}>
-                      <span className="font-semibold text-chrome">{svc.label}</span> — {svc.blurb}
-                    </li>
-                  ))}
-                </ul>
+                <>
+                  <div className="relative mt-4 aspect-[16/10] w-full overflow-hidden border border-border">
+                    <NextImage
+                      src="/images/design-innovation-studio.png"
+                      alt="Design and Innovation studio with tech packs, fabric boards, and 3D garment sampling"
+                      fill
+                      sizes="(max-width: 768px) 100vw, 640px"
+                      className="object-cover object-[58%_38%]"
+                    />
+                  </div>
+                  <ul className="mt-3 space-y-1.5 text-sm text-foreground/80">
+                    {DESIGN_SERVICES.map((svc) => (
+                      <li key={svc.mode}>
+                        <span className="font-semibold text-chrome">{svc.label}</span> — {svc.blurb}
+                      </li>
+                    ))}
+                  </ul>
+                </>
               ) : null}
             </div>
           ))}

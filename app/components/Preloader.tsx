@@ -161,7 +161,7 @@ export function Preloader() {
           DOJO DESIGN &amp; SOURCING
         </p>
         <p className="mt-2 font-mono text-[10px] font-bold uppercase tracking-[0.26em] text-[#8fa3c7]">
-          DESIGN · SOURCING · FACTORY · QA · PACKING · TRUCK · SHIP
+          DESIGN · SOURCING · FACTORY · QA · READY · SHIP
         </p>
 
         {/* Progress Bar & Counter */}
