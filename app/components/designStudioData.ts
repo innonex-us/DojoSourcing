@@ -1,6 +1,6 @@
 /**
  * Content for the Stage 01 "Product Design" studio: the five design services shown
- * around the 3D quilted jacket (tech pack, BOM, 3D sampling, development, presentation).
+ * around the 3D hooded shell jacket (tech pack, BOM, 3D sampling, development, presentation).
  * Shared by the Journey UI and the Three.js jacket build (anchor keys must match).
  */
 
