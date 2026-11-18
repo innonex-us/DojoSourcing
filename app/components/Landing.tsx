@@ -20,6 +20,7 @@ import { Footer } from "./Footer";
 import { Fabs } from "./Fabs";
 import { KineticCursor } from "./KineticCursor";
 import { useTheme } from "./useTheme";
+import { DEFAULT_COLORWAY_LABEL } from "./designStudioData";
 
 gsap.registerPlugin(
   useGSAP,
@@ -44,7 +45,7 @@ export function Landing() {
   const { theme, accent, setTheme, setAccent } = useTheme();
   const [activeSection, setActiveSection] = useState("01 // DESIGN");
   const [selectedColorway, setSelectedColorway] = useState(
-    "Off-White (420 GSM Heavy Jersey)",
+    DEFAULT_COLORWAY_LABEL,
   );
   const [estimatePrefill, setEstimatePrefill] =
     useState<EstimatePayload | null>(null);

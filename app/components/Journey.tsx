@@ -1,15 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDown,
   ArrowUpRight,
   Factory,
   MoveHorizontal,
   PackageCheck,
+  PencilRuler,
   Ship,
-  Shirt,
   Truck,
 } from "lucide-react";
 import * as THREE from "three";
@@ -19,16 +19,26 @@ import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import { buildRealisticStages, type RealisticStageAssets } from "./three";
+import { DesignCallouts, type CalloutHandle, type CalloutItem } from "./DesignCallouts";
+import { DesignStudioPanel, STUDIO_AUTOPLAY_MS } from "./DesignStudioPanel";
+import {
+  BOM_ROWS,
+  COLORWAYS,
+  DESIGN_SERVICES,
+  MODE_TAGS,
+  TECH_CALLOUTS,
+  type DesignMode,
+} from "./designStudioData";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger, ScrollToPlugin);
 
 const STAGES = [
   {
     num: "01",
-    tag: "DESIGN A T-SHIRT",
-    title: "Start With The Garment",
-    subtitle: "Silhouette · Cotton GSM · Live Colorway",
-    body: "Everything begins on the digital drafting table. Test fabric GSM and custom colorways live in 3D before a single yard is cut.",
+    tag: "PRODUCT DESIGN",
+    title: "Product Design",
+    subtitle: "Tech Pack · BOM · 3D Sampling · Development · Presentation",
+    body: "Every garment is engineered digitally first — tech pack, bill of materials, 3D sampling, development specs and a line-sheet presentation before a single yard is cut.",
   },
   {
     num: "02",
@@ -42,7 +52,7 @@ const STAGES = [
     tag: "READY TO SHIP",
     title: "Packed & QC Cleared",
     subtitle: "Euro Pallet · Stretch-Wrap · Barcode Scan",
-    body: "Finished tees are folded, polybagged, strapped onto Euro pallets, barcode-scanned, and stretch-wrapped — 100% AQL 2.5 inspection cleared.",
+    body: "Finished garments are folded, polybagged, strapped onto Euro pallets, barcode-scanned, and stretch-wrapped — 100% AQL 2.5 inspection cleared.",
   },
   {
     num: "04",
@@ -60,14 +70,7 @@ const STAGES = [
   },
 ] as const;
 
-export const COLORWAYS = [
-  { name: "Off-White", hex: "#e2e8f0", gsm: "420 GSM Heavy Jersey" },
-  { name: "Corp Navy", hex: "#1e3a8a", gsm: "380 GSM Combed Cotton" },
-  { name: "Crimson Red", hex: "#dc2626", gsm: "420 GSM Enzyme Wash" },
-  { name: "Slate Blue", hex: "#475569", gsm: "340 GSM Organic Knit" },
-] as const;
-
-const STAGE_ICONS = [Shirt, Factory, PackageCheck, Truck, Ship] as const;
+const STAGE_ICONS = [PencilRuler, Factory, PackageCheck, Truck, Ship] as const;
 
 const GROUND_Y = -1.35;
 
@@ -92,6 +95,49 @@ export function Journey({
 
   const [activeStep, setActiveStep] = useState(0);
   const [selectedColor, setSelectedColor] = useState(0);
+  const [studioMode, setStudioMode] = useState<DesignMode>("techpack");
+  const [studioAutoplay, setStudioAutoplay] = useState(true);
+  const [hoveredBom, setHoveredBom] = useState<number | null>(null);
+  const [stagePinned, setStagePinned] = useState(false);
+  const studioModeRef = useRef<DesignMode>("techpack");
+  const calloutsRef = useRef<CalloutHandle>(null);
+
+  useEffect(() => {
+    studioModeRef.current = studioMode;
+  }, [studioMode]);
+
+  // Auto-tour the five design services while Stage 01 is on screen, until the user picks one.
+  useEffect(() => {
+    if (!studioAutoplay || !stagePinned || activeStep !== 0) return;
+    const id = window.setTimeout(() => {
+      const idx = DESIGN_SERVICES.findIndex((s) => s.mode === studioMode);
+      const next = DESIGN_SERVICES[(idx + 1) % DESIGN_SERVICES.length];
+      if (next) setStudioMode(next.mode);
+    }, STUDIO_AUTOPLAY_MS);
+    return () => window.clearTimeout(id);
+  }, [studioAutoplay, stagePinned, activeStep, studioMode]);
+
+  const calloutItems = useMemo<CalloutItem[]>(() => {
+    if (studioMode === "techpack") {
+      return TECH_CALLOUTS.map((c) => ({ key: c.anchor, anchor: c.anchor, label: c.label, kind: "leader" }));
+    }
+    if (studioMode === "bom") {
+      return BOM_ROWS.map((r) => ({
+        key: r.anchor,
+        anchor: r.anchor,
+        label: `${r.no} · ${r.component} — ${r.spec}`,
+        kind: "pin",
+        index: r.no,
+        active: hoveredBom === r.no,
+      }));
+    }
+    return (MODE_TAGS[studioMode] ?? []).map((t) => ({
+      key: t.anchor,
+      anchor: t.anchor,
+      label: t.label,
+      kind: t.leader ? "leader" : "tag",
+    }));
+  }, [studioMode, hoveredBom]);
 
   const { contextSafe } = useGSAP(
     () => {
@@ -264,11 +310,14 @@ export function Journey({
           const timer = new THREE.Timer();
           const wavePos = waveGeo.attributes.position as THREE.BufferAttribute;
 
+          const { designStudio } = assets;
           const renderLoop = () => {
             timer.update();
             const t = timer.getElapsed();
 
-            tshirtGroup.rotation.y = Math.sin(t * 0.65) * 0.32;
+            designStudio.setMode(studioModeRef.current);
+            designStudio.update(t, timer.getDelta());
+            tshirtGroup.rotation.y = Math.sin(t * 0.65) * designStudio.getSway();
             hvacFans.forEach((fan) => {
               fan.rotation.y = t * 6.5;
             });
@@ -308,6 +357,17 @@ export function Journey({
             waveGeo.computeVertexNormals();
 
             renderer?.render(scene, camera);
+
+            // Studio annotations fade out as the jacket leaves for Stage 02.
+            const lift = tshirtGroup.position.y - 0.12;
+            const fade = tshirtGroup.visible ? 1 - Math.min(1, Math.max(0, lift / 0.6)) : 0;
+            calloutsRef.current?.update(
+              camera,
+              host.clientWidth,
+              host.clientHeight,
+              designStudio.anchors,
+              fade,
+            );
             rafId = requestAnimationFrame(renderLoop);
           };
           rafId = requestAnimationFrame(renderLoop);
@@ -332,6 +392,7 @@ export function Journey({
               pin: true,
               scrub: 0.8,
               anticipatePin: 1,
+              onToggle: (self) => setStagePinned(self.isActive),
               onUpdate: (self) => {
                 const p = self.progress * 5.2;
                 const idx =
@@ -515,7 +576,7 @@ export function Journey({
   function handleSelectColor(idx: number) {
     setSelectedColor(idx);
     const chosen = COLORWAYS[idx];
-    onColorwayChange?.(`${chosen.name} (${chosen.gsm})`);
+    onColorwayChange?.(`${chosen.name} (${chosen.spec})`);
   }
 
   return (
@@ -532,6 +593,9 @@ export function Journey({
           ref={canvasHostRef}
           className="absolute inset-0 z-0 cursor-grab active:cursor-grabbing"
         />
+
+        {/* Stage 01 design-studio annotations projected from the 3D jacket */}
+        <DesignCallouts ref={calloutsRef} items={calloutItems} />
 
         {/* Left Atmospheric Gradient */}
         <div
@@ -586,7 +650,7 @@ export function Journey({
 
         {/* Floating Editorial Narrative + Live Colorway Picker (Left) */}
         <div className="pointer-events-none relative z-10 mx-auto flex w-full max-w-[1400px] flex-1 items-center">
-          <div className="relative h-[400px] w-full max-w-[460px]">
+          <div className="relative h-[500px] w-full max-w-[460px]">
             {STAGES.map((stage, idx) => (
               <div
                 key={stage.num}
@@ -602,43 +666,24 @@ export function Journey({
                 <p className="mt-3 text-xs font-bold uppercase tracking-[0.22em] text-brand/90">
                   {stage.subtitle}
                 </p>
-                <p className="mt-5 text-base leading-relaxed text-foreground/85">
-                  {stage.body}
-                </p>
-
-                {/* Live 3D T-Shirt Colorway Customizer on Stage 01 */}
                 {idx === 0 ? (
-                  <div className="pointer-events-auto mt-6">
-                    <p className="mb-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-muted">
-                      Live 3D Fabric Colorway · {COLORWAYS[selectedColor].gsm}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      {COLORWAYS.map((c, ci) => {
-                        const on = ci === selectedColor;
-                        return (
-                          <button
-                            key={c.name}
-                            type="button"
-                            onClick={() => handleSelectColor(ci)}
-                            data-cursor="magnet"
-                            className={`focus-ring inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] transition-colors ${
-                              on
-                                ? "border-brand bg-brand/15 text-chrome"
-                                : "border-border bg-surface-deep/75 text-muted hover:border-chrome/40 hover:text-chrome"
-                            }`}
-                          >
-                            <span
-                              aria-hidden
-                              className="h-3 w-3 rounded-full border border-white/25"
-                              style={{ backgroundColor: c.hex }}
-                            />
-                            <span>{c.name}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : null}
+                  <DesignStudioPanel
+                    mode={studioMode}
+                    autoplay={studioAutoplay && stagePinned && activeStep === 0}
+                    onSelectMode={(m) => {
+                      setStudioAutoplay(false);
+                      setStudioMode(m);
+                    }}
+                    hoveredBom={hoveredBom}
+                    onHoverBom={setHoveredBom}
+                    selectedColor={selectedColor}
+                    onSelectColor={handleSelectColor}
+                  />
+                ) : (
+                  <p className="mt-5 text-base leading-relaxed text-foreground/85">
+                    {stage.body}
+                  </p>
+                )}
 
                 {idx === STAGES.length - 1 ? (
                   <div className="pointer-events-auto mt-7 flex flex-wrap gap-3">
@@ -704,6 +749,15 @@ export function Journey({
               <p className="mt-2 text-sm leading-relaxed text-foreground/80">
                 {stage.body}
               </p>
+              {stage.num === "01" ? (
+                <ul className="mt-3 space-y-1.5 text-sm text-foreground/80">
+                  {DESIGN_SERVICES.map((svc) => (
+                    <li key={svc.mode}>
+                      <span className="font-semibold text-chrome">{svc.label}</span> — {svc.blurb}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
           ))}
         </div>

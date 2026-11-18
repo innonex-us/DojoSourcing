@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { createSharedMaterials, type SharedStageMaterials } from "./materials";
-import { buildTShirt } from "./buildTShirt";
+import { buildTShirt, type DesignStudio } from "./buildTShirt";
 import { buildFactory } from "./buildFactory";
 import { buildCartons } from "./buildCartons";
 import { buildCargoTruck } from "./buildCargoTruck";
@@ -10,6 +10,7 @@ export type RealisticStageAssets = {
   mats: SharedStageMaterials;
   tshirtGroup: THREE.Group;
   swatches: THREE.Group;
+  designStudio: DesignStudio;
   factoryGroup: THREE.Group;
   steamPuffs: THREE.Mesh[];
   hvacFans: THREE.Mesh[];
@@ -33,7 +34,7 @@ export function buildRealisticStages(
 ): RealisticStageAssets {
   const mats = createSharedMaterials(groundClip);
 
-  const { tshirtGroup, swatches } = buildTShirt(mats);
+  const { tshirtGroup, swatches, designStudio } = buildTShirt(mats);
   const { factoryGroup, steamPuffs, hvacFans } = buildFactory(mats, groundClip);
   const { readyGroup, laserBeam } = buildCartons(mats);
   const { truckGroup, wheels } = buildCargoTruck(mats);
@@ -54,6 +55,7 @@ export function buildRealisticStages(
     mats,
     tshirtGroup,
     swatches,
+    designStudio,
     factoryGroup,
     steamPuffs,
     hvacFans,
@@ -68,6 +70,8 @@ export function buildRealisticStages(
     dispose: mats.disposeAll,
   };
 }
+
+export type { DesignStudio };
 
 export {
   createSharedMaterials,
