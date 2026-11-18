@@ -45,7 +45,7 @@ export function DesignStudioPanel({
       <div
         role="tablist"
         aria-label="Design and innovation services"
-        className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:grid sm:grid-cols-5 sm:gap-1.5 sm:overflow-visible sm:px-0 sm:pb-0"
+        className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0"
       >
         {DESIGN_SERVICES.map((s) => {
           const Icon = SERVICE_ICONS[s.mode];
@@ -58,7 +58,7 @@ export function DesignStudioPanel({
               aria-selected={on}
               onClick={() => onSelectMode(s.mode)}
               data-cursor="magnet"
-              className={`focus-ring group relative flex min-w-[92px] shrink-0 snap-start flex-col items-center gap-1.5 overflow-hidden rounded-xl border px-2 pb-2.5 pt-2.5 text-[10px] sm:min-w-0 font-bold uppercase tracking-[0.14em] transition-[color,background-color,border-color,box-shadow,transform] duration-200 ${
+              className={`focus-ring group relative flex min-w-[128px] shrink-0 snap-start flex-col items-center gap-1.5 overflow-hidden rounded-xl border px-3 pb-2.5 pt-2.5 text-[10px] font-bold uppercase tracking-[0.14em] transition-[color,background-color,border-color,box-shadow,transform] duration-200 sm:min-w-[118px] sm:flex-1 ${
                 on
                   ? "border-brand/80 bg-brand text-white shadow-[0_10px_24px_rgba(220,38,38,0.28)]"
                   : "border-border/90 bg-surface-deep/70 text-muted backdrop-blur-sm hover:-translate-y-0.5 hover:border-chrome/35 hover:bg-surface-deep hover:text-chrome"
@@ -73,7 +73,7 @@ export function DesignStudioPanel({
               >
                 <Icon className="h-3.5 w-3.5" aria-hidden />
               </span>
-              <span className="max-w-full truncate leading-tight">{s.label}</span>
+              <span className="whitespace-nowrap leading-tight">{s.label}</span>
               {on ? (
                 <span
                   key={`${s.mode}-${autoplay}`}
