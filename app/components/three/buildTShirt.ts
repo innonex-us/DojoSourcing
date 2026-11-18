@@ -578,7 +578,7 @@ const MODE_PRESETS: Record<
 };
 
 /**
- * Stage 01 — Product Design studio. Builds a hooded woven softshell jacket (structured
+ * Stage 01 — Design and Innovation studio. Builds a hooded woven softshell jacket (structured
  * hood with drawcords, raglan sleeves, full-length coil zipper to a chin guard, zippered
  * hand pockets, hook-and-loop cuff tabs, straight topstitched hem) and the props for five
  * design-service views: tech-pack sketch, BOM material stack, 3D-sampling pattern grid,

@@ -48,7 +48,7 @@ export function DesignStudioPanel({
     <div className="pointer-events-auto mt-3 sm:mt-5">
       <div
         role="tablist"
-        aria-label="Product design services"
+        aria-label="Design and innovation services"
         className="-mx-1 flex snap-x gap-1.5 overflow-x-auto px-1 pb-1 sm:mx-0 sm:grid sm:grid-cols-5 sm:overflow-visible sm:px-0 sm:pb-0"
       >
         {DESIGN_SERVICES.map((s) => {

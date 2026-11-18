@@ -36,44 +36,38 @@ gsap.registerPlugin(useGSAP, ScrollTrigger, ScrollToPlugin);
 const STAGES = [
   {
     num: "01",
-    tag: "PRODUCT DESIGN",
-    title: "Product Design",
-    subtitle: "Tech Pack · BOM · 3D Sampling · Development · Presentation",
+    tag: "DESIGN AND INNOVATION",
+    title: "Design and Innovation",
     body: "Every garment is engineered digitally first — tech pack, bill of materials, 3D sampling, development specs and a line-sheet presentation before a single yard is cut.",
   },
   {
     num: "02",
     tag: "SOURCING",
     title: "Global Sourcing",
-    subtitle: "Fabric Mills · Trims · Costing · Lab Dips",
     body: "Approved specs go to our vetted mill and trim network — fabrics, zippers, cords and labels are costed, lab-dipped, tested and booked in-house before production starts.",
   },
   {
     num: "03",
     tag: "FACTORY PRODUCTION",
     title: "Into The Factory",
-    subtitle: "Industrial Cut & Sew · QC Labs",
     body: "Your approved design flies straight into our multi-wing garment plant — precision cutting, knitting, dyeing, and assembly lines built for scale.",
   },
   {
     num: "04",
     tag: "QUALITY ASSURANCE",
     title: "Quality Assurance",
-    subtitle: "AQL 2.5 Inspection · Needle Detection · Spec Check",
     body: "Every lot is inspected against the approved tech pack before it leaves the line — measured, light-board checked seam by seam, and passed through needle detection.",
   },
   {
     num: "05",
     tag: "READY TO SHIP",
     title: "Packed & QC Cleared",
-    subtitle: "Euro Pallet · Stretch-Wrap · Barcode Scan",
     body: "QC-passed garments are folded, polybagged, strapped onto Euro pallets, barcode-scanned, and stretch-wrapped for export.",
   },
   {
     num: "06",
     tag: "CARGO TRUCK",
     title: "Cargo Truck Dispatch",
-    subtitle: "Factory Dock To Export Port",
     body: "Sealed 40ft container trucks haul your palletized inventory along the highway from the factory loading dock straight to the export terminal.",
   },
 ] as const;
@@ -820,15 +814,9 @@ export function Journey({
                 className="journey-copy absolute inset-0 flex flex-col justify-end xl:justify-center"
                 style={{ opacity: idx === 0 ? 1 : 0 }}
               >
-                <span className="font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-brand sm:text-xs">
-                  {`STAGE ${stage.num}`}
-                </span>
-                <h2 className="mt-2 text-[1.7rem] font-extrabold uppercase leading-[1.03] tracking-wide text-chrome sm:mt-4 sm:text-4xl lg:text-5xl">
+                <h2 className="text-[1.7rem] font-extrabold uppercase leading-[1.03] tracking-wide text-chrome sm:text-4xl lg:text-5xl">
                   {stage.title}
                 </h2>
-                <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.18em] text-brand/90 sm:mt-3 sm:text-xs sm:tracking-[0.22em]">
-                  {stage.subtitle}
-                </p>
                 {idx === 0 ? (
                   <DesignStudioPanel
                     mode={studioMode}
@@ -906,7 +894,7 @@ export function Journey({
                 {stage.num}
               </span>
               <p className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-brand">
-                {stage.tag} · {stage.subtitle}
+                {stage.tag}
               </p>
               <h3 className="mt-1 text-xl font-bold uppercase text-chrome">
                 {stage.title}
