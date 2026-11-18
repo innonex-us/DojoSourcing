@@ -1,18 +1,27 @@
 import type { MetadataRoute } from "next";
+import { NAV_ROUTES, SITE_URL } from "./lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
+  const lastModified = new Date();
+
   return [
+    ...NAV_ROUTES.map((route) => ({
+      url: `${SITE_URL}${route.path === "/" ? "" : route.path}`,
+      lastModified,
+      changeFrequency: route.changeFrequency,
+      priority: route.priority,
+    })),
     {
-      url: "https://dojosourcing.com",
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 1,
+      url: `${SITE_URL}/llms.txt`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.3,
     },
     {
-      url: "https://dojosourcing.com/showcase",
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.9,
+      url: `${SITE_URL}/llms-full.txt`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.2,
     },
   ];
 }

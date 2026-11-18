@@ -59,7 +59,9 @@ export function Accordion() {
               <li key={item.num} className="faq-item">
                 <button
                   type="button"
+                  id={`faq-question-${item.num}`}
                   aria-expanded={isOpen}
+                  aria-controls={`faq-answer-${item.num}`}
                   onClick={(e) => handleToggle(e, i, item.title)}
                   data-cursor="magnet"
                   className="focus-ring flex w-full items-center gap-4 py-6 text-left md:gap-8 md:py-8"
@@ -89,6 +91,9 @@ export function Accordion() {
                   </span>
                 </button>
                 <div
+                  id={`faq-answer-${item.num}`}
+                  role="region"
+                  aria-labelledby={`faq-question-${item.num}`}
                   className={`grid transition-[grid-template-rows] duration-300 ease-out ${
                     isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
                   }`}

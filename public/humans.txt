@@ -1,0 +1,15 @@
+/* TEAM */
+Company: Dojo Design & Sourcing
+Contact: sourcing@dojosourcing.com
+Location: Bangladesh · Global apparel markets
+
+/* SITE */
+Standards: HTML5, Schema.org JSON-LD, Open Graph, llms.txt
+Language: English
+Doctype: HTML5
+Components: Next.js App Router
+
+/* AI */
+Summary: /llms.txt
+Full context: /llms-full.txt
+Sitemap: /sitemap.xml

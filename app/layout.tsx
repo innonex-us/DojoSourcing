@@ -1,33 +1,46 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Montserrat } from "next/font/google";
+import { SITE, SITE_URL } from "./lib/site";
 import "./globals.css";
 
 const montserrat = Montserrat({
   variable: "--font-montserrat",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
 });
 
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#091122" },
+    { media: "(prefers-color-scheme: light)", color: "#f4f7fb" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+  colorScheme: "dark light",
+};
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://dojosourcing.com"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default:
       "Dojo Design & Sourcing — Apparel Design, Factory Manufacturing & Global Shipment",
     template: "%s | Dojo Design & Sourcing",
   },
-  description:
-    "Dojo Design & Sourcing is a complete end-to-end clothing brand partner — from 3D garment design and tech packs to vetted factory production, AQL quality control, cargo trucking, and ocean freight.",
-  keywords: [
-    "Dojo Design & Sourcing",
-    "apparel sourcing",
-    "clothing brand manufacturing",
-    "garment tech pack design",
-    "3D virtual garment sampling",
-    "cut and sew factory",
-    "AQL 2.5 apparel inspection",
-    "global garment ocean freight",
-  ],
-  authors: [{ name: "Dojo Design & Sourcing" }],
+  description: SITE.description,
+  applicationName: SITE.name,
+  keywords: [...SITE.keywords],
+  authors: [{ name: SITE.name, url: SITE_URL }],
+  creator: SITE.name,
+  publisher: SITE.name,
+  category: "Apparel sourcing",
+  classification: "Business",
+  referrer: "origin-when-cross-origin",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
@@ -35,63 +48,57 @@ export const metadata: Metadata = {
     ],
     apple: "/dojo-crane-mark.png",
   },
+  alternates: {
+    canonical: "/",
+    types: {
+      "text/plain": "/llms.txt",
+    },
+  },
   openGraph: {
     type: "website",
-    siteName: "Dojo Design & Sourcing",
+    locale: SITE.locale,
+    url: SITE_URL,
+    siteName: SITE.name,
     title:
       "Dojo Design & Sourcing — End-to-End Apparel Design, Manufacturing & Global Shipment",
-    description:
-      "Complete apparel production pipeline for clothing brands: 3D garment design, factory manufacturing, AQL packing, inland trucking, and ocean freight.",
-    images: [
-      {
-        url: "/images/apparel-outerwear.jpg",
-        width: 1200,
-        height: 1600,
-        alt: "Dojo Design & Sourcing Apparel Design & Manufacturing",
-      },
-    ],
+    description: SITE.description,
   },
   twitter: {
     card: "summary_large_image",
     title: "Dojo Design & Sourcing — Apparel Design, Manufacturing & Shipment",
     description:
       "Complete end-to-end apparel solution for clothing brands: Design, Factory, Ready to Ship, Cargo Truck, Ocean Ship.",
-    images: ["/images/apparel-outerwear.jpg"],
   },
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
   },
-};
-
-const organizationSchema = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  name: "Dojo Design & Sourcing",
-  url: "https://dojosourcing.com",
-  logo: "https://dojosourcing.com/dojo-sourcing-logo.png",
-  email: "sourcing@dojosourcing.com",
-  description:
-    "Complete end-to-end apparel sourcing, garment design, factory production, quality control, and global logistics for clothing brands.",
-  serviceType: [
-    "Apparel Design & Tech Packs",
-    "3D Virtual Garment Sampling",
-    "Garment Factory Manufacturing",
-    "AQL Quality Control & Export Packaging",
-    "Cargo Trucking & Global Ocean Freight",
-  ],
+  other: {
+    "ai-content": "human-authored",
+    "ai:summary": SITE.description,
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${montserrat.variable} h-full antialiased`}>
-      <body className="min-h-full font-sans bg-background text-foreground">
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(organizationSchema),
-          }}
+      <head>
+        <link
+          rel="alternate"
+          type="text/plain"
+          href="/llms.txt"
+          title="LLM guidance"
         />
+        <link rel="author" href="/humans.txt" />
+      </head>
+      <body className="min-h-full font-sans bg-background text-foreground">
         {children}
       </body>
     </html>

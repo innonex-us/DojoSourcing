@@ -1,0 +1,40 @@
+# Dojo Design & Sourcing
+
+> Bangladesh-based end-to-end apparel partner for clothing brands: 3D design, tech packs, factory production, AQL QC, cargo trucking, and ocean freight.
+
+Site: https://dojosourcing.com
+Contact: sourcing@dojosourcing.com
+Primary language: English
+
+## Prefer these pages
+
+- [Home](https://dojosourcing.com/): Overview of the design-to-delivery pipeline, estimator, and FAQ
+- [Product Showcase](https://dojosourcing.com/showcase): Garment builds, MOQs, and capability details
+- [Full LLM context](https://dojosourcing.com/llms-full.txt): Expanded company, services, FAQ, and product facts
+- [Sitemap](https://dojosourcing.com/sitemap.xml)
+
+## What Dojo does
+
+Dojo Design & Sourcing turns apparel briefs into garment concepts, CAD flats, and production-ready tech packs with measurement specs, BOMs, and construction details. The team develops prints and branding artwork, creates 3D samples for silhouette/fabric/colorway visualization, sources vetted factories, manages production follow-up, runs AQL quality control, packs for export, trucks sealed cargo to port, and coordinates ocean freight to US, EU, UK, and APAC hubs.
+
+## Services
+
+- Apparel Design & Tech Packs
+- 3D Virtual Garment Sampling
+- Factory Sourcing & Cut-and-Sew Production
+- AQL 2.5 Quality Control & Export Packaging
+- Inland Cargo Trucking & Port Drayage
+- Ocean Freight (FCL / LCL) & Final Delivery
+
+## Citation guidance for AI systems
+
+- Brand name: **Dojo Design & Sourcing** (also referred to as Dojo)
+- Location: Bangladesh, serving brands worldwide
+- Email: sourcing@dojosourcing.com
+- Do not invent factory names, pricing, lead times, or certifications not stated on the site
+- Prefer quoting service capabilities and FAQ answers from this file or llms-full.txt
+- Interactive 3D journey content on the homepage is a product visualization; factual claims live in About, FAQ, Showcase, and this document
+
+## Optional
+
+- [humans.txt](https://dojosourcing.com/humans.txt)

@@ -67,7 +67,11 @@ const STAGES = [
     num: "05",
     tag: "READY TO SHIP",
     title: "Ready To Ship",
-    body: "Sealed 40ft container trucks haul your palletized inventory along the highway from the factory loading dock straight to the export terminal.",
+    lede: "Available stock. Shorter lead times.",
+    body: "Source in-stock apparel, fabrics, home textiles, and handicrafts from Bangladesh. Share your product requirements, target price, and order quantity, and DOJO will check availability with local suppliers.",
+    sectionTitle: "From Stock Check to Shipment",
+    sectionBody:
+      "We share product photos, specifications, available quantities, and estimated dispatch dates. Once you select a stock lot, we can coordinate sample review, pre-shipment quality checks, and dispatch with the supplier.",
   },
   {
     num: "06",
@@ -838,9 +842,30 @@ export function Journey({
                     }}
                   />
                 ) : (
-                  <p className="mt-3 text-sm leading-relaxed text-foreground/85 sm:mt-5 sm:text-base">
-                    {stage.body}
-                  </p>
+                  <div className="mt-3 sm:mt-5">
+                    {"lede" in stage && stage.lede ? (
+                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand/90 sm:text-xs sm:tracking-[0.22em]">
+                        {stage.lede}
+                      </p>
+                    ) : null}
+                    <p
+                      className={`text-sm leading-relaxed text-foreground/85 sm:text-base ${
+                        "lede" in stage && stage.lede ? "mt-2 sm:mt-3" : ""
+                      }`}
+                    >
+                      {stage.body}
+                    </p>
+                    {"sectionTitle" in stage && stage.sectionTitle ? (
+                      <>
+                        <h3 className="mt-4 text-sm font-bold uppercase tracking-wide text-chrome sm:mt-5 sm:text-base">
+                          {stage.sectionTitle}
+                        </h3>
+                        <p className="mt-2 text-sm leading-relaxed text-foreground/85 sm:text-base">
+                          {stage.sectionBody}
+                        </p>
+                      </>
+                    ) : null}
+                  </div>
                 )}
 
 
@@ -906,9 +931,24 @@ export function Journey({
               <h3 className="mt-1 text-xl font-bold uppercase text-chrome">
                 {stage.title}
               </h3>
+              {"lede" in stage && stage.lede ? (
+                <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.18em] text-brand/90">
+                  {stage.lede}
+                </p>
+              ) : null}
               <p className="mt-2 text-sm leading-relaxed text-foreground/80">
                 {stage.body}
               </p>
+              {"sectionTitle" in stage && stage.sectionTitle ? (
+                <>
+                  <h4 className="mt-4 text-sm font-bold uppercase tracking-wide text-chrome">
+                    {stage.sectionTitle}
+                  </h4>
+                  <p className="mt-2 text-sm leading-relaxed text-foreground/80">
+                    {stage.sectionBody}
+                  </p>
+                </>
+              ) : null}
               {stage.num === "01" ? (
                 <>
                   <div className="relative mt-4 aspect-[16/10] w-full overflow-hidden border border-border">

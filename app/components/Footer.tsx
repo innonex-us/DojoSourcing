@@ -73,6 +73,19 @@ export function Footer() {
                 Supply Chain FAQ
               </Link>
             </li>
+            <li>
+              <Link href="/#about-dojo" className="focus-ring transition-colors hover:text-chrome">
+                About Dojo
+              </Link>
+            </li>
+            <li>
+              <a
+                href="/llms.txt"
+                className="focus-ring transition-colors hover:text-chrome"
+              >
+                AI / LLM summary
+              </a>
+            </li>
           </ul>
         </div>
       </div>

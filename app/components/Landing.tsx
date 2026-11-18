@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -40,7 +40,11 @@ const SECTION_LABELS: Array<{ selector: string; label: string }> = [
   { selector: "#contact", label: "06 // QUOTE" },
 ];
 
-export function Landing() {
+export function Landing({
+  seoSlot,
+}: {
+  seoSlot?: ReactNode;
+}) {
   const root = useRef<HTMLDivElement>(null);
   const { theme, accent, setTheme, setAccent } = useTheme();
   const [activeSection, setActiveSection] = useState("01 // DESIGN");
@@ -260,6 +264,7 @@ export function Landing() {
           key={estimatePrefill?.summary ?? "default"}
           estimatePrefill={estimatePrefill}
         />
+        {seoSlot}
       </main>
       <Footer />
       <Fabs
