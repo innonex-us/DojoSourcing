@@ -12,6 +12,11 @@ export type CalloutItem = {
   kind: "leader" | "pin" | "tag";
   index?: number;
   active?: boolean;
+  /**
+   * Fixed position as % of the callout layer (0–100).
+   * When set, skips 3D projection — used while the Stage 01 studio still covers the jacket.
+   */
+  screen?: { x: number; y: number };
 };
 
 export type CalloutHandle = {
@@ -68,6 +73,14 @@ export function DesignCallouts({
 
         const projected = new Map<string, { x: number; y: number; ok: boolean }>();
         items.forEach((item) => {
+          if (item.screen) {
+            projected.set(item.key, {
+              x: (item.screen.x / 100) * width,
+              y: (item.screen.y / 100) * height,
+              ok: true,
+            });
+            return;
+          }
           const anchor = anchors[item.anchor];
           if (!anchor) {
             projected.set(item.key, { x: 0, y: 0, ok: false });
@@ -90,7 +103,7 @@ export function DesignCallouts({
           const p = projected.get(i.key);
           if (p?.ok) maxX = Math.max(maxX, p.x);
         });
-        const columnX = Math.min(maxX + 64, width - 250);
+        const columnX = Math.min(Math.max(maxX + 56, width * 0.72), width - 220);
         let lastY = -Infinity;
         const labelY = new Map<string, number>();
         [...leaders]

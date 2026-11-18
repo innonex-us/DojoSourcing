@@ -2,7 +2,7 @@
 
 import NextImage from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowDown,
   ArrowUpRight,
@@ -24,11 +24,8 @@ import { buildRealisticStages, type RealisticStageAssets } from "./three";
 import { DesignCallouts, type CalloutHandle, type CalloutItem } from "./DesignCallouts";
 import { DesignStudioPanel, STUDIO_AUTOPLAY_MS } from "./DesignStudioPanel";
 import {
-  BOM_ROWS,
   COLORWAYS,
   DESIGN_SERVICES,
-  MODE_TAGS,
-  TECH_CALLOUTS,
   type DesignMode,
 } from "./designStudioData";
 
@@ -134,11 +131,9 @@ export function Journey({
   const [selectedColor, setSelectedColor] = useState(0);
   const [studioMode, setStudioMode] = useState<DesignMode>("techpack");
   const [studioAutoplay, setStudioAutoplay] = useState(true);
-  const [hoveredBom, setHoveredBom] = useState<number | null>(null);
   const [stagePinned, setStagePinned] = useState(false);
   const [webglFailed, setWebglFailed] = useState(false);
   const studioModeRef = useRef<DesignMode>("techpack");
-  const calloutsRef = useRef<CalloutHandle>(null);
   const qaCalloutsRef = useRef<CalloutHandle>(null);
   const sourcingCalloutsRef = useRef<CalloutHandle>(null);
 
@@ -157,28 +152,6 @@ export function Journey({
     return () => window.clearTimeout(id);
   }, [studioAutoplay, stagePinned, activeStep, studioMode]);
 
-  const calloutItems = useMemo<CalloutItem[]>(() => {
-    if (studioMode === "techpack") {
-      return TECH_CALLOUTS.map((c) => ({ key: c.anchor, anchor: c.anchor, label: c.label, kind: "leader" }));
-    }
-    if (studioMode === "bom") {
-      return BOM_ROWS.map((r) => ({
-        key: r.anchor,
-        anchor: r.anchor,
-        label: `${r.no} · ${r.component} — ${r.spec}`,
-        kind: "pin",
-        index: r.no,
-        active: hoveredBom === r.no,
-      }));
-    }
-    return (MODE_TAGS[studioMode] ?? []).map((t) => ({
-      key: t.anchor,
-      anchor: t.anchor,
-      label: t.label,
-      kind: t.leader ? "leader" : "tag",
-    }));
-  }, [studioMode, hoveredBom]);
-
   const { contextSafe } = useGSAP(
     () => {
       const mm = gsap.matchMedia();
@@ -192,6 +165,7 @@ export function Journey({
 
           gsap.set(texts, { autoAlpha: 0, y: 24 });
           if (texts[0]) gsap.set(texts[0], { autoAlpha: 1, y: 0 });
+          gsap.set(".journey-design-image", { autoAlpha: 1 });
 
           let renderer: THREE.WebGLRenderer | null = null;
           try {
@@ -451,17 +425,6 @@ export function Journey({
 
             renderer?.render(scene, camera);
 
-            // Pointers track the hidden jacket anchors and fade with the studio still.
-            const designFade = tshirtGroup.visible
-              ? Number(gsap.getProperty(".journey-design-image", "opacity")) || 0
-              : 0;
-            calloutsRef.current?.update(
-              camera,
-              host.clientWidth,
-              host.clientHeight,
-              designStudio.anchors,
-              designFade,
-            );
             const sourcingFade = sourcingGroup.visible
               ? 1 - Math.min(1, Math.abs(sourcingGroup.position.y) / 0.6)
               : 0;
@@ -780,7 +743,7 @@ export function Journey({
         />
 
         {/* Design & Innovation still — Stage 01 studio photo covering the 3D canvas */}
-        <div className="journey-design-image pointer-events-none absolute inset-0 z-[1] bg-background">
+        <div className="journey-design-image pointer-events-none absolute inset-0 z-[1] bg-transparent">
           <NextImage
             src="/images/design-innovation-studio.png"
             alt="Design and Innovation studio with tech packs, fabric boards, and 3D garment sampling"
@@ -792,24 +755,21 @@ export function Journey({
           />
         </div>
 
-        {/* Stage 01 design-studio annotations (over the studio still on xl+) */}
+        {/* Stage 02 / 04 annotations (xl+) — Stage 01 studio still has no pointers */}
         <div className="hidden xl:contents">
-          <DesignCallouts ref={calloutsRef} items={calloutItems} />
-          {/* Stage 04 quality-assurance annotations */}
           <DesignCallouts ref={qaCalloutsRef} items={QA_CALLOUTS} />
-          {/* Stage 02 sourcing annotations */}
           <DesignCallouts ref={sourcingCalloutsRef} items={SOURCING_CALLOUTS} />
         </div>
 
-        {/* Left Atmospheric Gradient */}
+        {/* Left legibility wash — keep light so the studio still stays visible */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-y-0 left-0 z-[1] hidden w-[44%] bg-gradient-to-r from-background via-background/85 to-transparent xl:block"
+          className="pointer-events-none absolute inset-y-0 left-0 z-[1] hidden w-[40%] bg-gradient-to-r from-background/70 via-background/25 to-transparent xl:block"
         />
-        {/* Bottom gradient behind the copy on narrow screens */}
+        {/* Bottom wash behind the copy on narrow screens */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[58%] bg-gradient-to-t from-background via-background/90 to-transparent xl:hidden"
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[52%] bg-gradient-to-t from-background/80 via-background/35 to-transparent xl:hidden"
         />
 
         {/* Top Clickable 5-Step Pipeline HUD */}
