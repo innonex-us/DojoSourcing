@@ -32,10 +32,11 @@ export type RealisticStageAssets = {
 export function buildRealisticStages(
   stageAnchor: THREE.Group,
   groundClip: THREE.Plane,
+  options: { detail?: number } = {},
 ): RealisticStageAssets {
   const mats = createSharedMaterials(groundClip);
 
-  const { tshirtGroup, swatches, designStudio } = buildTShirt(mats);
+  const { tshirtGroup, swatches, designStudio } = buildTShirt(mats, { detail: options.detail });
   const {
     sourcingGroup,
     anchors: sourcingAnchors,

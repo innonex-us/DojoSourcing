@@ -17,12 +17,13 @@ export function Hero({
       {/* Atmospheric Video Backdrop (vividly visible) */}
       <video
         className="hero-video absolute inset-0 h-full w-full object-cover opacity-85"
-        src="/DEZININ-WEB-HERO.mp4"
+        src="/hero-720.mp4"
+        poster="/hero-poster.jpg"
         autoPlay
         muted
         loop
         playsInline
-        preload="auto"
+        preload="metadata"
       />
 
       {/* Light Edge Vignette for Text Legibility Without Dimming Video */}
