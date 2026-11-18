@@ -10,6 +10,7 @@ import {
   MoveHorizontal,
   PackageCheck,
   PencilRuler,
+  Ship,
   ShieldCheck,
   Truck,
 } from "lucide-react";
@@ -44,13 +45,13 @@ const STAGES = [
     num: "02",
     tag: "SOURCING",
     title: "Global Sourcing",
-    body: "Approved specs go to our vetted mill and trim network — fabrics, zippers, cords and labels are costed, lab-dipped, tested and booked in-house before production starts.",
+    body: "DOJO connects you directly with apparel factories and fabric and trim suppliers in Bangladesh and China. We match suppliers to your product category, quality standards, target cost, order volume, and delivery timeline. Before you place an order, we compare quotes, confirm minimum order quantities and lead times, and coordinate material samples. Once you select a factory, we support final costing, sample approvals, and bulk production follow-up.",
   },
   {
     num: "03",
     tag: "FACTORY PRODUCTION",
     title: "Into The Factory",
-    body: "Your approved design flies straight into our multi-wing garment plant — precision cutting, knitting, dyeing, and assembly lines built for scale.",
+    body: "DOJO works directly with your factory to keep bulk production aligned with approved samples, specifications, and delivery dates. Before production starts, we confirm material readiness, outstanding approvals, and the production schedule. We then track progress from cutting and sewing through finishing and packing, flag delays or quality issues, and follow up on corrective actions. You receive updates on production status, open issues, and shipment readiness.",
   },
   {
     num: "04",
@@ -70,9 +71,15 @@ const STAGES = [
     title: "Cargo Truck Dispatch",
     body: "Sealed 40ft container trucks haul your palletized inventory along the highway from the factory loading dock straight to the export terminal.",
   },
+  {
+    num: "07",
+    tag: "About Dojo",
+    title: "About Dojo",
+    body: "DOJO Design & Sourcing is a Bangladesh-based apparel partner for brands and retailers. We bring design, product development, sourcing, production follow-up, and quality assurance together under one team. From the first sketch to pre-shipment inspection, we work directly with factories and suppliers to keep your specifications, approvals, and timelines on track.",
+  },
 ] as const;
 
-const STAGE_ICONS = [PencilRuler, Globe, Factory, ShieldCheck, PackageCheck, Truck] as const;
+const STAGE_ICONS = [PencilRuler, Globe, Factory, ShieldCheck, PackageCheck, Truck, Ship] as const;
 
 const SOURCING_CALLOUTS: CalloutItem[] = [
   { key: "srcMill", anchor: "srcMill", label: "Fabric mill · woven softshell", kind: "leader" },
@@ -338,6 +345,10 @@ export function Journey({
             laserBeam,
             truckGroup,
             wheels,
+            shipStageGroup,
+            shipHullGroup,
+            radarBar,
+            waveGeo,
           } = assets;
 
           // 360° Drag-Orbit + Pointer Parallax
@@ -381,6 +392,7 @@ export function Journey({
           let rafId = 0;
           let running = false;
           const timer = new THREE.Timer();
+          const wavePos = waveGeo.attributes.position as THREE.BufferAttribute;
 
           const { designStudio } = assets;
           const renderLoop = () => {
@@ -413,6 +425,22 @@ export function Journey({
             readyGroup.rotation.y = Math.sin(t * 0.55) * 0.24;
             laserBeam.rotation.x = Math.sin(t * 4.5) * 0.22;
 
+            shipHullGroup.position.y = Math.sin(t * 1.6) * 0.06;
+            shipHullGroup.rotation.z = Math.sin(t * 1.1) * 0.022;
+            shipHullGroup.rotation.x = Math.cos(t * 1.3) * 0.012;
+            radarBar.rotation.y = t * 3.0;
+
+            for (let i = 0; i < wavePos.count; i++) {
+              const vx = wavePos.getX(i);
+              const vz = wavePos.getZ(i);
+              wavePos.setY(
+                i,
+                Math.sin(vx * 0.65 + t * 1.9) * 0.09 +
+                  Math.cos(vz * 0.95 + t * 1.4) * 0.06,
+              );
+            }
+            wavePos.needsUpdate = true;
+            waveGeo.computeVertexNormals();
 
             renderer?.render(scene, camera);
 
@@ -504,22 +532,22 @@ export function Journey({
           };
           window.addEventListener("resize", onResize);
 
-          // GSAP ScrollTrigger Master Timeline with Exact Named Stage Labels (6 stages).
+          // GSAP ScrollTrigger Master Timeline with Exact Named Stage Labels (7 stages).
           // Each stage holds for ~1.2 timeline units; transitions start 0.4 after a label.
           const STAGE_COUNT = STAGES.length;
-          const TIMELINE_LENGTH = 6.28;
+          const TIMELINE_LENGTH = 7.6;
           const tl = gsap.timeline({
             scrollTrigger: {
               id: "journey-pipeline",
               trigger: ".journey-stage",
               start: "top top",
-              end: "+=5800",
+              end: "+=6800",
               pin: true,
               scrub: 0.8,
               anticipatePin: 1,
               onToggle: (self) => setStagePinned(self.isActive),
               onUpdate: (self) => {
-                const p = self.progress * tl.duration();
+                const p = self.progress * TIMELINE_LENGTH;
                 const idx =
                   p < 0.85 ? 0 : Math.min(STAGE_COUNT - 1, Math.floor((p - 0.85) / 1.2) + 1);
                 setActiveStep(idx);
@@ -625,11 +653,38 @@ export function Journey({
             .to(texts[5], { autoAlpha: 1, y: 0, duration: 0.35 }, 5.68)
             .addLabel("stage5", 6.18);
 
-          // Wheels roll while the truck drives in, finishing at the final label.
+          // Wheels roll while the truck drives in.
           wheels.forEach((w) => {
-            tl.to(w.rotation, { z: -Math.PI * 8, duration: 0.7, ease: "power1.out" }, 5.48);
+            tl.to(w.rotation, { z: -Math.PI * 10, duration: 1.5, ease: "none" }, 5.48);
           });
-          tl.to({}, { duration: 0.1 }, 6.18);
+
+          // STAGE 6 -> 7: Cargo Truck → Ocean Ship (6.45..7.50)
+          tl.to(
+            truckGroup.position,
+            { x: 18, y: 2.2, duration: 0.45, ease: "power2.in" },
+            6.45,
+          )
+            .set(truckGroup, { visible: false }, 6.9)
+            .to(texts[5], { autoAlpha: 0, y: -24, duration: 0.25 }, 6.45)
+            .to(
+              horizonGrid.position,
+              { y: -4.5, duration: 0.35, ease: "power2.in" },
+              6.85,
+            )
+            .to(
+              shipStageGroup.position,
+              { y: -0.1, duration: 0.55, ease: "power3.out" },
+              6.92,
+            )
+            .fromTo(
+              shipStageGroup.position,
+              { x: -0.4 },
+              { x: 1.0, duration: 0.55, ease: "power1.inOut" },
+              6.92,
+            )
+            .to(texts[6], { autoAlpha: 1, y: 0, duration: 0.32 }, 7.08)
+            .addLabel("stage6", 7.5)
+            .to({}, { duration: 0.1 }, 7.5);
 
           return () => {
             stopLoop();
@@ -856,7 +911,7 @@ export function Journey({
         <div className="pointer-events-none relative z-10 mx-auto mt-3 flex w-full max-w-[1400px] items-center justify-between font-mono text-[10px] uppercase tracking-[0.18em] text-muted sm:text-[11px] sm:tracking-[0.22em]">
           <span className="inline-flex items-center gap-2">
             <MoveHorizontal className="h-3.5 w-3.5 text-brand" aria-hidden />
-            <span className="hidden sm:inline">Drag 3D Stage To Orbit · Scroll Or Click 01–06</span>
+            <span className="hidden sm:inline">Drag 3D Stage To Orbit · Scroll Or Click 01–07</span>
             <span className="sm:hidden">Scroll · Drag to orbit</span>
           </span>
           <Link

@@ -22,7 +22,10 @@ export type SharedStageMaterials = {
   matWrapFilm: THREE.MeshPhysicalMaterial;
   matWood: THREE.MeshStandardMaterial;
   matTrailer: THREE.MeshPhysicalMaterial;
+  matRedHull: THREE.MeshStandardMaterial;
   matAsphalt: THREE.MeshStandardMaterial;
+  containerMats: THREE.MeshStandardMaterial[];
+  waterNormal: THREE.CanvasTexture;
   disposeAll: () => void;
 };
 
@@ -277,6 +280,29 @@ function createAsphaltTextures() {
   return { map, normalMap };
 }
 
+function createWaterNormalTexture() {
+  const size = 256;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = "#808080";
+  ctx.fillRect(0, 0, size, size);
+
+  for (let i = 0; i < 550; i++) {
+    const x = Math.random() * size;
+    const y = Math.random() * size;
+    const r = 6 + Math.random() * 22;
+    const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
+    grad.addColorStop(0, "rgba(220,220,220,0.28)");
+    grad.addColorStop(1, "rgba(128,128,128,0)");
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  return heightToNormalTexture(canvas, 2.5, 10, 10);
+}
 
 /**
  * Creates shared procedural PBR normal/albedo maps, clipped studio materials, and disposal tracker.
@@ -314,14 +340,22 @@ export function createSharedMaterials(groundClip: THREE.Plane): SharedStageMater
   const containerBrand = createCorrugatedTextures("#dc2626", "DOJO DESIGN & SOURCING");
   track(containerBrand.map);
   track(containerBrand.normalMap);
+  const containerDark = createCorrugatedTextures("#0f2347");
+  track(containerDark.map);
+  track(containerDark.normalMap);
   // Corrugated steel cladding for the factory walls.
   const containerSteel = createCorrugatedTextures("#1e3a8a");
   track(containerSteel.map);
   track(containerSteel.normalMap);
+  const containerCream = createCorrugatedTextures("#e2e8f0");
+  track(containerCream.map);
+  track(containerCream.normalMap);
 
   const asphalt = createAsphaltTextures();
   track(asphalt.map);
   track(asphalt.normalMap);
+
+  const waterNormal = track(createWaterNormalTexture());
 
   const matTrailer = makePhys({
     map: containerBrand.map,
@@ -333,6 +367,12 @@ export function createSharedMaterials(groundClip: THREE.Plane): SharedStageMater
     clearcoatRoughness: 0.28,
   });
 
+  const containerMats = [
+    matTrailer,
+    makeStd({ map: containerDark.map, normalMap: containerDark.normalMap, roughness: 0.45, metalness: 0.3 }),
+    makeStd({ map: containerCream.map, normalMap: containerCream.normalMap, roughness: 0.48, metalness: 0.2 }),
+    makeStd({ map: containerSteel.map, normalMap: containerSteel.normalMap, roughness: 0.42, metalness: 0.35 }),
+  ];
 
   return {
     track,
@@ -439,12 +479,19 @@ export function createSharedMaterials(groundClip: THREE.Plane): SharedStageMater
       metalness: 0.02,
     }),
     matTrailer,
+    matRedHull: makeStd({
+      color: 0x7f1e14,
+      roughness: 0.45,
+      metalness: 0.22,
+    }),
     matAsphalt: makeStd({
       map: asphalt.map,
       normalMap: asphalt.normalMap,
       roughness: 0.9,
       metalness: 0.05,
     }),
+    containerMats,
+    waterNormal,
     disposeAll: () => {
       disposables.forEach((d) => d.dispose());
     },
