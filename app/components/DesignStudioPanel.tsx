@@ -60,15 +60,15 @@ export function DesignStudioPanel({
               data-cursor="magnet"
               className={`focus-ring group relative flex min-w-[128px] shrink-0 snap-start flex-col items-center gap-1.5 overflow-hidden rounded-xl border px-3 pb-2.5 pt-2.5 text-[10px] font-bold uppercase tracking-[0.14em] transition-[color,background-color,border-color,box-shadow,transform] duration-200 sm:min-w-[118px] sm:flex-1 ${
                 on
-                  ? "border-brand/80 bg-brand text-white shadow-[0_10px_24px_rgba(220,38,38,0.28)]"
-                  : "border-border/90 bg-surface-deep/70 text-muted backdrop-blur-sm hover:-translate-y-0.5 hover:border-chrome/35 hover:bg-surface-deep hover:text-chrome"
+                  ? "border-white bg-white text-brand shadow-[0_10px_24px_rgba(255,255,255,0.18)]"
+                  : "border-brand/80 bg-brand text-white shadow-[0_8px_20px_rgba(220,38,38,0.22)] hover:-translate-y-0.5 hover:bg-brand/90"
               }`}
             >
               <span
                 className={`flex h-7 w-7 items-center justify-center rounded-full border transition-colors duration-200 ${
                   on
-                    ? "border-white/35 bg-white/15 text-white"
-                    : "border-border bg-background/50 text-muted group-hover:border-chrome/30 group-hover:text-chrome"
+                    ? "border-brand/25 bg-brand/10 text-brand"
+                    : "border-white/35 bg-white/15 text-white"
                 }`}
               >
                 <Icon className="h-3.5 w-3.5" aria-hidden />
@@ -78,7 +78,7 @@ export function DesignStudioPanel({
                 <span
                   key={`${s.mode}-timer`}
                   aria-hidden
-                  className="studio-progress-bar pointer-events-none absolute inset-x-0 bottom-0 h-[3px] bg-white"
+                  className="studio-progress-bar pointer-events-none absolute inset-x-0 bottom-0 h-[3px] bg-brand"
                   style={{ animationDuration: `${STUDIO_AUTOPLAY_MS}ms` }}
                 />
               ) : null}
