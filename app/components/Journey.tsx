@@ -5,11 +5,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDown,
   ArrowUpRight,
+  CircleCheck,
   Factory,
   MoveHorizontal,
   PackageCheck,
   PencilRuler,
   Ship,
+  ShieldCheck,
   Truck,
 } from "lucide-react";
 import * as THREE from "three";
@@ -49,20 +51,27 @@ const STAGES = [
   },
   {
     num: "03",
-    tag: "READY TO SHIP",
-    title: "Packed & QC Cleared",
-    subtitle: "Euro Pallet · Stretch-Wrap · Barcode Scan",
-    body: "Finished garments are folded, polybagged, strapped onto Euro pallets, barcode-scanned, and stretch-wrapped — 100% AQL 2.5 inspection cleared.",
+    tag: "QUALITY ASSURANCE",
+    title: "Quality Assurance",
+    subtitle: "AQL 2.5 Inspection · Needle Detection · Spec Check",
+    body: "Every lot is inspected against the approved tech pack before it leaves the line — measured, light-board checked seam by seam, and passed through needle detection.",
   },
   {
     num: "04",
+    tag: "READY TO SHIP",
+    title: "Packed & QC Cleared",
+    subtitle: "Euro Pallet · Stretch-Wrap · Barcode Scan",
+    body: "QC-passed garments are folded, polybagged, strapped onto Euro pallets, barcode-scanned, and stretch-wrapped for export.",
+  },
+  {
+    num: "05",
     tag: "CARGO TRUCK",
     title: "Cargo Truck Dispatch",
     subtitle: "Factory Dock To Export Port",
     body: "Sealed 40ft container trucks haul your palletized inventory along the highway from the factory loading dock straight to the export terminal.",
   },
   {
-    num: "05",
+    num: "06",
     tag: "OCEAN SHIP",
     title: "Global Ship Journey",
     subtitle: "Container Vessel To Brand Warehouse",
@@ -70,7 +79,25 @@ const STAGES = [
   },
 ] as const;
 
-const STAGE_ICONS = [PencilRuler, Factory, PackageCheck, Truck, Ship] as const;
+const STAGE_ICONS = [PencilRuler, Factory, ShieldCheck, PackageCheck, Truck, Ship] as const;
+
+/** Inspection points listed beside the Stage 03 QA station. */
+const QA_CHECKS = [
+  ["Measurements vs. spec", "Within ±1 cm tolerance"],
+  ["Workmanship & seams", "Light-board inspection"],
+  ["Needle detection", "100% of pieces scanned"],
+  ["Shade vs. lab dip", "Approved standard"],
+  ["Trims, labels & zipper", "Function + pull tested"],
+] as const;
+
+const QA_CALLOUTS: CalloutItem[] = [
+  { key: "qaBoard", anchor: "qaBoard", label: "Light-board flat-lay inspection", kind: "leader" },
+  { key: "qaMagnifier", anchor: "qaMagnifier", label: "Seam & workmanship check", kind: "leader" },
+  { key: "qaMeasure", anchor: "qaMeasure", label: "Spec measurement vs. tech pack", kind: "leader" },
+  { key: "qaDetector", anchor: "qaDetector", label: "Needle detector · 0 metal", kind: "leader" },
+  { key: "qaStamp", anchor: "qaStamp", label: "QC passed · AQL 2.5", kind: "leader" },
+  { key: "qaReport", anchor: "qaReport", label: "Final inspection report", kind: "leader" },
+];
 
 const GROUND_Y = -1.35;
 
@@ -101,6 +128,7 @@ export function Journey({
   const [stagePinned, setStagePinned] = useState(false);
   const studioModeRef = useRef<DesignMode>("techpack");
   const calloutsRef = useRef<CalloutHandle>(null);
+  const qaCalloutsRef = useRef<CalloutHandle>(null);
 
   useEffect(() => {
     studioModeRef.current = studioMode;
@@ -258,6 +286,8 @@ export function Journey({
             factoryGroup,
             steamPuffs,
             hvacFans,
+            qaGroup,
+            qaStage,
             readyGroup,
             laserBeam,
             truckGroup,
@@ -336,6 +366,7 @@ export function Journey({
                 0.15 * (1 - phase);
             });
 
+            qaStage.update(t);
             readyGroup.rotation.y = Math.sin(t * 0.55) * 0.24;
             laserBeam.rotation.x = Math.sin(t * 4.5) * 0.22;
 
@@ -368,6 +399,16 @@ export function Journey({
               designStudio.anchors,
               fade,
             );
+            const qaFade = qaGroup.visible
+              ? 1 - Math.min(1, Math.abs(qaGroup.position.y) / 0.6)
+              : 0;
+            qaCalloutsRef.current?.update(
+              camera,
+              host.clientWidth,
+              host.clientHeight,
+              qaStage.anchors,
+              qaFade,
+            );
             rafId = requestAnimationFrame(renderLoop);
           };
           rafId = requestAnimationFrame(renderLoop);
@@ -382,30 +423,45 @@ export function Journey({
           };
           window.addEventListener("resize", onResize);
 
-          // GSAP ScrollTrigger Master Timeline with Exact Named Stage Labels
+          // GSAP ScrollTrigger Master Timeline with Exact Named Stage Labels (6 stages)
+          const TIMELINE_LENGTH = 6.4;
           const tl = gsap.timeline({
             scrollTrigger: {
               id: "journey-pipeline",
               trigger: ".journey-stage",
               start: "top top",
-              end: "+=4800",
+              end: "+=5800",
               pin: true,
               scrub: 0.8,
               anticipatePin: 1,
               onToggle: (self) => setStagePinned(self.isActive),
               onUpdate: (self) => {
-                const p = self.progress * 5.2;
+                const p = self.progress * TIMELINE_LENGTH;
                 const idx =
-                  p < 0.85 ? 0 : p < 2.05 ? 1 : p < 3.25 ? 2 : p < 4.45 ? 3 : 4;
+                  p < 0.85
+                    ? 0
+                    : p < 2.05
+                      ? 1
+                      : p < 3.25
+                        ? 2
+                        : p < 4.45
+                          ? 3
+                          : p < 5.65
+                            ? 4
+                            : 5;
                 setActiveStep(idx);
               },
             },
           });
 
           tl.addLabel("stage0", 0);
-          tl.to(".journey-rail-fill", { scaleX: 1, ease: "none", duration: 5.2 }, 0);
+          tl.to(
+            ".journey-rail-fill",
+            { scaleX: 1, ease: "none", duration: TIMELINE_LENGTH },
+            0,
+          );
 
-          // STAGE 1 -> 2 (0.55..1.25)
+          // STAGE 1 -> 2: Design → Factory (0.55..1.25)
           tl.to(
             tshirtGroup.position,
             { y: 8.5, x: 2.2, z: -2.2, duration: 0.55, ease: "power2.in" },
@@ -422,7 +478,7 @@ export function Journey({
             .to(texts[1], { autoAlpha: 1, y: 0, duration: 0.35 }, 0.88)
             .addLabel("stage1", 1.35);
 
-          // STAGE 2 -> 3 (1.75..2.45)
+          // STAGE 2 -> 3: Factory → Quality Assurance (1.75..2.45)
           tl.to(
             factoryGroup.position,
             { y: 8.5, x: -2.5, duration: 0.55, ease: "power2.in" },
@@ -432,67 +488,84 @@ export function Journey({
             .set(factoryGroup, { visible: false }, 2.3)
             .to(texts[1], { autoAlpha: 0, y: -24, duration: 0.28 }, 1.75)
             .to(
-              readyGroup.position,
+              qaGroup.position,
               { y: 0, duration: 0.65, ease: "power3.out" },
               1.85,
             )
             .to(texts[2], { autoAlpha: 1, y: 0, duration: 0.35 }, 2.08)
             .addLabel("stage2", 2.55);
 
-          // STAGE 3 -> 4 (2.95..3.65)
+          // STAGE 3 -> 4: Quality Assurance → Ready To Ship (2.95..3.65)
+          tl.to(
+            qaGroup.position,
+            { y: 8.5, x: -2.2, duration: 0.55, ease: "power2.in" },
+            2.95,
+          )
+            .to(qaGroup.rotation, { y: 0.3, z: 0.15, duration: 0.55 }, 2.95)
+            .set(qaGroup, { visible: false }, 3.5)
+            .to(texts[2], { autoAlpha: 0, y: -24, duration: 0.28 }, 2.95)
+            .to(
+              readyGroup.position,
+              { y: 0, duration: 0.65, ease: "power3.out" },
+              3.05,
+            )
+            .to(texts[3], { autoAlpha: 1, y: 0, duration: 0.35 }, 3.28)
+            .addLabel("stage3", 3.75);
+
+          // STAGE 4 -> 5: Ready To Ship → Cargo Truck (4.15..4.85)
           tl.to(
             readyGroup.position,
             { y: 8.5, x: 2.2, duration: 0.55, ease: "power2.in" },
-            2.95,
+            4.15,
           )
-            .to(readyGroup.rotation, { z: -0.25, duration: 0.55 }, 2.95)
-            .set(readyGroup, { visible: false }, 3.5)
-            .to(texts[2], { autoAlpha: 0, y: -24, duration: 0.28 }, 2.95)
+            .to(readyGroup.rotation, { z: -0.25, duration: 0.55 }, 4.15)
+            .set(readyGroup, { visible: false }, 4.7)
+            .to(texts[3], { autoAlpha: 0, y: -24, duration: 0.28 }, 4.15)
             .to(
               truckGroup.position,
               { y: -0.02, duration: 0.55, ease: "power3.out" },
-              3.05,
+              4.25,
             )
             .fromTo(
               truckGroup.position,
               { x: -1.8 },
               { x: 0.6, duration: 0.65, ease: "power1.inOut" },
-              3.08,
+              4.28,
             )
-            .to(texts[3], { autoAlpha: 1, y: 0, duration: 0.35 }, 3.28)
-            .addLabel("stage3", 3.78);
+            .to(texts[4], { autoAlpha: 1, y: 0, duration: 0.35 }, 4.48)
+            .addLabel("stage4", 4.98);
 
           wheels.forEach((w) => {
-            tl.to(w.rotation, { z: -Math.PI * 10, duration: 1.5, ease: "none" }, 3.08);
+            tl.to(w.rotation, { z: -Math.PI * 10, duration: 1.5, ease: "none" }, 4.28);
           });
 
-          // STAGE 4 -> 5 (4.05..5.10): Truck exits 100% BEFORE Ocean Ship rises
+          // STAGE 5 -> 6 (5.25..6.30): Truck exits 100% BEFORE Ocean Ship rises
           tl.to(
             truckGroup.position,
             { x: 18, y: 2.2, duration: 0.45, ease: "power2.in" },
-            4.05,
+            5.25,
           )
-            .set(truckGroup, { visible: false }, 4.5)
-            .to(texts[3], { autoAlpha: 0, y: -24, duration: 0.25 }, 4.05)
+            .set(truckGroup, { visible: false }, 5.7)
+            .to(texts[4], { autoAlpha: 0, y: -24, duration: 0.25 }, 5.25)
             .to(
               horizonGrid.position,
               { y: -4.5, duration: 0.35, ease: "power2.in" },
-              4.45,
+              5.65,
             )
             .to(
               shipStageGroup.position,
               { y: -0.1, duration: 0.55, ease: "power3.out" },
-              4.52,
+              5.72,
             )
             .fromTo(
               shipStageGroup.position,
               { x: -0.4 },
               { x: 1.0, duration: 0.55, ease: "power1.inOut" },
-              4.52,
+              5.72,
             )
-            .to(texts[4], { autoAlpha: 1, y: 0, duration: 0.32 }, 4.68)
-            .addLabel("stage4", 5.1)
-            .to({}, { duration: 0.15 }, 5.1);
+            .to(texts[5], { autoAlpha: 1, y: 0, duration: 0.32 }, 5.88)
+            .addLabel("stage5", 6.3)
+            .to({}, { duration: 0.1 }, 6.3);
 
           return () => {
             cancelAnimationFrame(rafId);
@@ -596,6 +669,8 @@ export function Journey({
 
         {/* Stage 01 design-studio annotations projected from the 3D jacket */}
         <DesignCallouts ref={calloutsRef} items={calloutItems} />
+        {/* Stage 03 quality-assurance annotations */}
+        <DesignCallouts ref={qaCalloutsRef} items={QA_CALLOUTS} />
 
         {/* Left Atmospheric Gradient */}
         <div
@@ -685,6 +760,24 @@ export function Journey({
                   </p>
                 )}
 
+                {/* Stage 03 inspection checklist */}
+                {stage.num === "03" ? (
+                  <ul className="mt-5 space-y-2 border-t border-border pt-4">
+                    {QA_CHECKS.map(([check, detail]) => (
+                      <li key={check} className="flex items-center gap-3">
+                        <CircleCheck className="h-4 w-4 shrink-0 text-emerald-500" aria-hidden />
+                        <span className="text-sm font-semibold text-chrome">{check}</span>
+                        <span className="ml-auto font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
+                          {detail}
+                        </span>
+                      </li>
+                    ))}
+                    <li className="pt-1 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-500">
+                      Result · Passed · AQL 2.5 / General Level II
+                    </li>
+                  </ul>
+                ) : null}
+
                 {idx === STAGES.length - 1 ? (
                   <div className="pointer-events-auto mt-7 flex flex-wrap gap-3">
                     <a
@@ -714,7 +807,7 @@ export function Journey({
         <div className="pointer-events-none relative z-10 mx-auto flex w-full max-w-[1400px] items-center justify-between font-mono text-[11px] uppercase tracking-[0.22em] text-muted">
           <span className="inline-flex items-center gap-2">
             <MoveHorizontal className="h-3.5 w-3.5 text-brand" aria-hidden />
-            <span>Drag 3D Stage To Orbit · Scroll Or Click 01–05</span>
+            <span>Drag 3D Stage To Orbit · Scroll Or Click 01–06</span>
           </span>
           <Link
             href="/showcase"

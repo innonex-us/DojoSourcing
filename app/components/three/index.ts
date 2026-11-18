@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { createSharedMaterials, type SharedStageMaterials } from "./materials";
 import { buildTShirt, type DesignStudio } from "./buildTShirt";
 import { buildFactory } from "./buildFactory";
+import { buildQualityCheck, type QualityCheckBuild } from "./buildQualityCheck";
 import { buildCartons } from "./buildCartons";
 import { buildCargoTruck } from "./buildCargoTruck";
 import { buildOceanShip } from "./buildOceanShip";
@@ -14,6 +15,8 @@ export type RealisticStageAssets = {
   factoryGroup: THREE.Group;
   steamPuffs: THREE.Mesh[];
   hvacFans: THREE.Mesh[];
+  qaGroup: THREE.Group;
+  qaStage: Pick<QualityCheckBuild, "anchors" | "update">;
   readyGroup: THREE.Group;
   laserBeam: THREE.Mesh;
   truckGroup: THREE.Group;
@@ -36,6 +39,7 @@ export function buildRealisticStages(
 
   const { tshirtGroup, swatches, designStudio } = buildTShirt(mats);
   const { factoryGroup, steamPuffs, hvacFans } = buildFactory(mats, groundClip);
+  const { qaGroup, anchors: qaAnchors, update: qaUpdate } = buildQualityCheck(mats, groundClip);
   const { readyGroup, laserBeam } = buildCartons(mats);
   const { truckGroup, wheels } = buildCargoTruck(mats);
   const { shipStageGroup, shipHullGroup, radarBar, waveGeo } = buildOceanShip(
@@ -46,6 +50,7 @@ export function buildRealisticStages(
   stageAnchor.add(
     tshirtGroup,
     factoryGroup,
+    qaGroup,
     readyGroup,
     truckGroup,
     shipStageGroup,
@@ -59,6 +64,8 @@ export function buildRealisticStages(
     factoryGroup,
     steamPuffs,
     hvacFans,
+    qaGroup,
+    qaStage: { anchors: qaAnchors, update: qaUpdate },
     readyGroup,
     laserBeam,
     truckGroup,
@@ -77,6 +84,7 @@ export {
   createSharedMaterials,
   buildTShirt,
   buildFactory,
+  buildQualityCheck,
   buildCartons,
   buildCargoTruck,
   buildOceanShip,
