@@ -501,6 +501,96 @@ function buildSleeveGridLines(path: THREE.CatmullRomCurve3): THREE.BufferGeometr
   return geo;
 }
 
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Display mannequin (8-head proportions; 1 head ≈ 0.62 jacket units).
+ * ──────────────────────────────────────────────────────────────────────────── */
+export type MannequinFigure = "hip" | "full";
+
+const gauss = (x: number) => Math.exp(-x * x);
+
+/**
+ * Tapered limb lofted along a spine (parallel-transport frames), with radius stations
+ * interpolated smoothly, an optional elliptical section and rounded end caps.
+ */
+function taperedLimb(
+  pts: THREE.Vector3[],
+  radii: number[],
+  opts: { tubular?: number; radial?: number; flatten?: number; capStart?: boolean; capEnd?: boolean } = {},
+): THREE.BufferGeometry {
+  const curve = new THREE.CatmullRomCurve3(pts, false, "centripetal");
+  const tub = opts.tubular ?? 40;
+  const rad = opts.radial ?? 20;
+  const flat = opts.flatten ?? 1;
+  const frames = curve.computeFrenetFrames(tub, false);
+  const rAt = (u: number) => {
+    const f = u * (radii.length - 1);
+    const i = Math.min(radii.length - 2, Math.floor(f));
+    const t = f - i;
+    const a = radii[i] ?? 0;
+    const b = radii[i + 1] ?? a;
+    return a + (b - a) * t * t * (3 - 2 * t);
+  };
+  const cap = 0.12;
+  const positions = new Float32Array((tub + 1) * (rad + 1) * 3);
+  const P = new THREE.Vector3();
+  let k = 0;
+  for (let i = 0; i <= tub; i++) {
+    const u = i / tub;
+    curve.getPointAt(u, P);
+    const N = frames.normals[i] ?? new THREE.Vector3(1, 0, 0);
+    const B = frames.binormals[i] ?? new THREE.Vector3(0, 0, 1);
+    let m = 1;
+    if (opts.capStart && u < cap) m = Math.sqrt(Math.max(0, 1 - ((cap - u) / cap) ** 2));
+    if (opts.capEnd && u > 1 - cap) m = Math.sqrt(Math.max(0, 1 - ((u - (1 - cap)) / cap) ** 2));
+    const r = Math.max(rAt(u) * m, 1e-4);
+    for (let j = 0; j <= rad; j++) {
+      const v = (j / rad) * TAU;
+      const cx = Math.cos(v) * r;
+      const sy = Math.sin(v) * r * flat;
+      positions.set([P.x + N.x * cx + B.x * sy, P.y + N.y * cx + B.y * sy, P.z + N.z * cx + B.z * sy], k * 3);
+      k++;
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  geo.setIndex(gridIndices(tub, rad));
+  geo.computeVertexNormals();
+  return geo;
+}
+
+/**
+ * Sculpted mannequin head: an ellipsoid displaced analytically into a calm, idealised face —
+ * brow ridge, eye sockets, nose, cheekbones, lips, tapered jaw and chin, occipital curve.
+ * Local frame: +x right, +y up, +z forward; unit radius before `scale`.
+ */
+function sculptedHeadGeometry(): THREE.BufferGeometry {
+  const geo = new THREE.SphereGeometry(1, 112, 84);
+  const pos = geo.getAttribute("position") as THREE.BufferAttribute;
+  const d = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    d.fromBufferAttribute(pos, i).normalize();
+    const { x, y, z } = d;
+    const front = smoothstep(0.15, 0.85, z);
+    // Jaw taper toward a narrower chin, and a slightly flatter face plane.
+    const jaw = 1 - 0.3 * smoothstep(-0.05, -0.95, y);
+    let r = 1;
+    r += 0.035 * gauss((y - 0.2) / 0.07) * front * smoothstep(0.75, 0.2, Math.abs(x)); // brow ridge
+    r -= 0.03 * gauss((Math.abs(x) - 0.3) / 0.13) * gauss((y - 0.08) / 0.09) * front; // eye sockets
+    r += 0.11 * gauss(x / 0.075) * gauss((y + 0.12) / 0.11) * front; // nose tip
+    r += 0.045 * gauss(x / 0.06) * smoothstep(0.12, -0.06, y) * smoothstep(-0.25, -0.02, y) * front; // nose bridge
+    r += 0.025 * gauss((Math.abs(x) - 0.48) / 0.14) * gauss((y + 0.06) / 0.12) * front; // cheekbones
+    r += 0.02 * gauss(x / 0.2) * gauss((y + 0.37) / 0.045) * front; // upper lip
+    r -= 0.012 * gauss(x / 0.18) * gauss((y + 0.43) / 0.02) * front; // mouth line
+    r += 0.022 * gauss(x / 0.17) * gauss((y + 0.5) / 0.05) * front; // lower lip
+    r += 0.05 * gauss(x / 0.25) * gauss((y + 0.78) / 0.12) * front; // chin
+    r += 0.03 * gauss((y - 0.15) / 0.35) * smoothstep(-0.2, -0.8, z); // occiput
+    pos.setXYZ(i, x * r * jaw, y * r, z * r * (0.94 + 0.06 * jaw));
+  }
+  geo.computeVertexNormals();
+  return geo;
+}
+
 /* ────────────────────────────────────────────────────────────────────────────
  * Shader hook: seam/topstitch lines + "tech-pack sketch" crossfade (paper + ink)
  * on the existing physical materials, driven by one shared uniform.
@@ -586,8 +676,12 @@ const MODE_PRESETS: Record<
  */
 export function buildTShirt(
   mats: SharedStageMaterials,
-  options: { detail?: number } = {},
+  options: { detail?: number; figure?: MannequinFigure } = {},
 ): TShirtBuild {
+  // "hip": hip-form display on the stand pole; "full": standing figure (rig scaled down to fit).
+  const figure: MannequinFigure = options.figure ?? "full";
+  const rigScale = figure === "full" ? 0.58 : RIG_SCALE;
+  const rigY = figure === "full" ? 0.5 : RIG_Y;
   // Mesh density (1 = desktop; lower on phones/tablets).
   const detail = Math.min(1, Math.max(0.3, options.detail ?? 1));
   const res = (n: number) => Math.max(24, Math.round(n * detail));
@@ -596,8 +690,8 @@ export function buildTShirt(
 
   const tshirtGroup = new THREE.Group();
   const jacketRig = new THREE.Group(); // animated offset per studio mode
-  jacketRig.scale.setScalar(RIG_SCALE);
-  jacketRig.position.y = RIG_Y;
+  jacketRig.scale.setScalar(rigScale);
+  jacketRig.position.y = rigY;
   const jacket = new THREE.Group(); // the garment itself (cloned for the line sheet)
   jacketRig.add(jacket);
 
@@ -839,58 +933,103 @@ export function buildTShirt(
   });
   jacket.add(outlineGroup);
 
-  /* ── Display mannequin wearing the jacket (head in the hood, hands, hip form) ── */
+  /* ── Display mannequin wearing the jacket ─────────────────────────────── */
   const mannequin = new THREE.Group();
   const matMannequin = mats.makePhys({
     color: 0xe9e6e0,
-    roughness: 0.42,
+    roughness: 0.4,
     metalness: 0,
-    clearcoat: 0.35,
+    clearcoat: 0.3,
     clearcoatRoughness: 0.35,
     sheen: 0.2,
     sheenColor: new THREE.Color(0xffffff),
   });
+  const limb = (
+    pts: THREE.Vector3[],
+    radii: number[],
+    o?: Parameters<typeof taperedLimb>[2],
+  ) => {
+    const m = new THREE.Mesh(track(taperedLimb(pts, radii, o)), matMannequin);
+    m.castShadow = true;
+    return m;
+  };
 
-  // Head: featureless egg form tilted slightly forward, sitting inside the hood.
-  const head = new THREE.Mesh(track(new THREE.SphereGeometry(1, 48, 36)), matMannequin);
-  head.scale.set(0.19, 0.25, 0.22);
-  head.position.set(0, 1.32, 0.03);
-  head.rotation.x = 0.08;
+  // Head (0.62 tall), ears and a slender neck — the face shows through the hood opening.
+  const head = new THREE.Mesh(track(sculptedHeadGeometry()), matMannequin);
+  head.scale.set(0.205, 0.31, 0.225);
+  head.position.set(0, 1.31, 0.045);
+  head.rotation.x = 0.06;
   head.castShadow = true;
-  const neck = new THREE.Mesh(track(new THREE.CylinderGeometry(0.095, 0.11, 0.3, 32)), matMannequin);
-  neck.position.set(0, 1.0, 0.005);
+  const earGeo = track(new THREE.SphereGeometry(1, 24, 18));
+  [-1, 1].forEach((side) => {
+    const ear = new THREE.Mesh(earGeo, matMannequin);
+    ear.scale.set(0.018, 0.06, 0.035);
+    ear.position.set(side * 0.2, 1.3, 0.02);
+    ear.rotation.z = side * -0.12;
+    mannequin.add(ear);
+  });
+  const neck = limb(
+    [new THREE.Vector3(0, 0.86, -0.01), new THREE.Vector3(0, 1.0, 0.0), new THREE.Vector3(0, 1.12, 0.02)],
+    [0.11, 0.085, 0.08],
+    { radial: 28, tubular: 16 },
+  );
   mannequin.add(head, neck);
 
-  // Hands emerging from the cuffs, palms turned toward the body.
-  const palmGeo = track(new THREE.SphereGeometry(1, 28, 20));
-  const thumbGeo = track(new THREE.CapsuleGeometry(0.018, 0.05, 6, 12));
-  const wristGeo = track(new THREE.CylinderGeometry(0.045, 0.05, 0.1, 20));
+  // Relaxed hands (~¾ head long) with a palm, four curled fingers and a thumb.
   ([[-1, sleevePaths.left], [1, sleevePaths.right]] as const).forEach(([side, path]) => {
     const end = path.getPointAt(1);
     const down = path.getTangentAt(1).normalize();
-    // Basis: y runs back up the arm, x points toward the body, z completes the frame.
+    // Hand frame: y back up the arm, x toward the body (palm), z forward (hand width).
     const yAxis = down.clone().negate();
     const xAxis = new THREE.Vector3(-side, 0, 0);
     xAxis.addScaledVector(yAxis, -xAxis.dot(yAxis)).normalize();
     const zAxis = new THREE.Vector3().crossVectors(xAxis, yAxis).normalize();
+    if (zAxis.z < 0) zAxis.negate();
     const hand = new THREE.Group();
     hand.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis));
     hand.position.copy(end);
 
-    const wrist = new THREE.Mesh(wristGeo, matMannequin);
-    wrist.position.y = -0.02;
-    const palm = new THREE.Mesh(palmGeo, matMannequin);
-    palm.scale.set(0.044, 0.115, 0.07);
-    palm.position.y = -0.13;
+    const v = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
+    hand.add(limb([v(0, 0.06, 0), v(0, -0.02, 0), v(0.004, -0.07, 0)], [0.062, 0.058, 0.062], { radial: 24, tubular: 10, flatten: 0.72 }));
+    const palm = new THREE.Mesh(track(new THREE.SphereGeometry(1, 32, 24)), matMannequin);
+    palm.scale.set(0.034, 0.12, 0.078);
+    palm.position.set(0.008, -0.15, 0);
     palm.castShadow = true;
-    const thumb = new THREE.Mesh(thumbGeo, matMannequin);
-    thumb.position.set(0.02, -0.09, 0.05);
-    thumb.rotation.set(0.5, 0, -0.35);
-    hand.add(wrist, palm, thumb);
+    hand.add(palm);
+    // Fingers: index → little, across the hand width, each curling gently toward the palm.
+    const fingerSpecs: Array<[number, number, number]> = [
+      [0.055, 0.205, 0.0175],
+      [0.018, 0.225, 0.018],
+      [-0.019, 0.215, 0.017],
+      [-0.054, 0.17, 0.0145],
+    ];
+    fingerSpecs.forEach(([fz, len, r]) => {
+      const baseY = -0.25;
+      hand.add(
+        limb(
+          [
+            v(0.004, baseY + 0.02, fz),
+            v(0.01, baseY - len * 0.4, fz * 1.04),
+            v(0.032, baseY - len * 0.78, fz * 1.06),
+            v(0.055, baseY - len * 0.98, fz * 1.06),
+          ],
+          [r, r * 0.95, r * 0.86, r * 0.78],
+          { radial: 14, tubular: 18, flatten: 0.85, capEnd: true },
+        ),
+      );
+    });
+    // Thumb: from the wrist side of the palm, forward and down toward the body.
+    hand.add(
+      limb(
+        [v(0.012, -0.1, 0.06), v(0.03, -0.16, 0.095), v(0.055, -0.22, 0.1), v(0.07, -0.26, 0.09)],
+        [0.026, 0.022, 0.019, 0.017],
+        { radial: 14, tubular: 18, capEnd: true },
+      ),
+    );
     mannequin.add(hand);
   });
 
-  // Hip form below the hem, joining the stand pole.
+  // Pelvis / hip form below the hem.
   const hipProfile = [
     new THREE.Vector2(0.0001, -1.2),
     new THREE.Vector2(0.12, -1.19),
@@ -904,22 +1043,55 @@ export function buildTShirt(
   hips.scale.set(1, 1, 0.56);
   hips.castShadow = true;
   hips.receiveShadow = true;
-  // Upper-thigh stubs with flat cuts, as on a retail hip form.
-  const thighGeo = track(new THREE.CylinderGeometry(0.17, 0.145, 0.3, 40));
-  const thighCapGeo = track(new THREE.CircleGeometry(0.145, 40));
-  [-1, 1].forEach((side) => {
-    const thigh = new THREE.Group();
-    const leg = new THREE.Mesh(thighGeo, matMannequin);
-    leg.castShadow = true;
-    const cap = new THREE.Mesh(thighCapGeo, matMannequin);
-    cap.rotation.x = Math.PI / 2;
-    cap.position.y = -0.15;
-    thigh.add(leg, cap);
-    thigh.position.set(side * 0.22, -1.24, 0);
-    thigh.rotation.z = side * 0.06;
-    mannequin.add(thigh);
-  });
   mannequin.add(hips);
+
+  if (figure === "full") {
+    // Legs to the floor: thigh → knee → calf → ankle, with moulded feet (8-head figure).
+    [-1, 1].forEach((side) => {
+      const sx = (x: number) => side * x;
+      mannequin.add(
+        limb(
+          [
+            new THREE.Vector3(sx(0.25), -0.95, 0),
+            new THREE.Vector3(sx(0.22), -1.5, 0.02),
+            new THREE.Vector3(sx(0.17), -2.08, 0.04),
+            new THREE.Vector3(sx(0.16), -2.5, 0.0),
+            new THREE.Vector3(sx(0.15), -2.92, -0.01),
+            new THREE.Vector3(sx(0.145), -3.18, -0.02),
+          ],
+          [0.27, 0.225, 0.145, 0.165, 0.105, 0.08],
+          { radial: 36, tubular: 72, flatten: 0.9 },
+        ),
+      );
+      const foot = limb(
+        [
+          new THREE.Vector3(sx(0.145), -3.24, -0.08),
+          new THREE.Vector3(sx(0.15), -3.28, 0.06),
+          new THREE.Vector3(sx(0.16), -3.3, 0.2),
+          new THREE.Vector3(sx(0.165), -3.31, 0.3),
+        ],
+        [0.075, 0.08, 0.075, 0.05],
+        { radial: 24, tubular: 24, flatten: 0.6, capStart: true, capEnd: true },
+      );
+      mannequin.add(foot);
+    });
+  } else {
+    // Upper-thigh stubs with flat cuts, as on a retail hip form.
+    const thighGeo = track(new THREE.CylinderGeometry(0.17, 0.145, 0.3, 40));
+    const thighCapGeo = track(new THREE.CircleGeometry(0.145, 40));
+    [-1, 1].forEach((side) => {
+      const thigh = new THREE.Group();
+      const leg = new THREE.Mesh(thighGeo, matMannequin);
+      leg.castShadow = true;
+      const cap = new THREE.Mesh(thighCapGeo, matMannequin);
+      cap.rotation.x = Math.PI / 2;
+      cap.position.y = -0.15;
+      thigh.add(leg, cap);
+      thigh.position.set(side * 0.22, -1.24, 0);
+      thigh.rotation.z = side * 0.06;
+      mannequin.add(thigh);
+    });
+  }
   jacket.add(mannequin);
 
   /* ── Display stand ────────────────────────────────────────────────────── */
@@ -930,6 +1102,11 @@ export function buildTShirt(
   const pole = new THREE.Mesh(track(new THREE.CylinderGeometry(0.03, 0.035, 1.5, 16)), matChrome);
   pole.position.y = -0.72;
   standGroup.add(standBase, pole);
+  // A standing figure needs no pole: keep only a low plinth under the feet.
+  if (figure === "full") {
+    pole.visible = false;
+    standBase.scale.set(1.15, 1, 1.15);
+  }
 
   /* ══ Studio props ═════════════════════════════════════════════════════════ */
   const anchors: Record<string, THREE.Object3D> = {};
@@ -1075,23 +1252,26 @@ export function buildTShirt(
   const boardFoot = new THREE.Mesh(track(new THREE.BoxGeometry(1.75, 0.04, 0.4)), matObsidian);
   boardFoot.position.set(0, -0.73, 0.12);
   board.add(boardPanel, boardFoot);
-  backView.scale.setScalar(0.3);
+  const viewScale = figure === "full" ? 0.21 : 0.3;
+  backView.scale.setScalar(viewScale);
   backView.rotation.y = Math.PI;
-  backView.position.set(-0.42, 0.06, 0.2);
-  sideView.scale.setScalar(0.3);
+  const viewY = figure === "full" ? 0.2 : 0.06;
+  backView.position.set(-0.42, viewY, 0.2);
+  sideView.scale.setScalar(viewScale);
   sideView.rotation.y = Math.PI / 2;
-  sideView.position.set(0.45, 0.06, 0.2);
+  sideView.position.set(0.45, viewY, 0.2);
   board.add(backView, sideView);
   COLORWAYS.forEach((cw, i) => {
     const chip = new THREE.Mesh(
       track(new THREE.BoxGeometry(0.26, 0.09, 0.02)),
       mats.makePhys({ color: new THREE.Color(cw.hex).getHex(), roughness: 0.8 }),
     );
-    chip.position.set(-0.48 + i * 0.32, -0.52, 0.03);
+    chip.position.set(-0.48 + i * 0.32, figure === "full" ? -0.62 : -0.52, 0.03);
     board.add(chip);
   });
-  addAnchor("viewBack", board, new THREE.Vector3(-0.42, -0.36, 0.1));
-  addAnchor("viewSide", board, new THREE.Vector3(0.45, -0.36, 0.1));
+  const tagY = figure === "full" ? 0.64 : -0.36;
+  addAnchor("viewBack", board, new THREE.Vector3(-0.42, tagY, 0.1));
+  addAnchor("viewSide", board, new THREE.Vector3(0.45, tagY, 0.1));
   board.position.set(1.62, -0.2, -0.75);
   board.rotation.y = -0.42;
 
@@ -1156,7 +1336,7 @@ export function buildTShirt(
       matOutline.opacity = sketch.value;
       outlineGroup.visible = sketch.value > 0.01;
       sway += (preset.sway - sway) * k;
-      offsetTarget.set(preset.offset[0], preset.offset[1] + RIG_Y, preset.offset[2]);
+      offsetTarget.set(preset.offset[0], preset.offset[1] + rigY, preset.offset[2]);
       jacketRig.position.lerp(offsetTarget, k);
       (Object.keys(propObjects) as PropKey[]).forEach((key) => {
         const target = preset.props.includes(key) ? 1 : 0;
