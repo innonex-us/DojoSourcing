@@ -84,7 +84,7 @@ export function Header({
           data-cursor="magnet"
           className="focus-ring site-cta group inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-brand/45 bg-brand/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-brand transition-colors hover:bg-brand hover:text-white sm:px-4 sm:text-xs sm:tracking-[0.18em] md:text-sm"
         >
-          <span>Let&apos;s Talk</span>
+          <span>Let&apos;s Discuss</span>
           <ArrowUpRight
             aria-hidden
             className="cta-arrow h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"

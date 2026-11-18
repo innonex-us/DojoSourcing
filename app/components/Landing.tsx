@@ -106,7 +106,7 @@ export function Landing() {
               {
                 duration: 0.8,
                 scrambleText: {
-                  text: "DESIGN // SOURCING // FACTORY // QA // READY // TRUCK",
+                  text: "DOJO DESIGN & SOURCING · BANGLADESH · GLOBAL APPAREL SOLUTION",
                   chars: "01/\\XO",
                   speed: 0.5,
                 },

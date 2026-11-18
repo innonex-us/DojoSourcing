@@ -81,17 +81,23 @@ export function Hero({
       {/* Center Kinetic Typography */}
       <div className="relative z-10 flex max-w-[1100px] flex-col items-center text-center">
         <p className="hero-scramble mb-5 font-mono text-[11px] font-bold uppercase tracking-[0.34em] text-brand md:text-xs">
-          DESIGN // SOURCING // FACTORY // QA // READY // TRUCK
+          DOJO DESIGN &amp; SOURCING · BANGLADESH · GLOBAL APPAREL SOLUTION
         </p>
 
-        <h1 className="hero-title text-5xl font-extrabold uppercase leading-[0.95] tracking-[0.04em] text-white drop-shadow-[0_6px_28px_rgba(0,0,0,0.85)] sm:text-7xl md:text-8xl lg:text-[7.2rem]">
-          Design. Produce. Ship.
+        <h1
+          className="hero-title text-4xl font-extrabold uppercase leading-[0.95] tracking-[0.04em] text-white drop-shadow-[0_6px_28px_rgba(0,0,0,0.85)] sm:text-5xl md:text-6xl lg:text-7xl"
+          aria-label="Your End-to-End Apparel Partner"
+        >
+          Your End-to-End Apparel Partner
         </h1>
 
-        <p className="hero-sub mt-7 max-w-xl text-sm leading-relaxed text-white/90 drop-shadow-[0_2px_14px_rgba(0,0,0,0.9)] md:text-base">
-          Dojo Design & Sourcing is your complete apparel sourcing partner — from garment
-          design &amp; tech packs through factory production, cargo trucking,
-          and global ocean shipment.
+        <p className="hero-sub mt-7 max-w-3xl text-sm leading-relaxed text-white/90 drop-shadow-[0_2px_14px_rgba(0,0,0,0.9)] md:text-base">
+          DOJO turns your apparel brief into garment concepts, CAD flats, and
+          production-ready tech packs with measurement specs, BOMs, and
+          construction details. We develop prints, garment graphics, and branding
+          artwork, create 3D samples to visualize silhouettes, fabrics, and
+          colorways, and present your collection through line sheets and
+          buyer-ready decks.
         </p>
 
         <div className="hero-actions mt-10 flex flex-wrap items-center justify-center gap-4">
