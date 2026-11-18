@@ -106,7 +106,7 @@ export function Landing() {
               {
                 duration: 0.8,
                 scrambleText: {
-                  text: "DESIGN // FACTORY // READY // TRUCK // SHIP",
+                  text: "DESIGN // FACTORY // QA // READY // TRUCK // SHIP",
                   chars: "01/\\XO",
                   speed: 0.5,
                 },

@@ -80,7 +80,7 @@ export function Hero({
       {/* Center Kinetic Typography */}
       <div className="relative z-10 flex max-w-[1100px] flex-col items-center text-center">
         <p className="hero-scramble mb-5 font-mono text-[11px] font-bold uppercase tracking-[0.34em] text-brand md:text-xs">
-          DESIGN // FACTORY // READY // TRUCK // SHIP
+          DESIGN // FACTORY // QA // READY // TRUCK // SHIP
         </p>
 
         <h1 className="hero-title text-5xl font-extrabold uppercase leading-[0.95] tracking-[0.04em] text-white drop-shadow-[0_6px_28px_rgba(0,0,0,0.85)] sm:text-7xl md:text-8xl lg:text-[7.2rem]">
